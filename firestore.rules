@@ -1,0 +1,21 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // مشاريع توزيع الحساسات
+    // أي موظف مسجّل دخول يقدر يقرا ويكتب — عشان المبيعات والأوبريشن
+    // والدعم يشتغلوا على نفس الملف.
+    match /projects/{projectId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if request.auth != null;
+    }
+
+    // أي حاجة تانية ممنوعة
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

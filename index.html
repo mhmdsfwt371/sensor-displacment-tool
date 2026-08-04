@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Sensor Layout — توزيع الحساسات</title>
+<style>
+:root{
+  --ink:#0d141c; --panel:#151f2b; --panel-2:#1b2836; --line:#26374a;
+  --text:#e7eef5; --muted:#8ea1b4;
+  --sensor:#e02b2b; --gate:#1f63d6; --zone:#5b93ff; --ok:#57d38c; --warn:#ffc44d; --bad:#ff6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--ink);color:var(--text);
+  font-family:"Segoe UI","Noto Sans Arabic","Dubai",Tahoma,Arial,sans-serif;font-size:15px;overflow:hidden}
+.app{display:grid;grid-template-columns:395px 1fr;height:100%}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;grid-template-rows:44vh 1fr}
+  .side{order:2;border-inline-start:none;border-top:1px solid var(--line)}
+  .stage{order:1}
+}
+.side{background:var(--panel);border-inline-start:1px solid var(--line);overflow-y:auto;padding:0 0 70px}
+.brand{padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5;
+  display:flex;align-items:center;gap:8px}
+.brand h1{margin:0;font-size:16px;flex:1}
+.brand button{padding:6px 10px;font-size:12px}
+#btnLang{border-color:var(--zone);color:var(--zone)}
+.step{border-bottom:1px solid var(--line)}
+.step > summary{list-style:none;cursor:pointer;padding:13px 18px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px}
+.step > summary::-webkit-details-marker{display:none}
+.step > summary:hover{background:var(--panel-2)}
+.num{width:23px;height:23px;flex:0 0 23px;border-radius:6px;background:var(--panel-2);
+  border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--muted)}
+.step[open] .num{background:var(--zone);border-color:var(--zone);color:#08111d;font-weight:700}
+.body{padding:4px 18px 18px}
+label{display:block;font-size:12.5px;color:var(--muted);margin:11px 0 5px}
+input[type=text],input[type=number],select,textarea{width:100%;padding:9px 10px;border-radius:8px;
+  background:#0e1723;border:1px solid var(--line);color:var(--text);font-family:inherit;font-size:14px;outline:none}
+textarea{min-height:140px;resize:vertical;line-height:1.9;font-size:13px}
+input[type=range]{width:100%;accent-color:var(--zone)}
+input:focus,select:focus,textarea:focus{border-color:var(--zone)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.chk{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:13.5px;cursor:pointer}
+.chk input{width:17px;height:17px;accent-color:var(--gate)}
+button{font-family:inherit;font-size:13.5px;cursor:pointer;border-radius:8px;padding:9px 12px;
+  border:1px solid var(--line);background:var(--panel-2);color:var(--text)}
+button:hover{border-color:#3a5470}
+button:active{transform:translateY(1px)}
+.btn-main{background:var(--zone);border-color:var(--zone);color:#08111d;font-weight:700;width:100%;padding:11px}
+.btn-pdf{background:var(--ok);border-color:var(--ok);color:#07140d;font-weight:700;width:100%;padding:11px}
+.btn-line{width:100%}
+.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btns button{flex:1;min-width:100px}
+.hint{font-size:12px;color:var(--muted);line-height:1.75;margin:9px 0 0;background:#0e1723;
+  border:1px dashed var(--line);border-radius:8px;padding:9px 11px}
+.hint b{color:var(--text)} .hint code{color:var(--warn);font-family:inherit}
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:20px;background:#0e1723;
+  border:1px solid var(--line);color:var(--muted);margin-inline-start:auto}
+.pill.on{background:rgba(87,211,140,.14);border-color:var(--ok);color:var(--ok)}
+.pill.warn{background:rgba(255,107,107,.14);border-color:var(--bad);color:var(--bad)}
+.seg{display:flex;gap:5px;background:#0e1723;padding:4px;border-radius:10px;border:1px solid var(--line)}
+.seg button{flex:1;border:none;background:transparent;padding:8px 4px;font-size:12.5px}
+.seg button.on{background:var(--panel-2);border:1px solid var(--line);font-weight:700}
+.list{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.item{display:flex;align-items:center;gap:8px;background:#0e1723;border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.item input[type=text]{padding:4px 6px;font-size:13px;background:transparent;border:none}
+.item .meta{font-size:11.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.item .x{background:transparent;border:none;color:var(--muted);padding:2px 6px;font-size:16px;line-height:1}
+.item .x:hover{color:var(--bad)}
+.dot{width:10px;height:10px;border-radius:3px;flex:0 0 10px}
+.item.col{flex-direction:column;align-items:stretch;gap:6px}
+.item .r{display:flex;align-items:center;gap:8px}
+.item .r input[type=text]{flex:1}
+.cnt{display:flex;align-items:center;gap:6px;margin-inline-start:auto}
+.cnt button{padding:1px 9px;font-size:15px;border-radius:6px}
+.cnt b{min-width:26px;text-align:center;font-variant-numeric:tabular-nums;color:var(--sensor)}
+.item .rs{padding:3px 8px;font-size:11px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:start}
+th{color:var(--muted);font-weight:600;font-size:11.5px}
+td.n,th.n{text-align:end;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:none}
+.bad{color:var(--bad)}
+.kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.kpi{background:#0e1723;border:1px solid var(--line);border-radius:10px;padding:11px 8px;text-align:center}
+.kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi span{font-size:11px;color:var(--muted)}
+.kpi.s b{color:var(--sensor)} .kpi.g b{color:var(--gate)} .kpi.a b{color:var(--zone)}
+.chks{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.issue{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.6;
+  background:#0e1723;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.issue.err{border-color:rgba(255,107,107,.5)} .issue.ok{border-color:rgba(87,211,140,.5)}
+.issue b{flex:0 0 auto}
+.stage{position:relative;background:#0a1017;overflow:hidden}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.tools{position:absolute;top:10px;inset-inline-start:10px;display:flex;gap:6px;flex-wrap:wrap;
+  background:rgba(21,31,43,.93);border:1px solid var(--line);border-radius:11px;padding:6px;
+  backdrop-filter:blur(6px);max-width:calc(100% - 20px)}
+.tools button{padding:8px 11px;font-size:13px;border-color:transparent;background:transparent}
+.tools button.on{background:var(--panel-2);border-color:var(--line);font-weight:700}
+.tools .sep{width:1px;background:var(--line);margin:4px 2px}
+.badge{position:absolute;bottom:10px;inset-inline-start:10px;background:rgba(21,31,43,.93);
+  border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.legend{position:absolute;bottom:10px;inset-inline-end:10px;display:flex;gap:12px;background:rgba(21,31,43,.93);
+  border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-inline-end:5px}
+.legend i.sq{border-radius:2px}
+.empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#3f556d;
+  font-size:14px;text-align:center;line-height:2}
+.wait{position:absolute;inset:0;display:none;place-items:center;background:rgba(10,16,23,.75);
+  color:var(--text);font-size:14px;z-index:9}
+.wait.on{display:grid}
+.toast{position:absolute;top:14px;inset-inline-end:14px;background:var(--ok);color:#07140d;font-weight:700;
+  padding:9px 14px;border-radius:9px;font-size:13px;opacity:0;transform:translateY(-8px);
+  transition:.25s;pointer-events:none;z-index:10}
+.toast.on{opacity:1;transform:none}
+.gate{position:fixed;inset:0;background:var(--ink);display:none;place-items:center;z-index:50;padding:20px}
+.gate.on{display:grid}
+.gate .card{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:22px}
+.gate h2{margin:0 0 4px;font-size:19px}
+.gate p{margin:0 0 6px;color:var(--muted);font-size:12.5px;line-height:1.7}
+.gate .err{color:var(--bad);font-size:12.5px;min-height:18px;margin:8px 0 2px}
+.glinks{display:flex;gap:8px;margin-top:8px}
+.glinks button{flex:1;background:transparent;border:none;color:var(--muted);font-size:12px;padding:6px}
+.glinks button:hover{color:var(--text)}
+#userChip{font-size:11px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .go{flex:1;font-size:12.5px;line-height:1.6}
+.item .op{padding:4px 10px;font-size:12px}
+#print{display:none}
+@media print{
+  @page{size:A4 landscape;margin:9mm}
+  html,body{height:auto;overflow:visible;background:#fff;color:#000}
+  .app{display:none}
+  #print{display:block;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#000}
+  .sheet{page-break-after:always;page-break-inside:avoid}
+  .sheet:last-child{page-break-after:auto}
+  .ttl{display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:8px}
+  .ttl h2{margin:0;font-size:14pt} .ttl .rt{font-size:8.5pt;text-align:end;line-height:1.5}
+  .plan{display:block;margin:0 auto;max-width:100%;max-height:148mm;border:1px solid #999}
+  .crit{margin-top:6px;font-size:8pt;display:flex;gap:13px;flex-wrap:wrap;border-top:1px solid #ccc;padding-top:5px}
+  .crit i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-inline-end:4px}
+  #print table{width:100%;border-collapse:collapse;margin-top:7px;font-size:8.5pt}
+  #print th,#print td{border:1px solid #777;padding:4px 5px;text-align:start}
+  #print thead th{background:#eee}
+  .sign{margin-top:14px;display:flex;gap:40px;font-size:9pt}
+  .sign div{flex:1;border-top:1px solid #000;padding-top:4px}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <div class="card">
+    <h2 data-i="gateTitle">دخول</h2>
+    <p data-i="gateSub"></p>
+    <label data-i="fEmail">البريد</label>
+    <input type="email" id="gEmail" autocomplete="username">
+    <label data-i="fPass">كلمة السر</label>
+    <input type="password" id="gPass" autocomplete="current-password">
+    <div class="err" id="gErr"></div>
+    <button class="btn-main" id="gLogin" data-i="bLogin">دخول</button>
+    <div class="glinks">
+      <button id="gForgot" data-i="bForgot"></button>
+      <button id="gOffline" data-i="bOffline"></button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <h1 data-i="appTitle">ملف المشروع</h1>
+      <span id="userChip"></span>
+      <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
+      <button id="btnLang">English</button>
+      <button id="btnSave" data-i="save">حفظ</button>
+      <button id="btnOpen" data-i="open">فتح</button>
+      <input type="file" id="fileProj" accept=".json,application/json" style="display:none">
+    </div>
+
+    <details class="step" open>
+      <summary><span class="num">١</span><span data-i="s1">بيانات المشروع</span></summary>
+      <div class="body">
+        <div class="row">
+          <div><label data-i="fName">اسم المشروع</label><input type="text" id="pjName" data-ph="phName"></div>
+          <div><label data-i="fAux">رقم AUX</label><input type="text" id="pjRef" data-ph="phAux"></div>
+        </div>
+        <label data-i="fClient">اسم الشركة (العميل / الجهة)</label>
+        <input type="text" id="pjClient" data-ph="phClient">
+        <p class="hint" data-i="hSave" data-html="1"></p>
+        <div id="cloudBox" style="display:none">
+          <label data-i="s1Cloud">مشاريع السحابة</label>
+          <div class="btns" style="margin-top:0">
+            <button id="btnCloudSave" data-i="bCloudSave"></button>
+            <button id="btnCloudList" data-i="bCloudList"></button>
+          </div>
+          <div class="list" id="cloudList"></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="step" open>
+      <summary><span class="num">٢</span><span data-i="s2">الرسمة</span> <span class="pill" id="pillPlan"></span></summary>
+      <div class="body">
+        <div class="btns" style="margin-top:4px"><button class="btn-pdf" id="btnAll" data-i="runAll">شغّل كل حاجة</button></div>
+        <p class="hint" data-i="hRunAll"></p>
+        <div class="seg" id="segMode">
+          <button data-m="image" class="on" data-i="mImg">صورة</button>
+          <button data-m="dims" data-i="mDim">أبعاد</button>
+          <button data-m="text" data-i="mTxt">وصف مكتوب</button>
+        </div>
+        <div id="paneImage">
+          <label data-i="fUpload">ارفع صورة الرسمة</label>
+          <input type="file" id="fileImg" accept="image/*" style="display:none">
+          <button class="btn-line" id="btnChoose" data-i="bChoose">اختيار صورة من الجهاز</button>
+          <div id="paneClean" style="display:none">
+            <label data-i="fClean">تنضيف الصورة</label>
+            <div class="btns" style="margin-top:0">
+              <button id="btnTo2D" data-i="bTo2D">تحويل لخطوط</button>
+              <button id="btnOrig" data-i="bOrig">الأصلية</button>
+            </div>
+            <label><span data-i="fStrength">درجة التنقية</span>: <span id="lblStr">٨</span></label>
+            <input type="range" id="rngStr" min="2" max="25" value="8">
+          </div>
+          <p class="hint" data-i="hImg" data-html="1"></p>
+        </div>
+        <div id="paneDims" style="display:none">
+          <label data-i="fRoomName">اسم الغرفة</label>
+          <input type="text" id="rmName" data-ph="phRoom">
+          <div class="row">
+            <div><label data-i="fLen">الطول (متر)</label><input type="number" id="rmL" value="12" min="0.5" step="0.5"></div>
+            <div><label data-i="fWid">العرض (متر)</label><input type="number" id="rmW" value="8" min="0.5" step="0.5"></div>
+          </div>
+          <div class="btns"><button class="btn-main" id="btnAddRoom" data-i="bAddRoom">إضافة الغرفة</button></div>
+        </div>
+        <div id="paneText" style="display:none">
+          <label data-i="fDesc">وصف الرسمة — بالمتر</label>
+          <textarea id="txtPlan" spellcheck="false" dir="auto"></textarea>
+          <div class="btns"><button class="btn-main" id="btnDraw" data-i="bDraw">ارسم المخطط</button></div>
+          <div class="btns"><button class="btn-line" id="btnSample" data-i="bSample">مثال جاهز</button></div>
+          <p class="hint" data-i="hDesc" data-html="1"></p>
+        </div>
+      </div>
+    </details>
+
+    <details class="step" open>
+      <summary><span class="num">٣</span><span data-i="s3">الغرف</span> <span class="pill" id="pillZones">٠</span></summary>
+      <div class="body">
+        <p class="hint" data-i="hRooms" data-html="1"></p>
+        <div class="btns"><button class="btn-main" id="btnAuto" data-i="bAuto">اكتشاف كل الغرف</button></div>
+        <div class="list" id="zoneList"></div>
+      </div>
+    </details>
+
+    <details class="step">
+      <summary><span class="num">٤</span><span data-i="s4">معايير الشركة</span></summary>
+      <div class="body">
+        <label data-i="fSensor">الحساس</label>
+        <select id="selSensor">
+          <option value="tg08" data-i="optTg08">تي زون TG08 — بشاشة</option>
+          <option value="other" data-i="optOther">حساس آخر</option>
+        </select>
+        <div class="row">
+          <div><label data-i="fCov">تغطية الحساس (م٢)</label><input type="number" id="inCov" value="25" min="1" step="1"></div>
+          <div><label data-i="fMin">أقل عدد للغرفة</label><input type="number" id="inMin" value="1" min="1" step="1"></div>
+        </div>
+        <label data-i="fGw">الجيت واي</label>
+        <select id="selGw">
+          <option value="gsm" data-i="optGsm">جي إس إم</option>
+          <option value="wifi" data-i="optWifi">واي فاي</option>
+        </select>
+        <label data-i="fRange">مدى الجيت واي (متر)</label>
+        <input type="number" id="inGwRange" value="50" min="2" step="1">
+        <label class="chk"><input type="checkbox" id="chkPerRoom" checked> <span data-i="fPerRoom">جيت واي مستقل لكل غرفة</span></label>
+        <label><span data-i="fSym">حجم الرمز على الرسمة</span>: <span id="lblSym">٠٫٦</span> <span data-i="unitM">متر</span></label>
+        <input type="range" id="rngSym" min="3" max="20" value="6">
+        <label data-i="fAcc">مستلزمات لكل وحدة</label>
+        <div class="row">
+          <div><label data-i="fBat">بطاريات لكل حساس</label><input type="number" id="inBat" value="1" min="0" step="1"></div>
+          <div><label data-i="fBrk">قواعد تثبيت لكل حساس</label><input type="number" id="inBrk" value="1" min="0" step="1"></div>
+        </div>
+        <div class="row">
+          <div><label data-i="fPsu">محول لكل جيت واي</label><input type="number" id="inPsu" value="1" min="0" step="1"></div>
+          <div><label data-i="fSpare">احتياطي ٪</label><input type="number" id="inSpare" value="5" min="0" max="50" step="1"></div>
+        </div>
+        <div class="btns"><button class="btn-main" id="btnRun" data-i="bRun">وزّع الحساسات</button></div>
+        <div class="btns"><button class="btn-line" id="btnClear" data-i="bClear">مسح التوزيع</button></div>
+      </div>
+    </details>
+
+    <details class="step" open>
+      <summary><span class="num">٥</span><span data-i="s5">أعداد المشروع</span></summary>
+      <div class="body">
+        <div class="kpis">
+          <div class="kpi s"><b id="kSensors">٠</b><span data-i="kSensor">حساس</span></div>
+          <div class="kpi g"><b id="kGates">٠</b><span data-i="kGate">جيت واي</span></div>
+          <div class="kpi a"><b id="kArea">٠</b><span data-i="kArea">متر مربع</span></div>
+        </div>
+        <div id="tblZones"></div>
+        <div id="tblSupply"></div>
+        <div class="btns"><button class="btn-line" id="btnCopy" data-i="bCopy">نسخ ملخص للمبيعات</button></div>
+      </div>
+    </details>
+
+    <details class="step" open>
+      <summary><span class="num">٦</span><span data-i="s6">فحص قبل التسليم</span> <span class="pill" id="pillChk">—</span></summary>
+      <div class="body"><div class="chks" id="chkList"></div></div>
+    </details>
+
+    <details class="step">
+      <summary><span class="num">٧</span><span data-i="s7">المخرجات</span></summary>
+      <div class="body">
+        <label data-i="fSheets">الأوراق اللي هتطلع</label>
+        <label class="chk"><input type="checkbox" id="opDraw" checked> <span data-i="opDraw">رسمة التوزيع</span></label>
+        <label class="chk"><input type="checkbox" id="opCount" checked> <span data-i="opCount">جدول الأعداد</span></label>
+        <label class="chk"><input type="checkbox" id="opInst" checked> <span data-i="opInst">جدول التركيب للفنيين</span></label>
+        <label class="chk"><input type="checkbox" id="opSup" checked> <span data-i="opSup">قائمة التوريد للمخزن</span></label>
+        <label class="chk"><input type="checkbox" id="opCust"> <span data-i="opCust">نسخة العميل</span></label>
+        <div class="btns"><button class="btn-pdf" id="btnPdf" data-i="bPdf">حفظ ملف للطباعة</button></div>
+        <p class="hint" data-i="hPdf" data-html="1"></p>
+        <div class="btns">
+          <button id="btnCsvCount" data-i="bCsvCount">جدول الأعداد</button>
+          <button id="btnCsvInst" data-i="bCsvInst">جدول التركيب</button>
+        </div>
+        <label data-i="fImgOut">صورة جاهزة للإرسال مع عرض السعر</label>
+        <div class="btns" style="margin-top:0"><button class="btn-line" id="btnPng" data-i="bPng">حفظ صورة الرسمة</button></div>
+        <p class="hint" data-i="hImgOut"></p>
+      </div>
+    </details>
+  </aside>
+
+  <main class="stage">
+    <canvas id="cv"></canvas>
+    <div class="tools">
+      <button data-t="pan" class="on" data-i="tPan">تحريك</button>
+      <button data-t="edit" data-i="tEdit">تعديل</button>
+      <button data-t="cal" data-i="tCal">معايرة</button>
+      <span class="sep"></span>
+      <button data-t="poly" data-i="tPoly">مضلع</button>
+      <button data-t="rect" data-i="tRect">مستطيل</button>
+      <button data-t="wand" data-i="tWand">غرفة بضغطة</button>
+      <button data-t="wall" data-i="tWall">حائط</button>
+      <button data-t="door" data-i="tDoor">باب</button>
+      <span class="sep"></span>
+      <button data-t="sensor" data-i="tSensor">حساس</button>
+      <button data-t="gate" data-i="tGate">جيت واي</button>
+      <span class="sep"></span>
+      <button id="btnUndo" data-i="tUndo">تراجع</button>
+      <button id="btnCover" class="on" data-i="tCover">التغطية</button>
+      <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
+      <button id="btnFit" data-i="tFit">ضبط</button>
+    </div>
+    <div class="empty" id="emptyMsg" data-i="emptyMsg" data-html="1"></div>
+    <div class="wait" id="wait" data-i="waiting">شغّال…</div>
+    <div class="toast" id="toast"></div>
+    <div class="badge" id="badge"></div>
+    <div class="legend">
+      <span><i style="background:#e02b2b"></i><span data-i="lgSensor">حساس</span></span>
+      <span><i class="sq" style="background:#1f63d6"></i><span data-i="lgGate">جيت واي</span></span>
+    </div>
+  </main>
+</div>
+<div id="print"></div>
+
+<script>
+"use strict";
+/* ================================================================
+   إعدادات فايربيز | Firebase settings
+   حط بيانات مشروعك هنا من: Firebase Console > Project settings > Web app
+   سيبها فاضية لو عايز الأداة تشتغل محلي من غير حساب.
+   ================================================================ */
+const FIREBASE={
+  apiKey:"",
+  authDomain:"",
+  projectId:"",
+  appId:""
+};
+const ALLOW_OFFLINE=true;   // خلّيها false لو عايز الدخول إجباري
+
+/* ================= اللغة | Language ================= */
+let L="ar";
+const DICT={
+ar:{
+appTitle:"ملف المشروع",save:"حفظ",open:"فتح",langBtn:"English",
+s1:"بيانات المشروع",fName:"اسم المشروع",phName:"مخازن النور",fAux:"رقم AUX",phAux:"AUX-1024",
+fClient:"اسم الشركة (العميل / الجهة)",phClient:"شركة النور للأدوية",
+hSave:"زر <b>حفظ</b> فوق بينزّل ملف المشروع كامل بالرسمة والتوزيع — تفتحه تاني أو تبعته لزميلك ويكمّل عليه.",
+s2:"الرسمة",runAll:"شغّل كل حاجة",
+hRunAll:"بيحدد الغرف ويحسب ويوزّع الحساسات والجيت واي في خطوة واحدة. هيسألك سؤال واحد بس: الرسمة كلها كام متر.",
+mImg:"صورة",mDim:"أبعاد",mTxt:"وصف مكتوب",
+fUpload:"ارفع صورة الرسمة",bChoose:"اختيار صورة من الجهاز",fClean:"تنضيف الصورة",
+bTo2D:"تحويل لخطوط",bOrig:"الأصلية",fStrength:"درجة التنقية",
+hImg:"التنضيف بيوضّح الخطوط بس الرسمة تفضل <b>صورة</b>. عايزها مرسومة بحوائط وأبواب ومقياس مظبوط؟ استعمل <b>وصف مكتوب</b>.",
+fRoomName:"اسم الغرفة",phRoom:"مخزن التبريد",fLen:"الطول (متر)",fWid:"العرض (متر)",bAddRoom:"إضافة الغرفة",
+fDesc:"وصف الرسمة — بالمتر",bDraw:"ارسم المخطط",bSample:"مثال جاهز",
+hDesc:'<code>غرفة "مخزن" 0,0 12x8</code> — ركن الغرفة ثم مقاسها<br><code>مضلع "الاسم" 0,0 6,0 6,4 0,4</code> — للأشكال غير المستطيلة<br><code>باب 5,8 6,8</code> · <code>حائط 3,0 3,8</code>',
+s3:"الغرف",bAuto:"اكتشاف كل الغرف",
+hRooms:"أسرع طريقة: <b>اكتشاف كل الغرف</b> والأداة تقرا الصورة لوحدها. أو <b>غرفة بضغطة</b> ودوس جوّه أي غرفة. والرسم اليدوي بالمضلع والمستطيل موجود لو الرسمة مش واضحة.",
+s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 — بشاشة",optOther:"حساس آخر",
+fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
+fRange:"مدى الجيت واي (متر)",fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",
+fAcc:"مستلزمات لكل وحدة",fBat:"بطاريات لكل حساس",fBrk:"قواعد تثبيت لكل حساس",
+fPsu:"محول لكل جيت واي",fSpare:"احتياطي ٪",bRun:"وزّع الحساسات",bClear:"مسح التوزيع",
+s5:"أعداد المشروع",kSensor:"حساس",kGate:"جيت واي",kArea:"متر مربع",bCopy:"نسخ ملخص للمبيعات",
+s6:"فحص قبل التسليم",s7:"المخرجات",fSheets:"الأوراق اللي هتطلع",
+opDraw:"رسمة التوزيع",opCount:"جدول الأعداد",opInst:"جدول التركيب للفنيين",opSup:"قائمة التوريد للمخزن",
+opCust:"نسخة العميل — من غير دوائر التغطية والوصلات",bPdf:"حفظ ملف للطباعة",
+hPdf:"من نافذة الطباعة اختار <b>حفظ كملف</b> بدل الطابعة.",
+bCsvCount:"جدول الأعداد",bCsvInst:"جدول التركيب",fImgOut:"صورة جاهزة للإرسال مع عرض السعر",
+bPng:"حفظ صورة الرسمة",
+hImgOut:"الصورة بتطلع ورقة كاملة: اسم المشروع والشركة والتاريخ فوق، الرسمة في النص، ومفتاح الرموز والأعداد تحت.",
+tPan:"تحريك",tEdit:"تعديل",tCal:"معايرة",tPoly:"مضلع",tRect:"مستطيل",tWand:"غرفة بضغطة",tWall:"حائط",tDoor:"باب",tSensor:"حساس",tGate:"جيت واي",
+tUndo:"تراجع",tCover:"التغطية",tNums:"الأرقام",tFit:"ضبط",
+tNearWall:"دوس على حائط أو ضلع غرفة",aDrawOnly:"الحائط والباب للرسم من الصفر — مش فوق صورة",
+emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
+lgSensor:"حساس",lgGate:"جيت واي",
+pillNo:"لسه",pillCal:"محتاجة معايرة",pillReady:"جاهزة",
+thRoom:"الغرفة",thArea:"م٢",thSensors:"حساس",thGw:"جيت واي",thFar:"أبعد",thTotal:"الإجمالي",
+thSupply:"قائمة التوريد",thQty:"العدد",thCode:"الكود",thType:"النوع",thX:"بعد س من ركن الغرفة (م)",
+thY:"بعد ص (م)",thSerial:"الرقم التسلسلي",thDone:"تم",thRecv:"المستلم",thItem:"الصنف",
+auto:"تلقائي",resetAuto:"رجّع للتلقائي",room:"غرفة",sensor:"حساس",gateway:"جيت واي",
+gwPrefix:"ج",orphan:"خ",unitM2:"م٢",scaleBar:"٥ م",
+mScale:"المقياس {0} بكسل / متر • تكبير {1}٪",mNoScale:"المقياس غير محدد",
+okAll:"كل الغرف متغطية، والأعداد والمدى مظبوطين — جاهز للتسليم.",
+issNote:"{0} ملاحظة",issClear:"سليم",
+isScale:"المقياس غير محدد",isNoZones:"مفيش غرف متحددة",isNoSensors:"{0}: من غير حساسات",
+isLess:"{0}: {1} حساس والمطلوب {2}",isManual:"{0}: عدد يدوي {1} والمعيار {2}",
+isNoGw:"{0}: من غير جيت واي",isFar:"{0}: أبعد حساس {1} م خارج مدى الجيت واي",
+isOrphan:"{0} حساس مش داخل أي غرفة",isName:"اسم المشروع فاضي",
+aScale:"حدّد المقياس الأول من زر معايرة.",aZone:"ارسم غرفة واحدة على الأقل.",
+aImg:"محتاج صورة رسمة الأول.",aImgTool:"الأداة دي بتشتغل على صورة رسمة.",
+aBig:"الصورة كبيرة أوي.",aRead:"مش قادر أقرا الصورة.",aFile:"الملف مش سليم.",
+aStart:"ارفع صورة الرسمة الأول أو اكتب الوصف.",aNoPlan:"مفيش رسمة للتصدير.",aDims:"اكتب الطول والعرض بالمتر.",
+aSheet:"اختار ورقة واحدة على الأقل.",aDescLine:'اكتب على الأقل سطر زي: غرفة "مخزن" 0,0 12x8',
+pScale:"طول الخط اللي حددته بالمتر؟",pAll:"{0} الرسمة كله كام متر؟\n(رقم تقريبي دلوقتي، وتقدر تضبطه بالمعايرة بعدين)",
+pWidth:"عرض",pHeight:"ارتفاع",
+tSaved:"اتحفظ",tOpened:"اتفتح",tCopied:"اتنسخ",tDone:"خلص: {0} حساس · {1} جيت واي",
+tFound:"لقيت {0} غرفة",tNoRooms:"مش لاقي غرف مقفولة",tPicked:"اتحددت",tOnLine:"دوست على خط — دوس جوّه الغرفة",
+tOpen2:"الغرفة مش مقفولة — اقفل الفتحة أو ارسمها بالمستطيل",tNoShape:"مش قادر أحدد الشكل",tNeedZones:"محتاج غرف محددة",
+prTitle:"مخطط التوزيع",prCounts:"جدول الأعداد",prInst:"جدول التركيب — للفنيين",prSup:"قائمة التوريد — للمخزن",
+prTech:"الفني المنفّذ",prEng:"مهندس الموقع",prDate:"التاريخ",prStore:"أمين المخزن",prRecv:"المستلم",
+cCov:"تغطية {0} م٢",cRange:"بمدى {0} م",cPerRoom:"جيت واي مستقل لكل غرفة",cGroup:"تجميع حسب المدى",
+cArea:"المساحة {0} م٢",supSensor:"حساس {0}",supGw:"جيت واي {0}",supBat:"بطاريات",supBrk:"قواعد تثبيت",
+supPsu:"محولات كهرباء",supSim:"شرائح اتصال",
+sumProj:"مشروع",sumAux:"رقم AUX",sumComp:"الشركة",sumArea:"المساحة الإجمالية",sumTot:"الإجمالي",
+sumSup:"التوريد",sumStd:"المعايير",sumEach:"حساس لكل {0} م٢",sumSpare:"احتياطي {0}٪",
+fileProj:"مشروع",filePlan:"مخطط",fileCounts:"الأعداد",fileInst:"التركيب",
+sample:'غرفة "مخزن التبريد" 0,0 12x8\nغرفة "مخزن الأدوية" 12.3,0 7x8\nغرفة "الاستقبال" 0,8.3 19.3,4\nباب 5,8 6,8\nباب 12.3,3 12.3,4.2\n',
+gateTitle:"دخول",gateSub:"استخدم الحساب اللي الشركة فتحته لك.",fEmail:"البريد",fPass:"كلمة السر",
+bLogin:"دخول",bForgot:"نسيت كلمة السر",bOffline:"شغّل محلي من غير حساب",bLogout:"خروج",
+eLogin:"البريد أو كلمة السر غلط",tReset:"بعتنا رسالة على بريدك",
+s1Cloud:"مشاريع السحابة",bCloudSave:"حفظ للسحابة",bCloudList:"فتح من السحابة",bOpen:"فتح",
+tCloudSaved:"اتحفظ على السحابة",cloudEmpty:"مفيش مشاريع محفوظة",
+aTooBig:"الملف كبير على السحابة — استعمل «تحويل لخطوط» أو صورة أصغر",
+aNoCloud:"السحابة مش متظبطة"
+},
+en:{
+appTitle:"Project File",save:"Save",open:"Open",langBtn:"العربية",
+s1:"Project Details",fName:"Project Name",phName:"Al Nour Stores",fAux:"AUX Number",phAux:"AUX-1024",
+fClient:"Company (Client / Entity)",phClient:"Al Nour Pharma",
+hSave:"<b>Save</b> downloads the whole project — drawing, rooms and layout. Reopen it later or send it to a colleague to continue.",
+s2:"Drawing",runAll:"Run Everything",
+hRunAll:"Detects the rooms, measures them, then places sensors and gateways in one step. It asks a single question: how many metres across is the plan.",
+mImg:"Image",mDim:"Dimensions",mTxt:"Description",
+fUpload:"Upload plan image",bChoose:"Choose image from device",fClean:"Clean up image",
+bTo2D:"To line art",bOrig:"Original",fStrength:"Cleanup strength",
+hImg:"Cleanup sharpens the lines but the plan stays an <b>image</b>. Want real walls, doors and an exact scale? Use <b>Description</b>.",
+fRoomName:"Room name",phRoom:"Cold store",fLen:"Length (m)",fWid:"Width (m)",bAddRoom:"Add Room",
+fDesc:"Plan description — in metres",bDraw:"Draw Plan",bSample:"Load sample",
+hDesc:'<code>room "Store" 0,0 12x8</code> — corner then size<br><code>poly "Name" 0,0 6,0 6,4 0,4</code> — for non-rectangular shapes<br><code>door 5,8 6,8</code> · <code>wall 3,0 3,8</code>',
+s3:"Rooms",bAuto:"Detect All Rooms",
+hRooms:"Fastest route: <b>Detect All Rooms</b> and the tool reads the image itself. Or <b>Magic Room</b> and click inside any room. Manual polygon and rectangle are still there for unclear plans.",
+s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",optOther:"Other sensor",
+fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
+fRange:"Gateway range (m)",fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",
+fAcc:"Accessories per unit",fBat:"Batteries per sensor",fBrk:"Mounts per sensor",
+fPsu:"Adapters per gateway",fSpare:"Spare %",bRun:"Distribute Sensors",bClear:"Clear Layout",
+s5:"Project Totals",kSensor:"Sensors",kGate:"Gateways",kArea:"Square metres",bCopy:"Copy Sales Summary",
+s6:"Pre-Handover Check",s7:"Outputs",fSheets:"Sheets to include",
+opDraw:"Layout drawing",opCount:"Counts table",opInst:"Installation schedule",opSup:"Supply list",
+opCust:"Client version — no coverage circles or links",bPdf:"Save Print File",
+hPdf:"In the print dialog choose <b>Save as file</b> instead of a printer.",
+bCsvCount:"Counts sheet",bCsvInst:"Install sheet",fImgOut:"Image ready to email with the quote",
+bPng:"Save Drawing Image",
+hImgOut:"The image comes out as a full sheet: project, company and date on top, the drawing in the middle, symbol key and counts below.",
+tPan:"Pan",tEdit:"Edit",tCal:"Scale",tPoly:"Polygon",tRect:"Rectangle",tWand:"Magic Room",tWall:"Wall",tDoor:"Door",tSensor:"Sensor",tGate:"Gateway",
+tUndo:"Undo",tCover:"Coverage",tNums:"Labels",tFit:"Fit",
+tNearWall:"Click on a wall or room edge",aDrawOnly:"Wall and door are for drawing from scratch — not over an image",
+emptyMsg:"Upload a plan image or write the description<br>Or draw from scratch: rectangle for rooms, wall and door for details<br>You can also drop a project file here",waiting:"Working…",
+lgSensor:"Sensor",lgGate:"Gateway",
+pillNo:"Empty",pillCal:"Needs scale",pillReady:"Ready",
+thRoom:"Room",thArea:"m²",thSensors:"Sensors",thGw:"GW",thFar:"Farthest",thTotal:"Total",
+thSupply:"Supply list",thQty:"Qty",thCode:"Code",thType:"Type",thX:"X from room corner (m)",
+thY:"Y (m)",thSerial:"Serial number",thDone:"Done",thRecv:"Received",thItem:"Item",
+auto:"Auto",resetAuto:"Back to auto",room:"Room",sensor:"Sensor",gateway:"Gateway",
+gwPrefix:"G",orphan:"X",unitM2:"m²",scaleBar:"5 m",
+mScale:"Scale {0} px / m • Zoom {1}%",mNoScale:"Scale not set",
+okAll:"Every room is covered and the counts and range check out — ready to hand over.",
+issNote:"{0} issues",issClear:"Clear",
+isScale:"Scale not set",isNoZones:"No rooms defined",isNoSensors:"{0}: no sensors",
+isLess:"{0}: {1} sensors, {2} required",isManual:"{0}: manual count {1}, standard is {2}",
+isNoGw:"{0}: no gateway",isFar:"{0}: farthest sensor {1} m, beyond gateway range",
+isOrphan:"{0} sensors outside every room",isName:"Project name is empty",
+aScale:"Set the scale first using the Scale tool.",aZone:"Draw at least one room.",
+aImg:"A plan image is needed first.",aImgTool:"This tool works on a plan image.",
+aBig:"Image is too large.",aRead:"Cannot read the image.",aFile:"Invalid file.",
+aStart:"Upload a plan image first, or write the description.",aNoPlan:"Nothing to export.",aDims:"Enter length and width in metres.",
+aSheet:"Select at least one sheet.",aDescLine:'Write at least one line like: room "Store" 0,0 12x8',
+pScale:"Length of the line you marked, in metres?",pAll:"How many metres is the full plan {0}?\n(A rough figure is fine — refine it with the Scale tool later)",
+pWidth:"width",pHeight:"height",
+tSaved:"Saved",tOpened:"Opened",tCopied:"Copied",tDone:"Done: {0} sensors · {1} gateways",
+tFound:"Found {0} rooms",tNoRooms:"No closed rooms found",tPicked:"Room added",tOnLine:"That is a line — click inside the room",
+tOpen2:"Room is not closed — seal the gap or draw it as a rectangle",tNoShape:"Cannot trace that shape",tNeedZones:"Rooms are needed first",
+prTitle:"Layout drawing",prCounts:"Counts table",prInst:"Installation schedule — technicians",prSup:"Supply list — stores",
+prTech:"Technician",prEng:"Site engineer",prDate:"Date",prStore:"Storekeeper",prRecv:"Received by",
+cCov:"{0} m² coverage",cRange:"{0} m range",cPerRoom:"one gateway per room",cGroup:"grouped by range",
+cArea:"Area {0} m²",supSensor:"{0} sensor",supGw:"{0} gateway",supBat:"Batteries",supBrk:"Mounting brackets",
+supPsu:"Power adapters",supSim:"SIM cards",
+sumProj:"Project",sumAux:"AUX number",sumComp:"Company",sumArea:"Total area",sumTot:"Total",
+sumSup:"Supply",sumStd:"Standards",sumEach:"one sensor per {0} m²",sumSpare:"{0}% spare",
+fileProj:"project",filePlan:"layout",fileCounts:"counts",fileInst:"install",
+sample:'room "Cold Store" 0,0 12x8\nroom "Medicine Store" 12.3,0 7x8\nroom "Reception" 0,8.3 19.3,4\ndoor 5,8 6,8\ndoor 12.3,3 12.3,4.2\n',
+gateTitle:"Sign in",gateSub:"Use the account your company created for you.",fEmail:"Email",fPass:"Password",
+bLogin:"Sign in",bForgot:"Forgot password",bOffline:"Continue offline",bLogout:"Sign out",
+eLogin:"Wrong email or password",tReset:"Reset email sent",
+s1Cloud:"Cloud projects",bCloudSave:"Save to cloud",bCloudList:"Open from cloud",bOpen:"Open",
+tCloudSaved:"Saved to cloud",cloudEmpty:"No saved projects",
+aTooBig:"Too large for the cloud — use “To line art” or a smaller image",
+aNoCloud:"Cloud is not configured"
+}};
+function t(k){let s=DICT[L][k]!==undefined?DICT[L][k]:k;
+  for(let i=1;i<arguments.length;i++)s=s.split("{"+(i-1)+"}").join(arguments[i]);
+  return s;}
+function applyLang(){
+  document.documentElement.lang=L;
+  document.documentElement.dir=L==="ar"?"rtl":"ltr";
+  document.querySelectorAll("[data-i]").forEach(e=>{
+    const v=t(e.getAttribute("data-i"));
+    if(e.hasAttribute("data-html"))e.innerHTML=v;else e.textContent=v;});
+  document.querySelectorAll("[data-ph]").forEach(e=>e.placeholder=t(e.getAttribute("data-ph")));
+  btnLang.textContent=t("langBtn");
+  document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
+  txtPlan.placeholder=t("sample");
+  refresh();}
+
+/* ================= الحالة ================= */
+let SEQ=1;
+const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
+function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
+  scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
+function newProject(){return{v:2,lang:"ar",name:"",ref:"",client:"",cloudId:"",
+  cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,perRoom:true,bat:1,brk:1,psu:1,spare:5,sym:.6},
+  plans:[newPlan()],cur:0};}
+let P=newProject();
+const IMG={},ORIG={},MASK={};
+const V={k:1,x:0,y:0};
+const U={tool:"pan",draft:[],calib:[],rectStart:null,rectNow:null,wlast:null,wnow:null,
+  pnow:null,sel:null,drag:null,guides:null,snapped:false,delBtn:null,
+  showCover:true,showNums:true,panLast:null,pinch:null,undo:[]};
+const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+const dpr=Math.min(window.devicePixelRatio||1,2);
+const pl=()=>P.plans[P.cur];
+
+/* ================= أدوات ================= */
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function inPoly(p,poly){let c=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];
+    if(((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x))c=!c;}return c;}
+function polyArea(poly){let s=0;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++)s+=(poly[j].x+poly[i].x)*(poly[j].y-poly[i].y);
+  return Math.abs(s/2);}
+function bbox(poly){const a={minX:1e18,minY:1e18,maxX:-1e18,maxY:-1e18};
+  for(const p of poly){a.minX=Math.min(a.minX,p.x);a.minY=Math.min(a.minY,p.y);
+    a.maxX=Math.max(a.maxX,p.x);a.maxY=Math.max(a.maxY,p.y);}return a;}
+function centroid(p){let x=0,y=0;for(const q of p){x+=q.x;y+=q.y;}return{x:x/p.length,y:y/p.length};}
+function nearest(l,p){let b=l[0],bd=1e18;for(const q of l){const d=dist(q,p);if(d<bd){bd=d;b=q;}}return b;}
+const ar=n=>L==="ar"?String(n).replace(/[0-9]/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]):String(n);
+const fmt=n=>Number(n).toLocaleString(L==="ar"?"ar-EG":"en-US",{maximumFractionDigits:0});
+const m1=n=>Number(n).toFixed(1);
+const nice=n=>(Math.round(n*10)/10).toString().replace(/\.0$/,"");
+const today=()=>new Date().toLocaleDateString(L==="ar"?"ar-EG":"en-GB");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(x){const e=document.getElementById("toast");e.textContent=x;e.classList.add("on");
+  clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("on"),1800);}
+function snap(){U.undo.push(JSON.stringify({z:pl().zones,s:pl().sensors,g:pl().gateways,
+  w:pl().walls,d:pl().doors,sc:pl().scale}));if(U.undo.length>25)U.undo.shift();}
+function undo(){const s=U.undo.pop();if(!s)return;const o=JSON.parse(s);
+  pl().zones=o.z;pl().sensors=o.s;pl().gateways=o.g;pl().walls=o.w;pl().doors=o.d;pl().scale=o.sc;refresh();}
+
+/* ================= الوصف المكتوب ================= */
+function parsePlan(text){
+  const rooms=[],walls=[],doors=[];let ppm=30;
+  const s=text.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d))
+              .replace(/[،؛]/g," ").replace(/[×X]/g,"x").replace(/[“”«»]/g,'"');
+  s.split(/\n/).forEach(raw=>{
+    const line=raw.split("#")[0].trim();if(!line)return;
+    const nm=line.match(/"([^"]*)"/),name=nm?nm[1]:"";
+    const rest=line.replace(/"[^"]*"/,"").trim(),kw=(rest.split(/\s+/)[0]||"").toLowerCase();
+    const nums=(rest.match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
+    if(/^(مقياس|scale)$/.test(kw)){if(nums[0]>0)ppm=nums[0];return;}
+    if(/^(غرفة|غرفه|room)$/.test(kw)&&nums.length>=4)rooms.push({name,x:nums[0],y:nums[1],w:nums[2],h:nums[3]});
+    else if(/^(مضلع|poly|polygon)$/.test(kw)&&nums.length>=6){
+      const pts=[];for(let i=0;i+1<nums.length;i+=2)pts.push({x:nums[i],y:nums[i+1]});rooms.push({name,pts});}
+    else if(/^(باب|door)$/.test(kw)&&nums.length>=4)doors.push({x1:nums[0],y1:nums[1],x2:nums[2],y2:nums[3]});
+    else if(/^(حائط|حيطة|حيطه|wall)$/.test(kw)&&nums.length>=4)walls.push({x1:nums[0],y1:nums[1],x2:nums[2],y2:nums[3]});});
+  return{ppm,rooms,walls,doors};}
+function buildPlan(){
+  const p=parsePlan(txtPlan.value);
+  if(!p.rooms.length){alert(t("aDescLine"));return;}
+  snap();const k=p.ppm,q=pl();
+  q.text=txtPlan.value;q.imgData=null;q.imgW=q.imgH=0;q.drawn=true;q.scale=k;q.clean=null;
+  delete IMG[q.id];delete ORIG[q.id];delete MASK[q.id];
+  q.zones=[];q.sensors=[];q.gateways=[];
+  p.rooms.forEach((r,i)=>{
+    const pts=r.pts?r.pts.map(o=>({x:o.x*k,y:o.y*k}))
+      :[{x:r.x*k,y:r.y*k},{x:(r.x+r.w)*k,y:r.y*k},{x:(r.x+r.w)*k,y:(r.y+r.h)*k},{x:r.x*k,y:(r.y+r.h)*k}];
+    q.zones.push({id:SEQ++,name:r.name||(t("room")+" "+ar(i+1)),pts,color:ZC[i%ZC.length]});});
+  q.walls=p.walls.map(w=>({x1:w.x1*k,y1:w.y1*k,x2:w.x2*k,y2:w.y2*k}));
+  q.doors=p.doors.map(d=>({x1:d.x1*k,y1:d.y1*k,x2:d.x2*k,y2:d.y2*k}));
+  paneClean.style.display="none";fitView();refresh();}
+
+/* ================= الرسم ================= */
+function contentBox(q){
+  if(IMG[q.id])return{minX:0,minY:0,maxX:q.imgW,maxY:q.imgH};
+  if(q.zones.length){let b={minX:1e18,minY:1e18,maxX:-1e18,maxY:-1e18};
+    for(const z of q.zones){const o=bbox(z.pts);b.minX=Math.min(b.minX,o.minX);b.minY=Math.min(b.minY,o.minY);
+      b.maxX=Math.max(b.maxX,o.maxX);b.maxY=Math.max(b.maxY,o.maxY);}return b;}
+  return null;}
+function rectDims(z,sc){
+  if(z.pts.length!==4||sc<=0)return null;
+  const b=bbox(z.pts);
+  if(Math.abs(polyArea(z.pts)-(b.maxX-b.minX)*(b.maxY-b.minY))>1)return null;
+  return{w:(b.maxX-b.minX)/sc,h:(b.maxY-b.minY)/sc};}
+
+function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
+  const paper=pr?"#ffffff":"#f7f5ef",b=contentBox(q),sc=q.scale;
+  if(IMG[q.id])g.drawImage(IMG[q.id],0,0,q.imgW,q.imgH);
+  else if(b){const pad=40;
+    g.fillStyle=paper;g.fillRect(b.minX-pad,b.minY-pad,(b.maxX-b.minX)+pad*2,(b.maxY-b.minY)+pad*2);
+    if(sc>0){g.strokeStyle="rgba(30,60,90,.09)";g.lineWidth=1/k;
+      for(let x=b.minX-pad;x<b.maxX+pad;x+=sc){g.beginPath();g.moveTo(x,b.minY-pad);g.lineTo(x,b.maxY+pad);g.stroke();}
+      for(let y=b.minY-pad;y<b.maxY+pad;y+=sc){g.beginPath();g.moveTo(b.minX-pad,y);g.lineTo(b.maxX+pad,y);g.stroke();}}}
+
+  q.zones.forEach(z=>{if(z.pts.length<2)return;
+    g.beginPath();g.moveTo(z.pts[0].x,z.pts[0].y);
+    for(let i=1;i<z.pts.length;i++)g.lineTo(z.pts[i].x,z.pts[i].y);
+    g.closePath();g.fillStyle=z.color+(pr?"12":"1c");g.fill();
+    if(!q.drawn){g.strokeStyle=z.color;g.lineWidth=2/k;g.stroke();}});
+
+  if(q.drawn&&sc>0){
+    const th=Math.max(2/k,.18*sc);g.lineCap="square";g.lineJoin="round";
+    g.strokeStyle="#1c2733";g.lineWidth=th;
+    q.zones.forEach(z=>{g.beginPath();g.moveTo(z.pts[0].x,z.pts[0].y);
+      for(let i=1;i<z.pts.length;i++)g.lineTo(z.pts[i].x,z.pts[i].y);g.closePath();g.stroke();});
+    q.walls.forEach(w=>{g.beginPath();g.moveTo(w.x1,w.y1);g.lineTo(w.x2,w.y2);g.stroke();});
+    g.lineCap="butt";
+    g.strokeStyle=paper;g.lineWidth=th*1.45;
+    q.doors.forEach(d=>{g.beginPath();g.moveTo(d.x1,d.y1);g.lineTo(d.x2,d.y2);g.stroke();});
+    g.strokeStyle="#6c7d8f";g.lineWidth=Math.max(1/k,.03*sc);
+    q.doors.forEach(d=>{const a=Math.atan2(d.y2-d.y1,d.x2-d.x1),r=Math.hypot(d.x2-d.x1,d.y2-d.y1);
+      const e2=d.flip?a-Math.PI/2:a+Math.PI/2;
+      g.beginPath();
+      if(d.flip)g.arc(d.x1,d.y1,r,e2,a);else g.arc(d.x1,d.y1,r,a,e2);
+      g.stroke();
+      g.beginPath();g.moveTo(d.x1,d.y1);
+      g.lineTo(d.x1+r*Math.cos(e2),d.y1+r*Math.sin(e2));g.stroke();});
+    g.direction=L==="ar"?"rtl":"ltr";
+    g.fillStyle="#5a6b7c";g.font=(10.5/k)+'px "Segoe UI",Tahoma,sans-serif';
+    g.textAlign="center";g.textBaseline="middle";
+    const lbl=(a2,b2,cen)=>{const lm=dist(a2,b2)/sc;if(lm<.9)return;
+      const mx=(a2.x+b2.x)/2,my=(a2.y+b2.y)/2;
+      let ang=Math.atan2(b2.y-a2.y,b2.x-a2.x);
+      let nx=(b2.y-a2.y),ny=-(b2.x-a2.x);const nl=Math.hypot(nx,ny)||1;nx/=nl;ny/=nl;
+      if(cen){const d1=Math.hypot(mx+nx-cen.x,my+ny-cen.y),d2=Math.hypot(mx-nx-cen.x,my-ny-cen.y);
+        if(d1<d2){nx=-nx;ny=-ny;}}
+      const off=.42*sc;
+      if(ang>Math.PI/2||ang<-Math.PI/2)ang+=Math.PI;
+      g.save();g.translate(mx+nx*off,my+ny*off);g.rotate(ang);
+      g.fillText(nice(lm)+" "+t("unitM"),0,0);g.restore();};
+    q.zones.forEach(z=>{const cen=centroid(z.pts);
+      for(let i=0;i<z.pts.length;i++)lbl(z.pts[i],z.pts[(i+1)%z.pts.length],cen);});
+    q.walls.forEach(wl=>lbl({x:wl.x1,y:wl.y1},{x:wl.x2,y:wl.y2},null));
+    g.textBaseline="alphabetic";}
+
+  g.direction=L==="ar"?"rtl":"ltr";
+  q.zones.forEach(z=>{if(z.pts.length<2)return;
+    const c=centroid(z.pts);g.textAlign="center";
+    g.fillStyle=pr?"#111":"rgba(231,238,245,.92)";
+    g.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
+    g.fillText(z.name,c.x,c.y);
+    if(sc>0){const d=q.drawn?null:rectDims(z,sc);
+      g.fillStyle=pr?"#555":"rgba(142,161,180,.95)";
+      g.font=(11/k)+'px "Segoe UI",Tahoma,sans-serif';
+      g.fillText(d?(nice(d.w)+" × "+nice(d.h)+" "+t("unitM")):(fmt(polyArea(z.pts)/(sc*sc))+" "+t("unitM2")),c.x,c.y+15/k);
+      if(d)g.fillText(fmt(d.w*d.h)+" "+t("unitM2"),c.x,c.y+28/k);}});
+
+  if(U.showCover&&sc>0&&!clean){const R=Math.sqrt(P.cfg.cov/Math.PI)*sc;
+    g.fillStyle="rgba(224,43,43,.09)";g.strokeStyle="rgba(224,43,43,.32)";g.lineWidth=1/k;
+    q.sensors.forEach(s=>{g.beginPath();g.arc(s.x,s.y,R,0,7);g.fill();g.stroke();});}
+
+  const range=P.cfg.gwRange*sc;
+  if(!clean)q.gateways.forEach(gw=>{let far=0;
+    g.strokeStyle=pr?"rgba(31,99,214,.40)":"rgba(90,150,255,.40)";g.lineWidth=1/k;
+    gw.members.forEach(id=>{const s=q.sensors.find(x=>x.id===id);if(!s)return;
+      far=Math.max(far,dist(gw,s));g.beginPath();g.moveTo(gw.x,gw.y);g.lineTo(s.x,s.y);g.stroke();});
+    if(far>0){const over=sc>0&&far>range;
+      g.setLineDash([7/k,5/k]);g.lineWidth=1.6/k;
+      g.strokeStyle=over?"rgba(240,160,0,.95)":"rgba(31,99,214,.55)";
+      g.beginPath();g.arc(gw.x,gw.y,far,0,7);g.stroke();g.setLineDash([]);}});
+
+  const symR=Math.max((P.cfg.sym||.6)*sc/2,(pr?2.5:4)/k);
+  q.sensors.forEach(s=>{g.beginPath();g.arc(s.x,s.y,symR,0,7);
+    g.fillStyle="#e02b2b";g.fill();
+    g.strokeStyle="#ffffff";g.lineWidth=Math.max(symR*.2,.7/k);g.stroke();});
+  const gsz=symR*2;
+  q.gateways.forEach(gw=>{g.beginPath();g.rect(gw.x-gsz/2,gw.y-gsz/2,gsz,gsz);
+    g.fillStyle="#1f63d6";g.fill();
+    g.strokeStyle="#ffffff";g.lineWidth=Math.max(gsz*.1,.7/k);g.stroke();});
+  if(U.showNums){
+    const fs=Math.max(symR*1.6,8/k);
+    g.textAlign="center";g.textBaseline="middle";
+    g.font="600 "+fs+'px "Segoe UI",Tahoma,sans-serif';
+    g.lineWidth=fs*.32;g.strokeStyle="rgba(255,255,255,.92)";g.lineJoin="round";
+    q.sensors.forEach(s=>{if(!s.code)return;const y=s.y-symR-fs*.7;
+      g.strokeText(s.code,s.x,y);g.fillStyle="#a0141a";g.fillText(s.code,s.x,y);});
+    q.gateways.forEach(gw=>{if(!gw.code)return;const y=gw.y-gsz*.6-fs*.7;
+      g.strokeText(gw.code,gw.x,y);g.fillStyle="#123c86";g.fillText(gw.code,gw.x,y);});
+    g.textBaseline="alphabetic";}
+
+  if(pr&&sc>0&&b){const y=b.maxY+30,x=b.minX,Ln=5*sc;
+    g.strokeStyle="#111";g.lineWidth=2/k;
+    g.beginPath();g.moveTo(x,y);g.lineTo(x+Ln,y);
+    g.moveTo(x,y-4/k);g.lineTo(x,y+4/k);g.moveTo(x+Ln,y-4/k);g.lineTo(x+Ln,y+4/k);g.stroke();
+    g.fillStyle="#111";g.font=(11/k)+'px "Segoe UI",Tahoma,sans-serif';
+    g.textAlign="left";g.textBaseline="middle";
+    g.fillText(t("scaleBar"),x+Ln+6/k,y);g.textBaseline="alphabetic";}}
+
+function render(){
+  const r=cv.getBoundingClientRect(),k=V.k,q=pl();
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle="#0a1017";ctx.fillRect(0,0,r.width,r.height);
+  ctx.save();ctx.setTransform(k*dpr,0,0,k*dpr,V.x*dpr,V.y*dpr);
+  paintWorld(ctx,k,false,q);
+  if(U.draft.length){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;
+    ctx.beginPath();ctx.moveTo(U.draft[0].x,U.draft[0].y);
+    for(let i=1;i<U.draft.length;i++)ctx.lineTo(U.draft[i].x,U.draft[i].y);ctx.stroke();
+    U.draft.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4/k,0,7);ctx.fillStyle="#ffc44d";ctx.fill();});}
+  if(U.rectStart&&U.rectNow){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;ctx.setLineDash([6/k,4/k]);
+    ctx.strokeRect(U.rectStart.x,U.rectStart.y,U.rectNow.x-U.rectStart.x,U.rectNow.y-U.rectStart.y);ctx.setLineDash([]);
+    if(q.scale>0){const wM=Math.abs(U.rectNow.x-U.rectStart.x)/q.scale,
+        hM=Math.abs(U.rectNow.y-U.rectStart.y)/q.scale;
+      ctx.fillStyle="#ffc44d";ctx.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
+      ctx.textAlign="center";ctx.direction=L==="ar"?"rtl":"ltr";
+      ctx.fillText(nice(wM)+" × "+nice(hM)+" "+t("unitM"),
+        (U.rectStart.x+U.rectNow.x)/2,Math.min(U.rectStart.y,U.rectNow.y)-8/k);}}
+  if(U.wlast&&U.wnow){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2.5/k;ctx.setLineDash([7/k,5/k]);
+    ctx.beginPath();ctx.moveTo(U.wlast.x,U.wlast.y);ctx.lineTo(U.wnow.x,U.wnow.y);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(U.wlast.x,U.wlast.y,4/k,0,7);ctx.fillStyle="#ffc44d";ctx.fill();
+    if(q.scale>0){const lm=dist(U.wlast,U.wnow)/q.scale;
+      ctx.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
+      ctx.textAlign="center";ctx.direction=L==="ar"?"rtl":"ltr";
+      ctx.fillText(nice(lm)+" "+t("unitM"),
+        (U.wlast.x+U.wnow.x)/2,(U.wlast.y+U.wnow.y)/2-9/k);}}
+  if(U.calib.length){ctx.strokeStyle="#57d38c";ctx.lineWidth=2.5/k;
+    if(U.calib.length===2){ctx.beginPath();ctx.moveTo(U.calib[0].x,U.calib[0].y);ctx.lineTo(U.calib[1].x,U.calib[1].y);ctx.stroke();}
+    U.calib.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5/k,0,7);ctx.fillStyle="#57d38c";ctx.fill();});}
+  if(U.tool==="poly"&&U.draft.length&&U.pnow){
+    const lp=U.draft[U.draft.length-1];
+    ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;ctx.setLineDash([7/k,5/k]);
+    ctx.beginPath();ctx.moveTo(lp.x,lp.y);ctx.lineTo(U.pnow.x,U.pnow.y);ctx.stroke();ctx.setLineDash([]);
+    if(q.scale>0){const lm=dist(lp,U.pnow)/q.scale;
+      ctx.fillStyle="#ffc44d";ctx.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
+      ctx.textAlign="center";ctx.direction=L==="ar"?"rtl":"ltr";
+      ctx.fillText(nice(lm)+" "+t("unitM"),(lp.x+U.pnow.x)/2,(lp.y+U.pnow.y)/2-9/k);}}
+  if(U.guides&&(U.wlast||U.rectStart||U.pnow||U.drag)){
+    const x0=-V.x/k,x1=(r.width-V.x)/k,y0=-V.y/k,y1=(r.height-V.y)/k;
+    ctx.strokeStyle="rgba(87,211,140,.45)";ctx.lineWidth=1/k;ctx.setLineDash([4/k,4/k]);
+    if(U.guides.gx){ctx.beginPath();ctx.moveTo(U.guides.gx.x,y0);ctx.lineTo(U.guides.gx.x,y1);ctx.stroke();}
+    if(U.guides.gy){ctx.beginPath();ctx.moveTo(x0,U.guides.gy.y);ctx.lineTo(x1,U.guides.gy.y);ctx.stroke();}
+    ctx.setLineDash([]);}
+  if(U.tool==="edit"&&U.sel){
+    const s=U.sel;ctx.strokeStyle="#ffc44d";ctx.lineWidth=2.5/k;ctx.setLineDash([6/k,4/k]);
+    if(s.kind==="zone"){ctx.beginPath();ctx.moveTo(s.z.pts[0].x,s.z.pts[0].y);
+      for(let i=1;i<s.z.pts.length;i++)ctx.lineTo(s.z.pts[i].x,s.z.pts[i].y);ctx.closePath();ctx.stroke();}
+    if(s.kind==="wall"||s.kind==="wend"){ctx.beginPath();ctx.moveTo(s.w.x1,s.w.y1);
+      ctx.lineTo(s.w.x2,s.w.y2);ctx.stroke();}
+    if(s.kind==="door"){ctx.beginPath();ctx.moveTo(s.d.x1,s.d.y1);ctx.lineTo(s.d.x2,s.d.y2);ctx.stroke();}
+    ctx.setLineDash([]);
+    const pt=s.kind==="vertex"?s.z.pts[s.i]:s.kind==="sensor"?s.s:s.kind==="gate"?s.g:null;
+    if(pt){ctx.beginPath();ctx.arc(pt.x,pt.y,9/k,0,7);ctx.stroke();}}
+  ctx.restore();
+  U.delBtn=null;
+  if(U.tool==="edit"&&U.sel){const bb=selBBox(q,U.sel);
+    if(bb){let bx=bb.maxX*V.k+V.x+16,by=bb.minY*V.k+V.y-16;
+      bx=Math.min(Math.max(bx,18),r.width-18);by=Math.min(Math.max(by,18),r.height-18);
+      ctx.beginPath();ctx.arc(bx,by,11,0,7);ctx.fillStyle="#e02b2b";ctx.fill();
+      ctx.strokeStyle="#fff";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(bx-4,by-4);ctx.lineTo(bx+4,by+4);
+      ctx.moveTo(bx+4,by-4);ctx.lineTo(bx-4,by+4);ctx.stroke();
+      U.delBtn={x:bx,y:by,r:11};}}
+  document.getElementById("emptyMsg").style.display=(IMG[q.id]||q.zones.length)?"none":"grid";
+  badge.textContent=q.scale>0?t("mScale",ar(q.scale.toFixed(1)),ar(Math.round(V.k*100))):t("mNoScale");}
+
+function exportCanvas(q,maxPx,o){
+  const b=contentBox(q);if(!b)return null;
+  const pad=95,w=(b.maxX-b.minX)+pad*2,h=(b.maxY-b.minY)+pad*2;
+  const k=Math.min(maxPx/w,maxPx/h,4);
+  const c=document.createElement("canvas");
+  c.width=Math.max(2,Math.round(w*k));c.height=Math.max(2,Math.round(h*k));
+  const g=c.getContext("2d");
+  g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);
+  g.setTransform(k,0,0,k,-(b.minX-pad)*k,-(b.minY-pad)*k);
+  paintWorld(g,k,true,q,o);return c;}
+
+function exportSheet(q,W,clean){
+  const b=contentBox(q);if(!b)return null;
+  const pad=80,W0=(b.maxX-b.minX)+pad*2,H0=(b.maxY-b.minY)+pad*2;
+  const side=Math.round(W*.025),headH=Math.round(W*.082),footH=Math.round(W*.062);
+  const k=Math.min((W-side*2)/W0,(W*.82)/H0),dw=W0*k,dh=H0*k;
+  const H=Math.round(side*2+headH+dh+footH);
+  const c=document.createElement("canvas");c.width=Math.round(W);c.height=H;
+  const g=c.getContext("2d");
+  g.fillStyle="#fff";g.fillRect(0,0,c.width,H);
+  const RX=c.width-side,LX=side,rtl=L==="ar";
+  const A1=rtl?"right":"left",A2=rtl?"left":"right",X1=rtl?RX:LX,X2=rtl?LX:RX;
+  const fnt=(n,w)=>(w?w+" ":"")+Math.round(W*n)+'px "Segoe UI",Tahoma,Arial,sans-serif';
+  g.direction=rtl?"rtl":"ltr";
+  g.textAlign=A1;g.fillStyle="#111";g.font=fnt(.030,"700");
+  g.fillText(P.name||t("prTitle"),X1,side+Math.round(W*.032));
+  g.fillStyle="#555";g.font=fnt(.020);
+  g.fillText(P.client||"",X1,side+Math.round(W*.062));
+  g.textAlign=A2;g.font=fnt(.017);
+  [P.ref?"AUX: "+P.ref:"",today()].filter(Boolean)
+    .forEach((x,i)=>g.fillText(x,X2,side+Math.round(W*.030)+i*Math.round(W*.025)));
+  g.strokeStyle="#111";g.lineWidth=Math.max(1,W*.0014);
+  const hy=side+headH-Math.round(W*.014);
+  g.beginPath();g.moveTo(LX,hy);g.lineTo(RX,hy);g.stroke();
+  const ox=(c.width-dw)/2,oy=side+headH;
+  g.save();g.beginPath();g.rect(ox,oy,dw,dh);g.clip();
+  g.setTransform(k,0,0,k,ox-(b.minX-pad)*k,oy-(b.minY-pad)*k);
+  paintWorld(g,k,true,q,{clean:clean});
+  g.restore();
+  g.strokeStyle="#ccd4dc";g.lineWidth=1;g.strokeRect(ox+.5,oy+.5,dw-1,dh-1);
+  const tt=planTot(q),fy=oy+dh+Math.round(W*.032),fs=Math.round(W*.019);
+  g.font=fs+'px "Segoe UI",Tahoma,Arial,sans-serif';
+  g.textAlign="left";g.textBaseline="middle";
+  const its=[{c:"#e02b2b",sq:0,x:t("sensor")+" ("+ar(tt.sensors)+")"},
+             {c:"#1f63d6",sq:1,x:t("gateway")+" ("+ar(tt.gates)+")"}];
+  const wid=its.map(i=>fs*.84+fs*.45+g.measureText(i.x).width);
+  const total=wid.reduce((a,b2)=>a+b2,0)+fs*1.2*(its.length-1);
+  let x=rtl?RX-total:LX;
+  its.forEach((it,i)=>{const r=fs*.42;
+    g.fillStyle=it.c;
+    if(it.sq)g.fillRect(x,fy-r,r*2,r*2);else{g.beginPath();g.arc(x+r,fy,r,0,7);g.fill();}
+    g.fillStyle="#111";g.fillText(it.x,x+r*2+fs*.45,fy);
+    x+=wid[i]+fs*1.2;});
+  g.textAlign=A2;g.fillStyle="#555";g.font=fnt(.016);
+  g.fillText(t("cArea",fmt(tt.area))+" · "+t("cCov",ar(P.cfg.cov))+" · "+
+    (P.cfg.perRoom?t("cPerRoom"):t("cGroup")),X2,fy);
+  g.textBaseline="alphabetic";return c;}
+
+function dlCanvas(c,name,jpeg){
+  const a=document.createElement("a");a.download=name+(jpeg?".jpg":".png");
+  a.href=jpeg?c.toDataURL("image/jpeg",.9):c.toDataURL("image/png");a.click();}
+
+function resize(){const r=cv.getBoundingClientRect();
+  cv.width=Math.max(1,Math.round(r.width*dpr));cv.height=Math.max(1,Math.round(r.height*dpr));render();}
+new ResizeObserver(resize).observe(cv);
+function toWorld(sx,sy){return{x:(sx-V.x)/V.k,y:(sy-V.y)/V.k};}
+function fitView(){const b=contentBox(pl());if(!b)return;
+  const r=cv.getBoundingClientRect(),w=Math.max(1,b.maxX-b.minX),h=Math.max(1,b.maxY-b.minY);
+  V.k=Math.min(r.width/(w*1.15),r.height/(h*1.15));
+  V.x=(r.width-w*V.k)/2-b.minX*V.k;V.y=(r.height-h*V.k)/2-b.minY*V.k;render();}
+function zoomAt(sx,sy,f){const w=toWorld(sx,sy);
+  V.k=Math.max(.02,Math.min(60,V.k*f));V.x=sx-w.x*V.k;V.y=sy-w.y*V.k;render();}
+
+/* ================= الصور ================= */
+function shrink(im,max){
+  const s=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight));
+  const c=document.createElement("canvas");
+  c.width=Math.max(2,Math.round(im.naturalWidth*s));
+  c.height=Math.max(2,Math.round(im.naturalHeight*s));
+  c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",.82);}
+function to2D(strength){
+  const q=pl(),src=ORIG[q.id];if(!src)return;
+  const MAX=2200,s=Math.min(1,MAX/Math.max(src.naturalWidth,src.naturalHeight));
+  const W=Math.max(2,Math.round(src.naturalWidth*s)),H=Math.max(2,Math.round(src.naturalHeight*s));
+  const c=document.createElement("canvas");c.width=W;c.height=H;
+  const g=c.getContext("2d",{willReadFrequently:true});
+  g.drawImage(src,0,0,W,H);
+  const d=g.getImageData(0,0,W,H),p=d.data,gray=new Float32Array(W*H);
+  for(let i=0,j=0;i<p.length;i+=4,j++)gray[j]=.299*p[i]+.587*p[i+1]+.114*p[i+2];
+  const IW=W+1,I=new Float64Array(IW*(H+1));
+  for(let y=0;y<H;y++){let rs=0;for(let x=0;x<W;x++){rs+=gray[y*W+x];I[(y+1)*IW+(x+1)]=I[y*IW+(x+1)]+rs;}}
+  const r=Math.max(6,Math.round(Math.min(W,H)/40)),tt=strength/100;
+  for(let y=0;y<H;y++){const y1=Math.max(0,y-r),y2=Math.min(H-1,y+r);
+    for(let x=0;x<W;x++){const x1=Math.max(0,x-r),x2=Math.min(W-1,x+r);
+      const cnt=(x2-x1+1)*(y2-y1+1);
+      const sum=I[(y2+1)*IW+(x2+1)]-I[y1*IW+(x2+1)]-I[(y2+1)*IW+x1]+I[y1*IW+x1];
+      const v=gray[y*W+x]<(sum/cnt)*(1-tt)?0:255;
+      const i=(y*W+x)*4;p[i]=p[i+1]=p[i+2]=v;p[i+3]=255;}}
+  g.putImageData(d,0,0);IMG[q.id]=c;q.clean={on:true,s:strength};delete MASK[q.id];render();}
+function attachImage(q,dataUrl,cb){
+  const im=new Image();
+  im.onload=()=>{ORIG[q.id]=im;IMG[q.id]=im;
+    if(!q.imgW){q.imgW=im.naturalWidth;q.imgH=im.naturalHeight;}
+    if(q.clean&&q.clean.on)to2D(q.clean.s);
+    if(cb)cb();};
+  im.src=dataUrl;}
+
+/* ================= اكتشاف الغرف ================= */
+function binMask(q){
+  const im=IMG[q.id];if(!im)return null;
+  const MAX=1200,s=Math.min(1,MAX/Math.max(q.imgW,q.imgH));
+  const W=Math.max(8,Math.round(q.imgW*s)),H=Math.max(8,Math.round(q.imgH*s));
+  const c=document.createElement("canvas");c.width=W;c.height=H;
+  const g=c.getContext("2d",{willReadFrequently:true});
+  g.drawImage(im,0,0,W,H);
+  const p=g.getImageData(0,0,W,H).data,gray=new Float32Array(W*H);
+  for(let i=0,j=0;i<p.length;i+=4,j++)gray[j]=.299*p[i]+.587*p[i+1]+.114*p[i+2];
+  const IW=W+1,I=new Float64Array(IW*(H+1));
+  for(let y=0;y<H;y++){let rs=0;for(let x=0;x<W;x++){rs+=gray[y*W+x];I[(y+1)*IW+(x+1)]=I[y*IW+(x+1)]+rs;}}
+  const r=Math.max(5,Math.round(Math.min(W,H)/30)),tt=.06,wall=new Uint8Array(W*H);
+  for(let y=0;y<H;y++){const y1=Math.max(0,y-r),y2=Math.min(H-1,y+r);
+    for(let x=0;x<W;x++){const x1=Math.max(0,x-r),x2=Math.min(W-1,x+r);
+      const cnt=(x2-x1+1)*(y2-y1+1);
+      const sum=I[(y2+1)*IW+(x2+1)]-I[y1*IW+(x2+1)]-I[(y2+1)*IW+x1]+I[y1*IW+x1];
+      if(gray[y*W+x]<(sum/cnt)*(1-tt))wall[y*W+x]=1;}}
+  const w2=new Uint8Array(wall);
+  for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++)if(wall[y*W+x]){
+    w2[(y-1)*W+x]=1;w2[(y+1)*W+x]=1;w2[y*W+x-1]=1;w2[y*W+x+1]=1;}
+  return{W,H,wall:w2,sc:q.imgW/W};}
+function region(m,px,py){
+  const W=m.W,H=m.H,wall=m.wall,N=W*H;
+  if(px<0||py<0||px>=W||py>=H)return null;
+  const start=py*W+px;if(wall[start])return null;
+  const vis=new Uint8Array(N),st=[start];vis[start]=1;
+  let n=0,minX=px,maxX=px,minY=py,maxY=py,big=false;
+  const lim=N*.5;
+  while(st.length){
+    const i=st.pop();n++;
+    if(n>lim){big=true;break;}
+    const x=i%W,y=(i/W)|0;
+    if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;
+    if(x>0&&!wall[i-1]&&!vis[i-1]){vis[i-1]=1;st.push(i-1);}
+    if(x<W-1&&!wall[i+1]&&!vis[i+1]){vis[i+1]=1;st.push(i+1);}
+    if(y>0&&!wall[i-W]&&!vis[i-W]){vis[i-W]=1;st.push(i-W);}
+    if(y<H-1&&!wall[i+W]&&!vis[i+W]){vis[i+W]=1;st.push(i+W);}}
+  while(st.length){vis[st.pop()]=1;}
+  return{vis,n,minX,maxX,minY,maxY,big};}
+function segD(p,a,b){
+  const dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy;
+  if(!l2)return Math.hypot(p[0]-a[0],p[1]-a[1]);
+  let tp=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l2;tp=Math.max(0,Math.min(1,tp));
+  return Math.hypot(p[0]-(a[0]+tp*dx),p[1]-(a[1]+tp*dy));}
+function simplify(pts,eps){
+  if(pts.length<4)return pts;
+  const keep=new Uint8Array(pts.length);keep[0]=keep[pts.length-1]=1;
+  const st=[[0,pts.length-1]];
+  while(st.length){const s=st.pop(),a=s[0],b=s[1];let idx=-1,mx=0;
+    for(let i=a+1;i<b;i++){const d=segD(pts[i],pts[a],pts[b]);if(d>mx){mx=d;idx=i;}}
+    if(idx>0&&mx>eps){keep[idx]=1;st.push([a,idx],[idx,b]);}}
+  const out=[];for(let i=0;i<pts.length;i++)if(keep[i])out.push(pts[i]);
+  return out;}
+function regionPoly(m,rg){
+  const bw=rg.maxX-rg.minX+1,bh=rg.maxY-rg.minY+1;
+  if(rg.n/(bw*bh)>.86)
+    return[[rg.minX,rg.minY],[rg.maxX+1,rg.minY],[rg.maxX+1,rg.maxY+1],[rg.minX,rg.maxY+1]];
+  const W=m.W,H=m.H,vis=rg.vis;
+  let sx=-1,sy=-1;
+  for(let y=rg.minY;y<=rg.maxY&&sx<0;y++)
+    for(let x=rg.minX;x<=rg.maxX;x++)if(vis[y*W+x]){sx=x;sy=y;break;}
+  if(sx<0)return null;
+  const dr=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+  const at=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&vis[y*W+x];
+  const out=[];let cx=sx,cy=sy,dir=6,guard=0;
+  do{out.push([cx,cy]);let f=false;
+    for(let i=0;i<8;i++){const d=(dir+i)%8,nx=cx+dr[d][0],ny=cy+dr[d][1];
+      if(at(nx,ny)){cx=nx;cy=ny;dir=(d+5)%8;f=true;break;}}
+    if(!f)break;
+  }while((cx!==sx||cy!==sy)&&guard++<W*H*2);
+  if(out.length<8)return null;
+  return simplify(out,Math.max(2.5,Math.min(W,H)*.008));}
+function wandAt(wx,wy){
+  const q=pl();
+  if(!IMG[q.id]){alert(t("aImgTool"));return;}
+  const m=MASK[q.id]||(MASK[q.id]=binMask(q));if(!m)return;
+  const rg=region(m,Math.round(wx/m.sc),Math.round(wy/m.sc));
+  if(!rg){toast(t("tOnLine"));return;}
+  if(rg.big){toast(t("tOpen2"));return;}
+  const poly=regionPoly(m,rg);
+  if(!poly||poly.length<3){toast(t("tNoShape"));return;}
+  addZone(poly.map(p=>({x:p[0]*m.sc,y:p[1]*m.sc})));toast(t("tPicked"));}
+function autoRooms(cb){
+  const q=pl();
+  if(!IMG[q.id]){alert(t("aImg"));return;}
+  wait.classList.add("on");
+  setTimeout(()=>{try{
+    const m=MASK[q.id]=binMask(q);
+    if(!m){wait.classList.remove("on");return;}
+    const W=m.W,H=m.H,N=W*H,seen=new Uint8Array(N),found=[];
+    const minA=q.scale>0?Math.max(80,4*Math.pow(q.scale/m.sc,2)):N*.004;
+    const maxA=N*.42;
+    for(let y=2;y<H-2;y+=3)for(let x=2;x<W-2;x+=3){
+      const i=y*W+x;
+      if(seen[i]||m.wall[i])continue;
+      const rg=region(m,x,y);
+      if(!rg)continue;
+      for(let j=0;j<N;j++)if(rg.vis[j])seen[j]=1;
+      if(rg.big||rg.n<minA||rg.n>maxA)continue;
+      const poly=regionPoly(m,rg);
+      if(poly&&poly.length>=3)found.push({poly,n:rg.n});}
+    found.sort((a,b)=>b.n-a.n);
+    if(!found.length){toast(t("tNoRooms"));wait.classList.remove("on");if(cb)cb();return;}
+    snap();
+    found.slice(0,40).forEach(f=>{
+      q.zones.push({id:SEQ++,name:t("room")+" "+ar(q.zones.length+1),
+        pts:f.poly.map(p=>({x:p[0]*m.sc,y:p[1]*m.sc})),color:ZC[q.zones.length%ZC.length]});});
+    refresh();toast(t("tFound",ar(Math.min(found.length,40))));
+  }catch(e){alert(t("aRead"));}
+  wait.classList.remove("on");if(cb)cb();},30);}
+function askScaleQuick(cb){
+  const q=pl(),b=contentBox(q);
+  if(!b){alert(t("aStart"));return;}
+  const w=b.maxX-b.minX,h=b.maxY-b.minY,longer=Math.max(w,h);
+  const v=prompt(t("pAll",w>=h?t("pWidth"):t("pHeight")),"40");
+  if(v===null||!(+v>0))return;
+  snap();q.scale=longer/(+v);cb();}
+function autoAll(){
+  const q=pl();
+  if(!IMG[q.id]&&!q.zones.length){alert(t("aStart"));return;}
+  const finish=()=>{syncCfg();snap();
+    if(runPlan(q,true)){refresh();toast(t("tDone",ar(q.sensors.length),ar(q.gateways.length)));}
+    else{refresh();toast(t("tNeedZones"));}};
+  const go=()=>{if(!q.zones.length&&IMG[q.id])autoRooms(finish);else finish();};
+  if(q.scale>0)go();else askScaleQuick(go);}
+
+/* ================= التفاعل ================= */
+function pos(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+const pts=new Map();
+cv.addEventListener("pointerdown",e=>{
+  cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,pos(e));
+  if(pts.size===2){const a=[...pts.values()];U.pinch={d:dist(a[0],a[1])};return;}
+  const p=pos(e),w=toWorld(p.x,p.y),q=pl();
+  if(U.tool==="edit"){
+    if(U.sel&&U.delBtn&&Math.hypot(p.x-U.delBtn.x,p.y-U.delBtn.y)<U.delBtn.r+5){delSel();return;}
+    const h=hitTest(q,w);
+    if(h){U.sel=h;U.drag={kind:h.kind,h,last:w};U.snapped=false;render();return;}
+    U.sel=null;U.panLast=p;render();return;}
+  if(U.tool==="pan"){U.panLast=p;return;}
+  if(U.tool==="cal"){if(U.calib.length>=2)U.calib=[];U.calib.push(w);
+    if(U.calib.length===2)askScale();render();return;}
+  if(U.tool==="poly"){
+    if(!IMG[q.id]&&q.scale<=0){q.scale=30;q.drawn=true;}
+    U.draft.push(snapPt(q,w,U.draft[U.draft.length-1]||null,e.shiftKey));U.pnow=null;render();return;}
+  if(U.tool==="rect"){
+    if(!IMG[q.id]&&q.scale<=0){q.scale=30;q.drawn=true;}
+    U.rectStart=snapPt(q,w,null,e.shiftKey);U.rectNow=U.rectStart;return;}
+  if(U.tool==="wall"){
+    if(!ensureDraw(q))return;
+    const p2=snapPt(q,w,U.wlast,e.shiftKey);
+    if(!U.wlast){U.wlast=p2;U.wnow=p2;render();return;}
+    if(dist(U.wlast,p2)>q.scale*.15){snap();
+      q.walls.push({x1:U.wlast.x,y1:U.wlast.y,x2:p2.x,y2:p2.y});}
+    U.wlast=p2;U.wnow=p2;refresh();return;}
+  if(U.tool==="door"){
+    if(!ensureDraw(q))return;
+    doorAt(q,w);return;}
+  if(U.tool==="wand"){wandAt(w.x,w.y);return;}
+  if(U.tool==="sensor"){snap();
+    const hit=q.sensors.find(s=>dist(s,w)<12/V.k);
+    if(hit){q.sensors=q.sensors.filter(s=>s!==hit);
+      q.gateways.forEach(g=>g.members=g.members.filter(i=>i!==hit.id));}
+    else{const z=q.zones.find(z=>inPoly(w,z.pts));
+      const s={id:SEQ++,x:w.x,y:w.y,zoneId:z?z.id:null};q.sensors.push(s);
+      const g=q.gateways.find(g=>g.zoneId===s.zoneId);if(g)g.members.push(s.id);}
+    refresh();return;}
+  if(U.tool==="gate"){snap();
+    const hit=q.gateways.find(g=>dist(g,w)<14/V.k);
+    if(hit)q.gateways=q.gateways.filter(g=>g!==hit);
+    else{const z=q.zones.find(z=>inPoly(w,z.pts));
+      q.gateways.push({id:SEQ++,x:w.x,y:w.y,zoneId:z?z.id:null,
+        members:z?q.sensors.filter(s=>s.zoneId===z.id).map(s=>s.id):[]});}
+    refresh();return;}});
+cv.addEventListener("pointermove",e=>{
+  if(!pts.has(e.pointerId)){
+    const p0=pos(e);
+    if(U.tool==="edit"&&pts.size===0)
+      cv.style.cursor=hitTest(pl(),toWorld(p0.x,p0.y))?"move":"default";
+    if(U.tool==="poly"&&U.draft.length){
+      U.pnow=snapPt(pl(),toWorld(p0.x,p0.y),U.draft[U.draft.length-1],e.shiftKey);render();}
+    return;}
+  pts.set(e.pointerId,pos(e));
+  if(U.pinch&&pts.size===2){const a=[...pts.values()],d=dist(a[0],a[1]);
+    const c={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};zoomAt(c.x,c.y,d/U.pinch.d);U.pinch.d=d;return;}
+  const p=pos(e);
+  if((U.tool==="pan"||U.tool==="edit")&&U.panLast&&!U.drag){
+    V.x+=p.x-U.panLast.x;V.y+=p.y-U.panLast.y;U.panLast=p;render();}
+  if(U.tool==="edit"&&U.drag)dragMove(toWorld(p.x,p.y),e.shiftKey);
+  if(U.tool==="rect"&&U.rectStart){U.rectNow=snapPt(pl(),toWorld(p.x,p.y),null,e.shiftKey);render();}
+  if(U.tool==="wall"&&U.wlast){U.wnow=snapPt(pl(),toWorld(p.x,p.y),U.wlast,e.shiftKey);render();}});
+function endP(e){pts.delete(e.pointerId);if(pts.size<2)U.pinch=null;
+  if(U.tool==="edit"&&U.drag)dragEnd();
+  U.panLast=null;
+  if(U.tool==="rect"&&U.rectStart&&U.rectNow){const a=U.rectStart,b=U.rectNow;
+    if(Math.abs(a.x-b.x)>6/V.k&&Math.abs(a.y-b.y)>6/V.k)
+      addZone([{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}]);
+    U.rectStart=U.rectNow=null;render();}}
+cv.addEventListener("pointerup",endP);cv.addEventListener("pointercancel",endP);
+cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoomAt(p.x,p.y,e.deltaY<0?1.12:1/1.12);},{passive:false});
+cv.addEventListener("dblclick",()=>{if(U.tool==="poly")closePoly();
+  if(U.tool==="wall"){U.wlast=U.wnow=null;render();}});
+window.addEventListener("keydown",e=>{
+  if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT")return;
+  if(e.key==="Enter"&&U.tool==="poly")closePoly();
+  if(e.key==="Enter"&&U.tool==="wall"){U.wlast=U.wnow=null;render();}
+  if((e.key==="Delete"||e.key==="Backspace")&&U.sel){e.preventDefault();delSel();}
+  if(e.key==="Escape"){U.draft=[];U.calib=[];U.rectStart=null;U.wlast=U.wnow=null;
+    U.pnow=null;U.sel=null;U.guides=null;render();}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();undo();}});
+function closePoly(){if(U.draft.length>=3)addZone(U.draft.slice());U.draft=[];U.pnow=null;render();}
+function addZone(p){snap();const q=pl();
+  q.zones.push({id:SEQ++,name:t("room")+" "+ar(q.zones.length+1),pts:p,color:ZC[q.zones.length%ZC.length]});
+  refresh();if(!IMG[q.id]&&q.zones.length===1)fitView();}
+function ensureDraw(q){
+  if(IMG[q.id]){toast(t("aDrawOnly"));return false;}
+  if(q.scale<=0)q.scale=30;
+  q.drawn=true;return true;}
+function snapPt(q,w,ref,free,ex){
+  U.guides=null;
+  if(free||IMG[q.id]||q.scale<=0)return{x:w.x,y:w.y};
+  const sc=q.scale,cand=[];
+  q.zones.forEach(z=>z.pts.forEach(p=>{if(p!==ex)cand.push(p);}));
+  q.walls.forEach(s=>{
+    if(!(ex&&ex.wall===s&&ex.end===1))cand.push({x:s.x1,y:s.y1});
+    if(!(ex&&ex.wall===s&&ex.end===2))cand.push({x:s.x2,y:s.y2});});
+  for(const c of cand)if(dist(c,w)<sc*.35)return{x:c.x,y:c.y};
+  let x=w.x,y=w.y,lockX=false,lockY=false,gx=null,gy=null;
+  if(ref){const adx=Math.abs(w.x-ref.x),ady=Math.abs(w.y-ref.y),tol=Math.tan(Math.PI/22);
+    if(ady<=adx*tol){y=ref.y;lockY=true;}
+    else if(adx<=ady*tol){x=ref.x;lockX=true;}}
+  for(const c of cand){
+    if(!lockX&&gx===null&&Math.abs(x-c.x)<sc*.3){x=c.x;gx=c;}
+    if(!lockY&&gy===null&&Math.abs(y-c.y)<sc*.3){y=c.y;gy=c;}}
+  const g=sc*.5;
+  if(!lockX&&gx===null)x=Math.round(x/g)*g;
+  if(!lockY&&gy===null)y=Math.round(y/g)*g;
+  U.guides=(gx||gy)?{gx,gy}:null;
+  return{x,y};}
+function projSeg(p,a,b){
+  const dx=b.x-a.x,dy=b.y-a.y,l2=dx*dx+dy*dy||1;
+  let u=((p.x-a.x)*dx+(p.y-a.y)*dy)/l2;u=Math.max(0,Math.min(1,u));
+  const x=a.x+u*dx,y=a.y+u*dy,l=Math.sqrt(l2);
+  return{x,y,d:Math.hypot(p.x-x,p.y-y),ux:dx/l,uy:dy/l};}
+function doorAt(q,w){
+  const th=Math.max(10/V.k,.45*q.scale);
+  for(const d of q.doors){
+    const m={x:(d.x1+d.x2)/2,y:(d.y1+d.y2)/2};
+    if(dist(m,w)<th){snap();d.flip=!d.flip;refresh();return;}}
+  let best=null,bd=1e18;
+  const segs=[];
+  q.walls.forEach(s=>segs.push([{x:s.x1,y:s.y1},{x:s.x2,y:s.y2}]));
+  q.zones.forEach(z=>{for(let i=0;i<z.pts.length;i++)
+    segs.push([z.pts[i],z.pts[(i+1)%z.pts.length]]);});
+  segs.forEach(s=>{const pr=projSeg(w,s[0],s[1]);
+    if(pr.d<bd){bd=pr.d;best=pr;}});
+  if(!best||bd>th){toast(t("tNearWall"));return;}
+  const hw=.45*q.scale;
+  snap();
+  q.doors.push({x1:best.x-best.ux*hw,y1:best.y-best.uy*hw,
+                x2:best.x+best.ux*hw,y2:best.y+best.uy*hw});
+  refresh();}
+function selBBox(q,s){
+  const A=[];
+  if(s.kind==="zone")s.z.pts.forEach(p=>A.push(p));
+  if(s.kind==="vertex")A.push(s.z.pts[s.i]);
+  if(s.kind==="sensor")A.push(s.s);
+  if(s.kind==="gate")A.push(s.g);
+  if(s.kind==="wall"||s.kind==="wend"){A.push({x:s.w.x1,y:s.w.y1});A.push({x:s.w.x2,y:s.w.y2});}
+  if(s.kind==="door"){A.push({x:s.d.x1,y:s.d.y1});A.push({x:s.d.x2,y:s.d.y2});}
+  return A.length?bbox(A):null;}
+function hitTest(q,w){
+  const r=10/V.k,sy=Math.max(r,(P.cfg.sym||.6)*Math.max(q.scale,0)*.7);
+  for(let i=q.sensors.length-1;i>=0;i--)if(dist(q.sensors[i],w)<sy)return{kind:"sensor",s:q.sensors[i]};
+  for(let i=q.gateways.length-1;i>=0;i--)if(dist(q.gateways[i],w)<sy*1.2)return{kind:"gate",g:q.gateways[i]};
+  for(const z of q.zones)for(let i=0;i<z.pts.length;i++)
+    if(dist(z.pts[i],w)<r)return{kind:"vertex",z,i};
+  for(const wl of q.walls){
+    if(dist({x:wl.x1,y:wl.y1},w)<r)return{kind:"wend",w:wl,end:1};
+    if(dist({x:wl.x2,y:wl.y2},w)<r)return{kind:"wend",w:wl,end:2};}
+  for(const d of q.doors){const m={x:(d.x1+d.x2)/2,y:(d.y1+d.y2)/2};
+    if(dist(m,w)<Math.max(r,.5*q.scale))return{kind:"door",d};}
+  for(const wl of q.walls){const pr=projSeg(w,{x:wl.x1,y:wl.y1},{x:wl.x2,y:wl.y2});
+    if(pr.d<r)return{kind:"wall",w:wl};}
+  let bz=null,ba=1e18;
+  for(const z of q.zones)if(inPoly(w,z.pts)){const a=polyArea(z.pts);if(a<ba){ba=a;bz=z;}}
+  return bz?{kind:"zone",z:bz}:null;}
+function delSel(){
+  const q=pl(),s=U.sel;if(!s)return;snap();
+  if(s.kind==="zone"){q.zones=q.zones.filter(z=>z!==s.z);
+    q.sensors=q.sensors.filter(x=>x.zoneId!==s.z.id);gwPlan(q);}
+  else if(s.kind==="vertex"&&s.z.pts.length>3)s.z.pts.splice(s.i,1);
+  else if(s.kind==="sensor"){q.sensors=q.sensors.filter(x=>x!==s.s);
+    q.gateways.forEach(g=>g.members=g.members.filter(i=>i!==s.s.id));}
+  else if(s.kind==="gate")q.gateways=q.gateways.filter(x=>x!==s.g);
+  else if(s.kind==="wall"||s.kind==="wend")q.walls=q.walls.filter(x=>x!==s.w);
+  else if(s.kind==="door")q.doors=q.doors.filter(x=>x!==s.d);
+  U.sel=null;U.drag=null;refresh();}
+function dragMove(w,free){
+  const q=pl(),d=U.drag;if(!d)return;
+  if(!U.snapped){snap();U.snapped=true;}
+  const dx=w.x-d.last.x,dy=w.y-d.last.y;
+  if(d.kind==="vertex"){const p0=d.h.z.pts[d.h.i];
+    const np=snapPt(q,w,null,free,p0);p0.x=np.x;p0.y=np.y;}
+  else if(d.kind==="zone"){d.h.z.pts.forEach(p=>{p.x+=dx;p.y+=dy;});
+    q.sensors.forEach(s=>{if(s.zoneId===d.h.z.id){s.x+=dx;s.y+=dy;}});
+    q.gateways.forEach(g=>{if(g.zoneId===d.h.z.id){g.x+=dx;g.y+=dy;}});}
+  else if(d.kind==="sensor"){d.h.s.x=w.x;d.h.s.y=w.y;}
+  else if(d.kind==="gate"){d.h.g.x=w.x;d.h.g.y=w.y;}
+  else if(d.kind==="wend"){const wl=d.h.w;
+    const np=snapPt(q,w,null,free,{wall:wl,end:d.h.end});
+    if(d.h.end===1){wl.x1=np.x;wl.y1=np.y;}else{wl.x2=np.x;wl.y2=np.y;}}
+  else if(d.kind==="wall"){d.h.w.x1+=dx;d.h.w.y1+=dy;d.h.w.x2+=dx;d.h.w.y2+=dy;}
+  else if(d.kind==="door"){const dr=d.h.d,vx=dr.x2-dr.x1,vy=dr.y2-dr.y1,
+      ln=Math.hypot(vx,vy)||1,ux=vx/ln,uy=vy/ln,
+      mx=(dr.x1+dr.x2)/2,my=(dr.y1+dr.y2)/2,
+      sh=(w.x-mx)*ux+(w.y-my)*uy;
+    dr.x1+=ux*sh;dr.y1+=uy*sh;dr.x2+=ux*sh;dr.y2+=uy*sh;}
+  d.last=w;render();}
+function dragEnd(){
+  const q=pl(),d=U.drag;U.drag=null;U.snapped=false;
+  if(d&&d.kind==="sensor"){const s=d.h.s;
+    const z=q.zones.find(z=>inPoly(s,z.pts)),nz=z?z.id:null;
+    if(nz!==s.zoneId){
+      q.gateways.forEach(g=>g.members=g.members.filter(i=>i!==s.id));
+      s.zoneId=nz;
+      const g=q.gateways.find(g=>g.zoneId===nz);
+      if(g)g.members.push(s.id);}}
+  refresh();}
+function askScale(){const px=dist(U.calib[0],U.calib[1]);
+  const v=prompt(t("pScale"),"10");
+  if(v===null||!(+v>0)){U.calib=[];render();return;}
+  snap();pl().scale=px/(+v);U.calib=[];refresh();}
+["dragover","drop"].forEach(ev=>cv.addEventListener(ev,e=>e.preventDefault()));
+cv.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(!f)return;
+  if(/json$/i.test(f.name))readProject(f);else readImage(f);});
+
+/* ================= التوزيع ================= */
+function samplePoly(poly,k){
+  const b=bbox(poly),w=Math.max(1,b.maxX-b.minX),h=Math.max(1,b.maxY-b.minY);
+  const target=Math.min(3000,Math.max(600,k*80)),step=Math.max(1.5,Math.sqrt(w*h/target)),out=[];
+  for(let x=b.minX+step/2;x<b.maxX;x+=step)
+    for(let y=b.minY+step/2;y<b.maxY;y+=step){const p={x,y};if(inPoly(p,poly))out.push(p);}
+  if(!out.length)out.push(centroid(poly));return out;}
+function evenPoints(poly,k){
+  const smp=samplePoly(poly,k),b=bbox(poly);
+  const w=Math.max(1,b.maxX-b.minX),h=Math.max(1,b.maxY-b.minY);
+  let nx=Math.max(1,Math.min(k,Math.round(Math.sqrt(k*w/h)))),ny=Math.ceil(k/nx),c=[];
+  for(let j=0;j<ny&&c.length<k;j++)for(let i=0;i<nx&&c.length<k;i++)
+    c.push({x:b.minX+w*(i+.5)/nx,y:b.minY+h*(j+.5)/ny});
+  c=c.map(p=>inPoly(p,poly)?p:nearest(smp,p));
+  const it=k>60?8:16;
+  for(let tI=0;tI<it;tI++){
+    const acc=c.map(()=>({x:0,y:0,n:0}));
+    for(const s of smp){let bi=0,bd=1e18;
+      for(let i=0;i<c.length;i++){const d=(s.x-c[i].x)**2+(s.y-c[i].y)**2;if(d<bd){bd=d;bi=i;}}
+      acc[bi].x+=s.x;acc[bi].y+=s.y;acc[bi].n++;}
+    for(let i=0;i<c.length;i++){
+      if(acc[i].n)c[i]={x:acc[i].x/acc[i].n,y:acc[i].y/acc[i].n};
+      else{let f=smp[0],fd=-1;
+        for(const s of smp){let mm=1e18;for(const o of c)mm=Math.min(mm,dist(s,o));if(mm>fd){fd=mm;f=s;}}
+        c[i]={x:f.x,y:f.y};}}}
+  return c.map(p=>inPoly(p,poly)?p:nearest(smp,p));}
+function oneCenter(list,poly){
+  if(!list.length)return centroid(poly);
+  let c={x:list[0].x,y:list[0].y};
+  for(let i=0;i<120;i++){let f=list[0],fd=-1;
+    for(const p of list){const d=dist(p,c);if(d>fd){fd=d;f=p;}}
+    const tw=1/(i+2);c={x:c.x+(f.x-c.x)*tw,y:c.y+(f.y-c.y)*tw};}
+  return inPoly(c,poly)?c:nearest(samplePoly(poly,4),c);}
+function runPlan(q,silent){
+  if(q.scale<=0){if(!silent)alert(t("aScale"));return false;}
+  if(!q.zones.length){if(!silent)alert(t("aZone"));return false;}
+  q.sensors=[];
+  q.zones.forEach(z=>{const a=polyArea(z.pts)/(q.scale*q.scale);
+    const k=z.fixed>0?z.fixed:Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9));
+    evenPoints(z.pts,k).forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));});
+  gwPlan(q);return true;}
+function gwPlan(q){
+  q.gateways=[];
+  if(q.scale<=0||!q.sensors.length)return;
+  if(P.cfg.perRoom){
+    q.zones.forEach(z=>{const list=q.sensors.filter(s=>s.zoneId===z.id);
+      if(!list.length)return;const c=oneCenter(list,z.pts);
+      q.gateways.push({id:SEQ++,x:c.x,y:c.y,zoneId:z.id,members:list.map(s=>s.id)});});
+  }else{const range=P.cfg.gwRange*q.scale;let un=q.sensors.slice(),guard=0;
+    while(un.length&&guard++<400){
+      let seed=un[0],best=1e18;
+      for(const s of un){let n=0;for(const o of un)if(dist(s,o)<=range)n++;if(n<best){best=n;seed=s;}}
+      let grp=un.filter(s=>dist(s,seed)<=range);let c=centroid(grp);
+      grp=grp.filter(s=>dist(s,c)<=range);if(!grp.length)grp=[seed];c=centroid(grp);
+      q.gateways.push({id:SEQ++,x:c.x,y:c.y,zoneId:null,members:grp.map(s=>s.id)});
+      un=un.filter(s=>!grp.includes(s));}}}
+function setZoneCount(z,n){
+  const q=pl();n=Math.max(1,Math.min(400,n));
+  snap();z.fixed=n;
+  q.sensors=q.sensors.filter(s=>s.zoneId!==z.id);
+  evenPoints(z.pts,n).forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));
+  gwPlan(q);refresh();}
+function zoneAuto(z){
+  const q=pl();delete z.fixed;
+  if(q.scale>0){const a=polyArea(z.pts)/(q.scale*q.scale);
+    setZoneCount(z,Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9)));delete z.fixed;refresh();}}
+
+/* ================= الحسابات ================= */
+function zoneStat(q,z){
+  const a=q.scale>0?polyArea(z.pts)/(q.scale*q.scale):0;
+  const list=q.sensors.filter(s=>s.zoneId===z.id);
+  const g=q.gateways.find(g=>g.zoneId===z.id);
+  let far=0;if(g)list.forEach(s=>far=Math.max(far,dist(g,s)));
+  const std=q.scale>0?Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9)):0;
+  return{a,n:list.length,need:z.fixed>0?z.fixed:std,std,g:g?1:0,far:q.scale>0?far/q.scale:0};}
+function planTot(q){
+  const area=q.scale>0?q.zones.reduce((s,z)=>s+polyArea(z.pts)/(q.scale*q.scale),0):0;
+  return{area,sensors:q.sensors.length,gates:q.gateways.length};}
+function projTot(){return planTot(pl());}
+function renumber(){
+  const q=pl();
+  q.zones.forEach((z,zi)=>{let n=0;
+    q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>{n++;s.code=ar(zi+1)+"-"+ar(n);});});
+  q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).forEach((s,i)=>s.code=t("orphan")+"-"+ar(i+1));
+  q.gateways.forEach((g,i)=>{const z=q.zones.find(z=>z.id===g.zoneId);
+    g.code=t("gwPrefix")+ar(z?q.zones.indexOf(z)+1:i+1);});}
+function instRows(){
+  const q=pl(),out=[];
+  q.zones.forEach(z=>{const b=bbox(z.pts);
+    q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>out.push({zone:z.name,code:s.code,kind:t("sensor"),
+      x:q.scale>0?(s.x-b.minX)/q.scale:0,y:q.scale>0?(s.y-b.minY)/q.scale:0}));
+    const g=q.gateways.find(g=>g.zoneId===z.id);
+    if(g)out.push({zone:z.name,code:g.code,kind:t("gateway"),
+      x:q.scale>0?(g.x-b.minX)/q.scale:0,y:q.scale>0?(g.y-b.minY)/q.scale:0});});
+  return out;}
+function supply(){
+  const tt=projTot(),sp=1+P.cfg.spare/100;
+  const dev=P.cfg.sensor==="tg08"?"TZone TG08":t("optOther");
+  const gwt=P.cfg.gw==="gsm"?t("optGsm"):t("optWifi");
+  const items=[{n:t("supSensor",dev),q:Math.ceil(tt.sensors*sp)},
+    {n:t("supGw",gwt),q:tt.gates},
+    {n:t("supBat"),q:Math.ceil(tt.sensors*P.cfg.bat*sp)},
+    {n:t("supBrk"),q:Math.ceil(tt.sensors*P.cfg.brk*sp)},
+    {n:t("supPsu"),q:tt.gates*P.cfg.psu}];
+  if(P.cfg.gw==="gsm")items.push({n:t("supSim"),q:tt.gates});
+  return items.filter(i=>i.q>0);}
+function issues(){
+  const q=pl(),out=[];
+  if(q.scale<=0)out.push(t("isScale"));
+  if(!q.zones.length)out.push(t("isNoZones"));
+  q.zones.forEach(z=>{const st=zoneStat(q,z);
+    if(!st.n)out.push(t("isNoSensors",z.name));
+    else if(st.n<st.need)out.push(t("isLess",z.name,ar(st.n),ar(st.need)));
+    if(z.fixed>0&&z.fixed!==st.std)out.push(t("isManual",z.name,ar(z.fixed),ar(st.std)));
+    if(P.cfg.perRoom&&!st.g&&st.n)out.push(t("isNoGw",z.name));
+    if(st.far>P.cfg.gwRange)out.push(t("isFar",z.name,ar(m1(st.far))));});
+  const orph=q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).length;
+  if(orph)out.push(t("isOrphan",ar(orph)));
+  if(!P.name)out.push(t("isName"));
+  return out;}
+
+/* ================= الواجهة ================= */
+function refresh(){renumber();renderZones();renderResults();renderIssues();render();}
+function renderZones(){
+  const q=pl();
+  pillZones.textContent=ar(q.zones.length);
+  pillZones.className="pill"+(q.zones.length?" on":"");
+  pillPlan.textContent=(IMG[q.id]||q.zones.length)?(q.scale>0?t("pillReady"):t("pillCal")):t("pillNo");
+  pillPlan.className="pill"+((IMG[q.id]||q.zones.length)&&q.scale>0?" on":"");
+  const Lst=document.getElementById("zoneList");Lst.innerHTML="";
+  q.zones.forEach(z=>{const st=zoneStat(q,z);
+    const d=document.createElement("div");d.className="item col";
+    d.innerHTML='<div class="r"><span class="dot" style="background:'+z.color+'"></span>'+
+      '<input type="text" value="'+esc(z.name)+'"><button class="x">✕</button></div>'+
+      '<div class="r"><span class="meta">'+ar(fmt(st.a))+' '+t("unitM2")+'</span>'+
+      (z.fixed>0?'<button class="rs">'+t("resetAuto")+'</button>':'<span class="meta">'+t("auto")+'</span>')+
+      '<span class="cnt"><button class="mn">−</button><b>'+ar(st.n)+'</b><button class="pl">+</button></span></div>';
+    d.querySelector("input").oninput=e=>{z.name=e.target.value;render();};
+    d.querySelector(".mn").onclick=()=>setZoneCount(z,st.n-1);
+    d.querySelector(".pl").onclick=()=>setZoneCount(z,st.n+1);
+    const rs=d.querySelector(".rs");if(rs)rs.onclick=()=>zoneAuto(z);
+    d.querySelector(".x").onclick=()=>{snap();q.zones=q.zones.filter(x=>x!==z);
+      q.sensors=q.sensors.filter(s=>s.zoneId!==z.id);gwPlan(q);refresh();};
+    Lst.appendChild(d);});}
+function renderResults(){
+  const q=pl(),tt=projTot();
+  kSensors.textContent=ar(tt.sensors);kGates.textContent=ar(tt.gates);kArea.textContent=ar(fmt(tt.area));
+  let rows="";
+  q.zones.forEach(z=>{const st=zoneStat(q,z);
+    rows+='<tr><td>'+esc(z.name)+'</td><td class="n">'+ar(fmt(st.a))+'</td><td class="n">'+ar(st.n)+
+      '</td><td class="n">'+ar(st.g)+'</td><td class="n'+(st.far>P.cfg.gwRange?" bad":"")+'">'+
+      (st.n?ar(m1(st.far)):"—")+'</td></tr>';});
+  document.getElementById("tblZones").innerHTML=rows?
+    '<table><thead><tr><th>'+t("thRoom")+'</th><th class="n">'+t("thArea")+'</th><th class="n">'+t("thSensors")+
+    '</th><th class="n">'+t("thGw")+'</th><th class="n">'+t("thFar")+'</th></tr></thead><tbody>'+rows+
+    '</tbody><tfoot><tr><td>'+t("thTotal")+'</td><td class="n">'+ar(fmt(tt.area))+'</td><td class="n">'+
+    ar(tt.sensors)+'</td><td class="n">'+ar(tt.gates)+'</td><td class="n">—</td></tr></tfoot></table>':"";
+  document.getElementById("tblSupply").innerHTML=tt.sensors?
+    '<table><thead><tr><th>'+t("thSupply")+'</th><th class="n">'+t("thQty")+'</th></tr></thead><tbody>'+
+    supply().map(i=>'<tr><td>'+i.n+'</td><td class="n">'+ar(i.q)+'</td></tr>').join("")+'</tbody></table>':"";}
+function renderIssues(){
+  const list=issues(),Lst=document.getElementById("chkList");
+  pillChk.textContent=list.length?t("issNote",ar(list.length)):t("issClear");
+  pillChk.className="pill "+(list.length?"warn":"on");
+  Lst.innerHTML=list.length
+    ?list.map(i=>'<div class="issue err"><b>•</b><span>'+esc(i)+'</span></div>').join("")
+    :'<div class="issue ok"><b>✓</b><span>'+t("okAll")+'</span></div>';}
+
+/* ================= حفظ وفتح ================= */
+function saveProject(){
+  syncCfg();P.lang=L;
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(P)],{type:"application/json"}));
+  a.download=(P.name||t("fileProj"))+".json";a.click();toast(t("tSaved"));}
+function applyProject(o){
+  if(!o||!o.plans)throw 0;
+  P=o;P.cur=0;
+  for(const k in IMG)delete IMG[k];for(const k in ORIG)delete ORIG[k];for(const k in MASK)delete MASK[k];
+  SEQ=1;P.plans.forEach(q=>{SEQ=Math.max(SEQ,q.id+1);
+    q.zones.forEach(z=>SEQ=Math.max(SEQ,z.id+1));
+    q.sensors.forEach(s=>SEQ=Math.max(SEQ,s.id+1));
+    q.gateways.forEach(g=>SEQ=Math.max(SEQ,g.id+1));});
+  if(P.lang&&P.lang!==L){L=P.lang;applyLang();}
+  loadCfg();
+  const q=pl();txtPlan.value=q.text||"";
+  const done=()=>{paneClean.style.display=ORIG[q.id]?"block":"none";fitView();refresh();};
+  if(q.imgData)attachImage(q,q.imgData,done);else done();}
+function readProject(f){
+  const rd=new FileReader();
+  rd.onload=()=>{try{applyProject(JSON.parse(rd.result));toast(t("tOpened"));}
+    catch(e){alert(t("aFile"));}};
+  rd.readAsText(f);}
+function readImage(f){
+  const rd=new FileReader();
+  rd.onload=()=>{const im=new Image();
+    im.onload=()=>{const q=pl();snap();
+      q.imgW=im.naturalWidth;q.imgH=im.naturalHeight;q.drawn=false;q.walls=[];q.doors=[];q.clean=null;
+      q.imgData=shrink(im,1600);ORIG[q.id]=im;IMG[q.id]=im;delete MASK[q.id];
+      paneClean.style.display="block";fitView();refresh();};
+    im.src=rd.result;};
+  rd.readAsDataURL(f);}
+
+/* ================= الإعدادات ================= */
+function syncCfg(){
+  P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
+  P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
+  P.cfg.gw=selGw.value;P.cfg.gwRange=+inGwRange.value||50;P.cfg.perRoom=chkPerRoom.checked;
+  P.cfg.bat=+inBat.value||0;P.cfg.brk=+inBrk.value||0;P.cfg.psu=+inPsu.value||0;P.cfg.spare=+inSpare.value||0;
+  P.cfg.sym=(+rngSym.value||6)/10;
+  lblSym.textContent=ar(P.cfg.sym.toFixed(1)).replace(".",L==="ar"?"٫":".");
+  lblStr.textContent=ar(rngStr.value);}
+function loadCfg(){
+  pjName.value=P.name||"";pjRef.value=P.ref||"";pjClient.value=P.client||"";
+  selSensor.value=P.cfg.sensor;inCov.value=P.cfg.cov;inMin.value=P.cfg.minPer;
+  selGw.value=P.cfg.gw;inGwRange.value=P.cfg.gwRange;chkPerRoom.checked=P.cfg.perRoom;
+  inBat.value=P.cfg.bat;inBrk.value=P.cfg.brk;inPsu.value=P.cfg.psu;inSpare.value=P.cfg.spare;
+  rngSym.value=Math.round((P.cfg.sym||.6)*10);
+  lblSym.textContent=ar((P.cfg.sym||.6).toFixed(1)).replace(".",L==="ar"?"٫":".");
+  lblStr.textContent=ar(rngStr.value);}
+["pjName","pjRef","pjClient","selSensor","inCov","inMin","selGw","inGwRange",
+ "inBat","inBrk","inPsu","inSpare","rngSym","rngStr"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",()=>{syncCfg();renderResults();renderIssues();render();});});
+chkPerRoom.onchange=()=>{syncCfg();gwPlan(pl());refresh();};
+
+/* ================= الدخول والسحابة | Auth & cloud ================= */
+let FBX=null;
+async function initFB(){
+  if(!FIREBASE.apiKey){gate.classList.remove("on");return;}
+  gate.classList.add("on");
+  try{
+    const [a,b,c]=await Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js")]);
+    const app=a.initializeApp(FIREBASE);
+    FBX={a,b,c,auth:b.getAuth(app),db:c.getFirestore(app),user:null};
+    b.onAuthStateChanged(FBX.auth,u=>{
+      FBX.user=u||null;
+      if(u){gate.classList.remove("on");userChip.textContent=u.email;
+        btnLogout.style.display="inline-block";cloudBox.style.display="block";}
+      else{gate.classList.add("on");userChip.textContent="";
+        btnLogout.style.display="none";cloudBox.style.display="none";}});
+  }catch(e){gErr.textContent=t("aNoCloud");}}
+function reshrink(dataUrl,max,q){
+  return new Promise(res=>{const im=new Image();
+    im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));
+      const c=document.createElement("canvas");
+      c.width=Math.max(2,Math.round(im.width*s));c.height=Math.max(2,Math.round(im.height*s));
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      res(c.toDataURL("image/jpeg",q));};
+    im.onerror=()=>res(dataUrl);im.src=dataUrl;});}
+async function cloudSave(){
+  if(!FBX||!FBX.user){alert(t("aNoCloud"));return;}
+  syncCfg();P.lang=L;
+  const copy=JSON.parse(JSON.stringify(P));
+  for(const q of copy.plans)if(q.imgData)q.imgData=await reshrink(q.imgData,1200,.68);
+  const s=JSON.stringify(copy);
+  if(s.length>950000){alert(t("aTooBig"));return;}
+  const id=P.cloudId||("p"+Date.now()+Math.floor(Math.random()*997));
+  try{
+    await FBX.c.setDoc(FBX.c.doc(FBX.db,"projects",id),{
+      uid:FBX.user.uid,by:FBX.user.email,name:P.name||"",ref:P.ref||"",client:P.client||"",
+      updated:Date.now(),data:s});
+    P.cloudId=id;toast(t("tCloudSaved"));
+  }catch(e){alert(t("aNoCloud"));}}
+async function cloudList(){
+  if(!FBX||!FBX.user){alert(t("aNoCloud"));return;}
+  const el=document.getElementById("cloudList");el.innerHTML="";
+  try{
+    const res=await FBX.c.getDocs(FBX.c.collection(FBX.db,"projects"));
+    const arr=[];res.forEach(d=>arr.push(Object.assign({id:d.id},d.data())));
+    arr.sort((x,y)=>(y.updated||0)-(x.updated||0));
+    if(!arr.length){el.innerHTML='<div class="issue">'+t("cloudEmpty")+'</div>';return;}
+    arr.slice(0,30).forEach(o=>{
+      const d=document.createElement("div");d.className="item";
+      d.innerHTML='<span class="go">'+esc(o.name||"—")+(o.ref?" · "+esc(o.ref):"")+
+        '<br><span class="meta">'+esc(o.by||"")+' · '+
+        new Date(o.updated||0).toLocaleDateString(L==="ar"?"ar-EG":"en-GB")+'</span></span>'+
+        '<button class="op">'+t("bOpen")+'</button>';
+      d.querySelector(".op").onclick=()=>{
+        try{applyProject(JSON.parse(o.data));P.cloudId=o.id;toast(t("tOpened"));}
+        catch(e){alert(t("aFile"));}};
+      el.appendChild(d);});
+  }catch(e){alert(t("aNoCloud"));}}
+
+/* ================= الأزرار ================= */
+document.getElementById("gLogin").onclick=async()=>{
+  if(!FBX){gErr.textContent=t("aNoCloud");return;}
+  gErr.textContent="";
+  try{await FBX.b.signInWithEmailAndPassword(FBX.auth,gEmail.value.trim(),gPass.value);}
+  catch(e){gErr.textContent=t("eLogin");}};
+document.getElementById("gPass").addEventListener("keydown",e=>{if(e.key==="Enter")gLogin.click();});
+document.getElementById("gForgot").onclick=async()=>{
+  if(!FBX||!gEmail.value.trim())return;
+  try{await FBX.b.sendPasswordResetEmail(FBX.auth,gEmail.value.trim());gErr.textContent=t("tReset");}
+  catch(e){gErr.textContent=t("eLogin");}};
+document.getElementById("gOffline").onclick=()=>gate.classList.remove("on");
+document.getElementById("btnLogout").onclick=async()=>{if(FBX)await FBX.b.signOut(FBX.auth);};
+document.getElementById("btnCloudSave").onclick=cloudSave;
+document.getElementById("btnCloudList").onclick=cloudList;
+document.getElementById("btnLang").onclick=()=>{L=L==="ar"?"en":"ar";P.lang=L;applyLang();};
+document.querySelectorAll(".tools [data-t]").forEach(b=>{b.onclick=()=>{
+  document.querySelectorAll(".tools [data-t]").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");U.tool=b.dataset.t;U.draft=[];U.calib=[];U.rectStart=null;
+  U.wlast=U.wnow=null;U.pnow=null;U.sel=null;U.guides=null;
+  cv.style.cursor=U.tool==="pan"?"grab":U.tool==="edit"?"default":"crosshair";render();};});
+document.querySelectorAll("#segMode button").forEach(b=>{b.onclick=()=>{
+  document.querySelectorAll("#segMode button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  paneImage.style.display=b.dataset.m==="image"?"block":"none";
+  paneDims.style.display=b.dataset.m==="dims"?"block":"none";
+  paneText.style.display=b.dataset.m==="text"?"block":"none";};});
+document.getElementById("btnChoose").onclick=()=>fileImg.click();
+document.getElementById("fileImg").onchange=e=>{if(e.target.files[0])readImage(e.target.files[0]);};
+document.getElementById("btnOpen").onclick=()=>fileProj.click();
+document.getElementById("fileProj").onchange=e=>{if(e.target.files[0])readProject(e.target.files[0]);};
+document.getElementById("btnSave").onclick=saveProject;
+document.getElementById("btnAll").onclick=autoAll;
+document.getElementById("btnAuto").onclick=()=>autoRooms();
+document.getElementById("btnTo2D").onclick=()=>{wait.classList.add("on");
+  setTimeout(()=>{try{to2D(+rngStr.value||8);}catch(e){alert(t("aBig"));}
+    wait.classList.remove("on");},30);};
+document.getElementById("btnOrig").onclick=()=>{const q=pl();
+  if(ORIG[q.id]){IMG[q.id]=ORIG[q.id];q.clean=null;delete MASK[q.id];render();}};
+document.getElementById("btnDraw").onclick=buildPlan;
+document.getElementById("btnSample").onclick=()=>{txtPlan.value=t("sample");buildPlan();};
+document.getElementById("btnAddRoom").onclick=()=>{
+  const Ln=+rmL.value,W=+rmW.value;
+  if(!(Ln>0&&W>0)){alert(t("aDims"));return;}
+  snap();const q=pl();if(q.scale<=0)q.scale=30;q.drawn=true;
+  const gap=1.5*q.scale,maxW=60*q.scale;let x=gap,y=gap,rowH=0;
+  q.zones.forEach(z=>{const b=bbox(z.pts),w=b.maxX-b.minX,h=b.maxY-b.minY;
+    if(x+w>maxW){x=gap;y+=rowH+gap;rowH=0;}x+=w+gap;rowH=Math.max(rowH,h);});
+  const w=Ln*q.scale,h=W*q.scale;
+  if(x+w>maxW){x=gap;y+=rowH+gap;}
+  q.zones.push({id:SEQ++,name:rmName.value.trim()||(t("room")+" "+ar(q.zones.length+1)),
+    pts:[{x,y},{x:x+w,y},{x:x+w,y:y+h},{x,y:y+h}],color:ZC[q.zones.length%ZC.length]});
+  rmName.value="";fitView();refresh();};
+document.getElementById("btnRun").onclick=()=>{syncCfg();snap();if(runPlan(pl()))refresh();};
+document.getElementById("btnClear").onclick=()=>{snap();pl().sensors=[];pl().gateways=[];refresh();};
+document.getElementById("btnUndo").onclick=undo;
+document.getElementById("btnFit").onclick=fitView;
+document.getElementById("btnCover").onclick=e=>{U.showCover=!U.showCover;
+  e.currentTarget.classList.toggle("on",U.showCover);render();};
+document.getElementById("btnNums").onclick=e=>{U.showNums=!U.showNums;
+  e.currentTarget.classList.toggle("on",U.showNums);render();};
+document.getElementById("btnPng").onclick=()=>{const q=pl();
+  const c=exportSheet(q,2000,opCust.checked);
+  if(!c){alert(t("aNoPlan"));return;}
+  dlCanvas(c,(P.name||t("filePlan"))+(P.ref?" - "+P.ref:""),!!q.imgData);};
+function csv(rows,name){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\uFEFF"+rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));
+  a.download=name;a.click();}
+document.getElementById("btnCsvCount").onclick=()=>{
+  const q=pl(),tt=projTot();
+  const r=[[t("thRoom"),t("thArea"),t("thSensors"),t("thGw"),t("thFar")]];
+  q.zones.forEach(z=>{const st=zoneStat(q,z);r.push([z.name,m1(st.a),st.n,st.g,m1(st.far)]);});
+  r.push([t("thTotal"),m1(tt.area),tt.sensors,tt.gates,""]);r.push([]);
+  supply().forEach(i=>r.push([i.n,i.q]));
+  csv(r,(P.name||t("fileProj"))+"-"+t("fileCounts")+".csv");};
+document.getElementById("btnCsvInst").onclick=()=>{
+  const r=[[t("thRoom"),t("thCode"),t("thType"),t("thX"),t("thY"),t("thSerial"),t("thDone")]];
+  instRows().forEach(o=>r.push([o.zone,o.code,o.kind,m1(o.x),m1(o.y),"",""]));
+  csv(r,(P.name||t("fileProj"))+"-"+t("fileInst")+".csv");};
+document.getElementById("btnCopy").onclick=()=>{
+  syncCfg();const tt=projTot();
+  let s=t("sumProj")+": "+(P.name||"—")+"\n";
+  if(P.ref)s+=t("sumAux")+": "+P.ref+"\n";
+  if(P.client)s+=t("sumComp")+": "+P.client+"\n";
+  s+=t("sumArea")+": "+m1(tt.area)+" "+t("unitM2")+"\n";
+  s+="\n"+t("sumTot")+": "+tt.sensors+" "+t("sensor")+" · "+tt.gates+" "+t("gateway")+"\n\n"+t("sumSup")+":\n";
+  supply().forEach(i=>s+="- "+i.n+": "+i.q+"\n");
+  s+="\n"+t("sumStd")+": "+t("sumEach",P.cfg.cov)+" · "+(P.cfg.perRoom?t("cPerRoom"):t("cGroup"))+
+     " · "+t("cRange",P.cfg.gwRange)+" · "+t("sumSpare",P.cfg.spare);
+  const done=()=>toast(t("tCopied"));
+  const fb=()=>{const ta=document.createElement("textarea");ta.value=s;
+    ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");done();}catch(e){alert(s);}document.body.removeChild(ta);};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(done,fb);else fb();};
+document.getElementById("btnPdf").onclick=()=>{
+  syncCfg();
+  const q=pl(),tt=projTot();
+  const dev=P.cfg.sensor==="tg08"?"TZone TG08":t("optOther");
+  const gwt=P.cfg.gw==="gsm"?t("optGsm"):t("optWifi");
+  const head=(sub)=>'<div class="ttl"><h2>'+esc(P.name||t("prTitle"))+'</h2>'+
+    '<div class="rt">'+esc(sub)+'<br>'+esc(P.client||"")+
+    (P.ref?" · AUX "+esc(P.ref):"")+'<br>'+today()+'</div></div>';
+  let html="";
+  if(opDraw.checked){const c=exportCanvas(q,2400,{clean:opCust.checked});
+    if(c)html+='<div class="sheet">'+head(t("prTitle"))+'<img class="plan" src="'+c.toDataURL("image/png")+'">'+
+      '<div class="crit"><span><i style="background:#e02b2b"></i>'+t("sensor")+' ('+ar(tt.sensors)+')</span>'+
+      '<span><i style="background:#1f63d6;border-radius:2px"></i>'+t("gateway")+' ('+ar(tt.gates)+')</span>'+
+      '<span>'+dev+'</span><span>'+t("cCov",ar(P.cfg.cov))+'</span>'+
+      '<span>'+gwt+' · '+t("cRange",ar(P.cfg.gwRange))+'</span>'+
+      '<span>'+(P.cfg.perRoom?t("cPerRoom"):t("cGroup"))+'</span></div></div>';}
+  if(opCount.checked){
+    let rows="";
+    q.zones.forEach(z=>{const st=zoneStat(q,z);
+      rows+='<tr><td>'+esc(z.name)+'</td><td>'+ar(m1(st.a))+'</td><td>'+ar(st.n)+
+        '</td><td>'+ar(st.g)+'</td><td>'+ar(m1(st.far))+'</td></tr>';});
+    html+='<div class="sheet">'+head(t("prCounts"))+
+      '<table><thead><tr><th>'+t("thRoom")+'</th><th>'+t("thArea")+'</th><th>'+t("thSensors")+
+      '</th><th>'+t("thGw")+'</th><th>'+t("thFar")+'</th></tr></thead><tbody>'+rows+
+      '</tbody><tfoot><tr><th>'+t("thTotal")+'</th><th>'+ar(m1(tt.area))+'</th><th>'+ar(tt.sensors)+
+      '</th><th>'+ar(tt.gates)+'</th><th>—</th></tr></tfoot></table></div>';}
+  if(opInst.checked){
+    const rows=instRows().map(o=>'<tr><td>'+esc(o.zone)+'</td><td>'+o.code+'</td><td>'+o.kind+
+      '</td><td>'+ar(m1(o.x))+'</td><td>'+ar(m1(o.y))+'</td><td></td><td></td></tr>').join("");
+    html+='<div class="sheet">'+head(t("prInst"))+
+      '<table><thead><tr><th>'+t("thRoom")+'</th><th>'+t("thCode")+'</th><th>'+t("thType")+'</th><th>'+
+      t("thX")+'</th><th>'+t("thY")+'</th><th>'+t("thSerial")+'</th><th>'+t("thDone")+'</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table>'+
+      '<div class="sign"><div>'+t("prTech")+'</div><div>'+t("prEng")+'</div><div>'+t("prDate")+'</div></div></div>';}
+  if(opSup.checked){
+    html+='<div class="sheet">'+head(t("prSup"))+
+      '<table><thead><tr><th>'+t("thItem")+'</th><th>'+t("thQty")+'</th><th>'+t("thRecv")+'</th></tr></thead><tbody>'+
+      supply().map(i=>'<tr><td>'+i.n+'</td><td>'+ar(i.q)+'</td><td></td></tr>').join("")+
+      '</tbody></table><div class="sign"><div>'+t("prStore")+'</div><div>'+t("prRecv")+'</div><div>'+t("prDate")+'</div></div></div>';}
+  if(!html){alert(t("aSheet"));return;}
+  document.getElementById("print").innerHTML=html;
+  setTimeout(()=>window.print(),150);};
+
+applyLang();loadCfg();resize();refresh();
+document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
+initFB();
+</script>
+</body>
+</html>
