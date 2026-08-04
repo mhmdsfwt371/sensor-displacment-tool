@@ -142,6 +142,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .glinks button{flex:1;background:transparent;border:none;color:var(--muted);font-size:12px;padding:6px}
 .glinks button:hover{color:var(--text)}
 #userChip{font-size:11px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#verChip{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;
+  padding:1px 7px;letter-spacing:.3px}
 .item .go{flex:1;font-size:12.5px;line-height:1.6}
 .item .op{padding:4px 10px;font-size:12px}
 #print{display:none}
@@ -189,6 +191,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   <aside class="side">
     <div class="brand">
       <h1 data-i="appTitle">ملف المشروع</h1>
+      <span id="verChip"></span>
       <span id="userChip"></span>
       <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
       <button id="btnLang">English</button>
@@ -360,8 +363,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   <main class="stage">
     <canvas id="cv"></canvas>
     <div class="tools">
-      <button data-t="pan" class="on" data-i="tPan">تحريك</button>
-      <button data-t="edit" data-i="tEdit">تعديل</button>
+      <button data-t="pan" data-i="tPan">تحريك</button>
+      <button data-t="edit" class="on" data-i="tEdit">تعديل</button>
       <button data-t="cal" data-i="tCal">معايرة</button>
       <span class="sep"></span>
       <button data-t="poly" data-i="tPoly">مضلع</button>
@@ -396,6 +399,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
+const VERSION="1.2";
+const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
    حط بيانات مشروعك هنا من: Firebase Console > Project settings > Web app
@@ -583,6 +588,7 @@ function applyLang(){
     if(e.hasAttribute("data-html"))e.innerHTML=v;else e.textContent=v;});
   document.querySelectorAll("[data-ph]").forEach(e=>e.placeholder=t(e.getAttribute("data-ph")));
   btnLang.textContent=t("langBtn");
+  verChip.textContent="v"+VERSION;
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
   txtPlan.placeholder=t("phDesc");
   refresh();}
@@ -592,13 +598,13 @@ let SEQ=1;
 const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
   scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
-function newProject(){return{v:2,lang:"ar",name:"",ref:"",client:"",cloudId:"",brand:{logo:null},
+function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",brand:{logo:null},
   cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,perRoom:true,bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
 let P=newProject();
 const IMG={},ORIG={},MASK={};
 const V={k:1,x:0,y:0};
-const U={tool:"pan",draft:[],calib:[],rectStart:null,rectNow:null,wlast:null,wnow:null,
+const U={tool:"edit",draft:[],calib:[],rectStart:null,rectNow:null,wlast:null,wnow:null,
   pnow:null,sel:null,drag:null,guides:null,snapped:false,delBtn:null,
   showCover:true,showNums:true,panLast:null,pinch:null,undo:[]};
 const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
@@ -910,17 +916,23 @@ function render(){
     if(s.kind==="door"){ctx.beginPath();ctx.moveTo(s.d.x1,s.d.y1);ctx.lineTo(s.d.x2,s.d.y2);ctx.stroke();}
     ctx.setLineDash([]);
     const pt=s.kind==="vertex"?s.z.pts[s.i]:s.kind==="sensor"?s.s:s.kind==="gate"?s.g:null;
-    if(pt){ctx.beginPath();ctx.arc(pt.x,pt.y,9/k,0,7);ctx.stroke();}}
+    if(pt){const rr=(U.drag?15:11)/k;
+      ctx.beginPath();ctx.arc(pt.x,pt.y,rr,0,7);ctx.stroke();
+      if(U.drag){ctx.beginPath();ctx.arc(pt.x,pt.y,rr+5/k,0,7);
+        ctx.strokeStyle="rgba(255,196,77,.35)";ctx.lineWidth=6/k;ctx.stroke();}}}
   ctx.restore();
   U.delBtn=null;
-  if(U.tool==="edit"&&U.sel){const bb=selBBox(q,U.sel);
-    if(bb){let bx=bb.maxX*V.k+V.x+16,by=bb.minY*V.k+V.y-16;
-      bx=Math.min(Math.max(bx,18),r.width-18);by=Math.min(Math.max(by,18),r.height-18);
-      ctx.beginPath();ctx.arc(bx,by,11,0,7);ctx.fillStyle="#e02b2b";ctx.fill();
-      ctx.strokeStyle="#fff";ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(bx-4,by-4);ctx.lineTo(bx+4,by+4);
-      ctx.moveTo(bx+4,by-4);ctx.lineTo(bx-4,by+4);ctx.stroke();
-      U.delBtn={x:bx,y:by,r:11};}}
+  if(U.tool==="edit"&&U.sel&&!U.drag){const bb=selBBox(q,U.sel);
+    if(bb){const R2=COARSE?15:11;
+      let bx=bb.maxX*V.k+V.x+R2+6,by=bb.minY*V.k+V.y-R2-6;
+      bx=Math.min(Math.max(bx,R2+4),r.width-R2-4);
+      by=Math.min(Math.max(by,R2+4),r.height-R2-4);
+      ctx.beginPath();ctx.arc(bx,by,R2,0,7);ctx.fillStyle="#e02b2b";ctx.fill();
+      ctx.strokeStyle="#fff";ctx.lineWidth=R2*.2;
+      const a2=R2*.38;
+      ctx.beginPath();ctx.moveTo(bx-a2,by-a2);ctx.lineTo(bx+a2,by+a2);
+      ctx.moveTo(bx+a2,by-a2);ctx.lineTo(bx-a2,by+a2);ctx.stroke();
+      U.delBtn={x:bx,y:by,r:R2};}}
   draftBar.classList.toggle("on",
     (U.tool==="poly"&&U.draft.length>0)||(U.tool==="wall"&&!!U.wlast));
   document.getElementById("emptyMsg").style.display=(IMG[q.id]||q.zones.length)?"none":"grid";
@@ -987,7 +999,7 @@ function exportSheet(q,W,clean){
     x+=wid[i]+fs*1.2;});
   g.textAlign=A2;g.fillStyle="#555";g.font=fnt(.016);
   g.fillText(t("cArea",fmt(tt.area))+" · "+t("cCov",ar(P.cfg.cov))+" · "+
-    (P.cfg.perRoom?t("cPerRoom"):t("cGroup")),X2,fy);
+    (P.cfg.perRoom?t("cPerRoom"):t("cGroup"))+" · v"+VERSION,X2,fy);
   g.textBaseline="alphabetic";return c;}
 
 function dlCanvas(c,name,jpeg){
@@ -1175,9 +1187,13 @@ cv.addEventListener("pointerdown",e=>{
   if(pts.size===2){const a=[...pts.values()];U.pinch={d:dist(a[0],a[1])};return;}
   const p=pos(e),w=toWorld(p.x,p.y),q=pl();
   if(U.tool==="edit"){
-    if(U.sel&&U.delBtn&&Math.hypot(p.x-U.delBtn.x,p.y-U.delBtn.y)<U.delBtn.r+5){delSel();return;}
+    if(U.sel&&U.delBtn&&Math.hypot(p.x-U.delBtn.x,p.y-U.delBtn.y)<U.delBtn.r+8){delSel();return;}
     const h=hitTest(q,w);
-    if(h){U.sel=h;U.drag={kind:h.kind,h,last:w};U.snapped=false;render();return;}
+    if(h){
+      const same=U.sel&&U.sel.kind==="zone"&&h.kind==="zone"&&U.sel.z===h.z;
+      if(h.kind==="zone"&&!same){U.sel=h;U.panLast=p;render();return;}
+      U.sel=h;U.drag={kind:h.kind,h,last:w};U.snapped=false;
+      cv.style.cursor="grabbing";render();return;}
     U.sel=null;U.panLast=p;render();return;}
   if(U.tool==="pan"){U.panLast=p;return;}
   if(U.tool==="cal"){if(U.calib.length>=2)U.calib=[];U.calib.push(w);
@@ -1218,8 +1234,9 @@ cv.addEventListener("pointerdown",e=>{
 cv.addEventListener("pointermove",e=>{
   if(!pts.has(e.pointerId)){
     const p0=pos(e);
-    if(U.tool==="edit"&&pts.size===0)
-      cv.style.cursor=hitTest(pl(),toWorld(p0.x,p0.y))?"move":"default";
+    if(U.tool==="edit"&&pts.size===0){
+      const h=hitTest(pl(),toWorld(p0.x,p0.y));
+      cv.style.cursor=!h?"default":h.kind==="zone"?"pointer":"grab";}
     if(U.tool==="poly"&&U.draft.length){
       U.pnow=snapPt(pl(),toWorld(p0.x,p0.y),U.draft[U.draft.length-1],e.shiftKey);render();}
     return;}
@@ -1313,7 +1330,7 @@ function selBBox(q,s){
   if(s.kind==="door"){A.push({x:s.d.x1,y:s.d.y1});A.push({x:s.d.x2,y:s.d.y2});}
   return A.length?bbox(A):null;}
 function hitTest(q,w){
-  const r=12/V.k,sy=Math.max(r,(P.cfg.sym||.6)*Math.max(q.scale,0)*.7);
+  const r=(COARSE?24:14)/V.k,sy=Math.max(r,(P.cfg.sym||.6)*Math.max(q.scale,0)*.8);
   for(let i=q.sensors.length-1;i>=0;i--)if(dist(q.sensors[i],w)<sy)return{kind:"sensor",s:q.sensors[i]};
   for(let i=q.gateways.length-1;i>=0;i--)if(dist(q.gateways[i],w)<sy*1.2)return{kind:"gate",g:q.gateways[i]};
   for(const z of q.zones)for(let i=0;i<z.pts.length;i++)
@@ -1362,8 +1379,12 @@ function dragMove(w,free){
   d.last=w;render();}
 function dragEnd(){
   const q=pl(),d=U.drag;U.drag=null;U.snapped=false;
+  cv.style.cursor=U.tool==="edit"?"default":"crosshair";
   if(d&&d.kind==="sensor"){const s=d.h.s;
-    const z=q.zones.find(z=>inPoly(s,z.pts)),nz=z?z.id:null;
+    let z=q.zones.find(z=>inPoly(s,z.pts));
+    if(!z&&s.zoneId){const old=q.zones.find(x=>x.id===s.zoneId);
+      if(old){const np=nearest(samplePoly(old.pts,6),s);s.x=np.x;s.y=np.y;z=old;}}
+    const nz=z?z.id:null;
     if(nz!==s.zoneId){
       q.gateways.forEach(g=>g.members=g.members.filter(i=>i!==s.id));
       s.zoneId=nz;
@@ -1388,7 +1409,12 @@ function samplePoly(poly,k){
 function evenPoints(poly,k){
   const smp=samplePoly(poly,k),b=bbox(poly);
   const w=Math.max(1,b.maxX-b.minX),h=Math.max(1,b.maxY-b.minY);
-  let nx=Math.max(1,Math.min(k,Math.round(Math.sqrt(k*w/h)))),ny=Math.ceil(k/nx),c=[];
+  let nx=1,best=1e18;
+  for(let i=1;i<=k;i++){const j=Math.ceil(k/i);
+    const asp=Math.abs(Math.log((w/i)/(h/j)));
+    const waste=(i*j-k)*.12;
+    if(asp+waste<best){best=asp+waste;nx=i;}}
+  let ny=Math.ceil(k/nx),c=[];
   for(let j=0;j<ny&&c.length<k;j++)for(let i=0;i<nx&&c.length<k;i++)
     c.push({x:b.minX+w*(i+.5)/nx,y:b.minY+h*(j+.5)/ny});
   c=c.map(p=>inPoly(p,poly)?p:nearest(smp,p));
@@ -1548,7 +1574,7 @@ function renderIssues(){
 
 /* ================= حفظ وفتح ================= */
 function saveProject(){
-  syncCfg();P.lang=L;
+  syncCfg();P.lang=L;P.appV=VERSION;
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(P)],{type:"application/json"}));
   a.download=(P.name||t("fileProj"))+".json";a.click();toast(t("tSaved"));}
@@ -1808,7 +1834,7 @@ document.getElementById("btnPdf").onclick=()=>{
   const head=(sub)=>'<div class="ttl"><div style="display:flex;align-items:center;gap:10px">'+lg+
     '<h2>'+esc(P.name||t("prTitle"))+'</h2></div>'+
     '<div class="rt">'+esc(sub)+'<br>'+esc(P.client||"")+
-    (P.ref?" · AUX "+esc(P.ref):"")+'<br>'+today()+'</div></div>';
+    (P.ref?" · AUX "+esc(P.ref):"")+'<br>'+today()+' · v'+VERSION+'</div></div>';
   let html="";
   if(opDraw.checked){const c=exportCanvas(q,2400,{clean:opCust.checked});
     if(c)html+='<div class="sheet">'+head(t("prTitle"))+'<img class="plan" src="'+c.toDataURL("image/png")+'">'+
@@ -1845,6 +1871,7 @@ document.getElementById("btnPdf").onclick=()=>{
   setTimeout(()=>window.print(),150);};
 
 applyLang();loadCfg();updateLogoUI();resize();refresh();restoreAS();
+cv.style.cursor="default";
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
 initFB();
 </script>
