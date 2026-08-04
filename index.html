@@ -340,7 +340,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         </select>
         <label data-i="fRange">مدى الجيت واي (متر)</label>
         <input type="number" id="inGwRange" value="50" min="2" step="1">
-        <label class="chk"><input type="checkbox" id="chkPerRoom" checked> <span data-i="fPerRoom">جيت واي مستقل لكل غرفة</span></label>
+        <label data-i="fGwMode">سياسة الجيت واي</label>
+        <select id="selGwMode">
+          <option value="room" data-i="optModeRoom">جيت واي مستقل لكل غرفة</option>
+          <option value="range" data-i="optModeRange">تجميع حسب المدى</option>
+          <option value="manual" data-i="optModeManual">يدوي — أنا اللي أحط وأربط</option>
+        </select>
+        <p class="hint" data-i="hGwMode" data-html="1"></p>
         <label><span data-i="fSym">حجم الرمز على الرسمة</span>: <span id="lblSym">٠٫٦</span> <span data-i="unitM">متر</span></label>
         <input type="range" id="rngSym" min="3" max="20" value="6">
         <label data-i="fAcc">مستلزمات لكل وحدة</label>
@@ -413,9 +419,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <span class="sep"></span>
       <button data-t="sensor" data-i="tSensor">حساس</button>
       <button data-t="gate" data-i="tGate">جيت واي</button>
+      <button data-t="link" data-i="tLink">ربط</button>
       <span class="sep"></span>
       <button id="btnUndo" data-i="tUndo">تراجع</button>
       <button id="btnCover" class="on" data-i="tCover">التغطية</button>
+      <button id="btnLinks" class="on" data-i="tLinks">الوصلات</button>
       <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
       <button id="btnFit" data-i="tFit">ضبط</button>
     </div>
@@ -457,7 +465,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="1.3";
+const VERSION="1.4";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -493,7 +501,14 @@ s3:"الغرف",bAuto:"اكتشاف كل الغرف",
 hRooms:"أسرع طريقة: <b>اكتشاف كل الغرف</b> والأداة تقرا الصورة لوحدها. أو <b>غرفة بضغطة</b> ودوس جوّه أي غرفة. والرسم اليدوي بالمضلع والمستطيل موجود لو الرسمة مش واضحة.",
 s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 — بشاشة",optOther:"حساس آخر",
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
-fRange:"مدى الجيت واي (متر)",fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",
+fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
+optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",
+tLink:"ربط",tLinks:"الوصلات",
+tPickGw:"دوس على جيت واي الأول",tLinked:"اتربط بـ {0}",tUnlinked:"اتفك من {0}",
+hGwMode:"«مستقل لكل غرفة» بيمشي مع اشتراط الفصل بين الغرف. لو حطيت جيت واي بإيدك بأداة الجيت واي، بياخد الحساسات القريبة منه في أي غرفة، وبيفضل ثابت مهما وزّعت تاني. أداة <b>ربط</b> بتضيف وتشيل حساسات منه بضغطة.",
+isShared:"{0}: بيخدم {1} — مخالف لسياسة الغرفة الواحدة",
+isNoGwS:"{0} حساس من غير جيت واي",
 fAcc:"مستلزمات لكل وحدة",fBat:"بطاريات لكل حساس",fBrk:"قواعد تثبيت لكل حساس",
 fPsu:"محول لكل جيت واي",fSpare:"احتياطي ٪",bRun:"وزّع الحساسات",bClear:"مسح التوزيع",
 s5:"أعداد المشروع",kSensor:"حساس",kGate:"جيت واي",kArea:"متر مربع",bCopy:"نسخ ملخص للمبيعات",
@@ -575,7 +590,14 @@ s3:"Rooms",bAuto:"Detect All Rooms",
 hRooms:"Fastest route: <b>Detect All Rooms</b> and the tool reads the image itself. Or <b>Magic Room</b> and click inside any room. Manual polygon and rectangle are still there for unclear plans.",
 s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",optOther:"Other sensor",
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
-fRange:"Gateway range (m)",fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",
+fRange:"Gateway range (m)",fGwMode:"Gateway policy",
+optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",
+tLink:"Link",tLinks:"Links",
+tPickGw:"Select a gateway first",tLinked:"Linked to {0}",tUnlinked:"Unlinked from {0}",
+hGwMode:"“One per room” matches room-isolation requirements. A gateway you place yourself picks up nearby sensors in any room and stays put through redistribution. The <b>Link</b> tool adds or removes sensors from it with one click.",
+isShared:"{0}: serves {1} — deviates from the one-per-room policy",
+isNoGwS:"{0} sensors with no gateway",
 fAcc:"Accessories per unit",fBat:"Batteries per sensor",fBrk:"Mounts per sensor",
 fPsu:"Adapters per gateway",fSpare:"Spare %",bRun:"Distribute Sensors",bClear:"Clear Layout",
 s5:"Project Totals",kSensor:"Sensors",kGate:"Gateways",kArea:"Square metres",bCopy:"Copy Sales Summary",
@@ -661,14 +683,14 @@ const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
   scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
 function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",brand:{logo:null},
-  cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,perRoom:true,bat:1,brk:1,psu:1,spare:5,sym:.6},
+  cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,gwMode:"room",bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
 let P=newProject();
 const IMG={},ORIG={},MASK={};
 const V={k:1,x:0,y:0};
 const U={tool:"edit",draft:[],calib:[],rectStart:null,rectNow:null,wlast:null,wnow:null,
   pnow:null,sel:null,drag:null,guides:null,snapped:false,delBtn:null,
-  showCover:true,showNums:true,panLast:null,pinch:null,undo:[],redo:[]};
+  showCover:true,showNums:true,showLinks:true,linkG:null,panLast:null,pinch:null,undo:[],redo:[]};
 const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
 const dpr=Math.min(window.devicePixelRatio||1,2);
 const pl=()=>P.plans[P.cur];
@@ -897,13 +919,17 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     q.sensors.forEach(s=>{g.beginPath();g.arc(s.x,s.y,R,0,7);g.fill();g.stroke();});}
 
   const range=P.cfg.gwRange*sc;
-  if(!clean)q.gateways.forEach(gw=>{let far=0;
-    g.strokeStyle=pr?"rgba(31,99,214,.40)":"rgba(90,150,255,.40)";g.lineWidth=1/k;
+  if(!clean&&U.showLinks)q.gateways.forEach(gw=>{let far=0;
+    const lit=(U.tool==="link"&&U.linkG===gw);
+    const zs=gwZones(q,gw),shared=zs.length>1;
+    g.strokeStyle=lit?"rgba(255,196,77,.85)":shared
+      ?"rgba(0,170,140,.55)":(pr?"rgba(31,99,214,.40)":"rgba(90,150,255,.40)");
+    g.lineWidth=(lit?2.2:1)/k;
     gw.members.forEach(id=>{const s=q.sensors.find(x=>x.id===id);if(!s)return;
       far=Math.max(far,dist(gw,s));g.beginPath();g.moveTo(gw.x,gw.y);g.lineTo(s.x,s.y);g.stroke();});
     if(far>0){const over=sc>0&&far>range;
       g.setLineDash([7/k,5/k]);g.lineWidth=1.6/k;
-      g.strokeStyle=over?"rgba(240,160,0,.95)":"rgba(31,99,214,.55)";
+      g.strokeStyle=over?"rgba(240,160,0,.95)":shared?"rgba(0,170,140,.5)":"rgba(31,99,214,.55)";
       g.beginPath();g.arc(gw.x,gw.y,far,0,7);g.stroke();g.setLineDash([]);}});
 
   const symR=Math.max((P.cfg.sym||.6)*sc/2,(pr?2.5:4)/k);
@@ -911,9 +937,11 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.fillStyle="#e02b2b";g.fill();
     g.strokeStyle="#ffffff";g.lineWidth=Math.max(symR*.2,.7/k);g.stroke();});
   const gsz=symR*2;
-  q.gateways.forEach(gw=>{g.beginPath();g.rect(gw.x-gsz/2,gw.y-gsz/2,gsz,gsz);
-    g.fillStyle="#1f63d6";g.fill();
-    g.strokeStyle="#ffffff";g.lineWidth=Math.max(gsz*.1,.7/k);g.stroke();});
+  q.gateways.forEach(gw=>{const shared=gwZones(q,gw).length>1;
+    g.beginPath();g.rect(gw.x-gsz/2,gw.y-gsz/2,gsz,gsz);
+    g.fillStyle=shared?"#00a88c":"#1f63d6";g.fill();
+    g.strokeStyle=(U.tool==="link"&&U.linkG===gw)?"#ffc44d":"#ffffff";
+    g.lineWidth=Math.max(gsz*.14,.9/k);g.stroke();});
   if(U.showNums){
     const fs=Math.max(symR*1.6,8/k);
     g.textAlign="center";g.textBaseline="middle";
@@ -1068,7 +1096,7 @@ function exportSheet(q,W,clean){
     x+=wid[i]+fs*1.2;});
   g.textAlign=A2;g.fillStyle="#555";g.font=fnt(.016);
   g.fillText(t("cArea",fmt(tt.area))+" · "+t("cCov",ar(P.cfg.cov))+" · "+
-    (P.cfg.perRoom?t("cPerRoom"):t("cGroup"))+" · v"+VERSION,X2,fy);
+    gwModeLabel()+" · v"+VERSION,X2,fy);
   g.textBaseline="alphabetic";return c;}
 
 function dlCanvas(c,name,jpeg){
@@ -1296,9 +1324,25 @@ cv.addEventListener("pointerdown",e=>{
   if(U.tool==="gate"){snap();
     const hit=q.gateways.find(g=>dist(g,w)<14/V.k);
     if(hit)q.gateways=q.gateways.filter(g=>g!==hit);
-    else{const z=q.zones.find(z=>inPoly(w,z.pts));
-      q.gateways.push({id:SEQ++,x:w.x,y:w.y,zoneId:z?z.id:null,
-        members:z?q.sensors.filter(s=>s.zoneId===z.id).map(s=>s.id):[]});}
+    else{const range=q.scale>0?P.cfg.gwRange*q.scale:1e9;
+      const near=q.sensors.filter(s=>dist(s,w)<=range&&!gwOf(q,s));
+      const z=q.zones.find(z=>inPoly(w,z.pts));
+      q.gateways.push({id:SEQ++,x:w.x,y:w.y,manual:true,
+        zoneId:z?z.id:null,members:near.map(s=>s.id)});}
+    refresh();return;}
+  if(U.tool==="link"){
+    const g=q.gateways.find(g=>dist(g,w)<16/V.k);
+    if(g){U.linkG=g;render();return;}
+    const sy=Math.max(14/V.k,(P.cfg.sym||.6)*q.scale*.8);
+    const s=q.sensors.find(s=>dist(s,w)<sy);
+    if(!s)return;
+    if(!U.linkG){toast(t("tPickGw"));return;}
+    snap();U.linkG.manual=true;
+    const i=U.linkG.members.indexOf(s.id);
+    if(i>=0){U.linkG.members.splice(i,1);toast(t("tUnlinked",U.linkG.code||""));}
+    else{q.gateways.forEach(g2=>{const j=g2.members.indexOf(s.id);
+      if(j>=0){g2.members.splice(j,1);g2.manual=true;}});
+      U.linkG.members.push(s.id);toast(t("tLinked",U.linkG.code||""));}
     refresh();return;}});
 cv.addEventListener("pointermove",e=>{
   if(!pts.has(e.pointerId)){
@@ -1517,14 +1561,31 @@ function runPlan(q,silent){
     const k=z.fixed>0?z.fixed:Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9));
     evenPoints(z.pts,k).forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));});
   gwPlan(q);return true;}
+function gwModeLabel(){const m=P.cfg.gwMode||"room";
+  return m==="room"?t("cPerRoom"):m==="range"?t("cGroup"):t("optModeManual");}
+function gwOf(q,s){return q.gateways.find(g=>g.members.indexOf(s.id)>=0)||null;}
+function gwZones(q,g){
+  const ids=new Set();
+  g.members.forEach(id=>{const s=q.sensors.find(x=>x.id===id);
+    if(s&&s.zoneId)ids.add(s.zoneId);});
+  return [...ids].map(id=>q.zones.find(z=>z.id===id)).filter(Boolean);}
 function gwPlan(q){
-  q.gateways=[];
-  if(q.scale<=0||!q.sensors.length)return;
-  if(P.cfg.perRoom){
-    q.zones.forEach(z=>{const list=q.sensors.filter(s=>s.zoneId===z.id);
+  q.gateways.forEach(g=>g.members=g.members.filter(id=>q.sensors.some(s=>s.id===id)));
+  const keep=q.gateways.filter(g=>g.manual&&g.members.length);
+  const taken=new Set();keep.forEach(g=>g.members.forEach(id=>taken.add(id)));
+  q.gateways=keep;
+  const mode=P.cfg.gwMode||"room";
+  if(q.scale<=0||mode==="manual")return;
+  const free=q.sensors.filter(s=>!taken.has(s.id));
+  if(!free.length)return;
+  if(mode==="room"){
+    q.zones.forEach(z=>{const list=free.filter(s=>s.zoneId===z.id);
       if(!list.length)return;const c=oneCenter(list,z.pts);
       q.gateways.push({id:SEQ++,x:c.x,y:c.y,zoneId:z.id,members:list.map(s=>s.id)});});
-  }else{const range=P.cfg.gwRange*q.scale;let un=q.sensors.slice(),guard=0;
+    const orph=free.filter(s=>!s.zoneId);
+    if(orph.length){const c=centroid(orph);
+      q.gateways.push({id:SEQ++,x:c.x,y:c.y,zoneId:null,members:orph.map(s=>s.id)});}
+  }else{const range=P.cfg.gwRange*q.scale;let un=free.slice(),guard=0;
     while(un.length&&guard++<400){
       let seed=un[0],best=1e18;
       for(const s of un){let n=0;for(const o of un)if(dist(s,o)<=range)n++;if(n<best){best=n;seed=s;}}
@@ -1547,10 +1608,12 @@ function zoneAuto(z){
 function zoneStat(q,z){
   const a=q.scale>0?polyArea(z.pts)/(q.scale*q.scale):0;
   const list=q.sensors.filter(s=>s.zoneId===z.id);
-  const g=q.gateways.find(g=>g.zoneId===z.id);
-  let far=0;if(g)list.forEach(s=>far=Math.max(far,dist(g,s)));
+  const gs=new Set();let far=0,served=0;
+  list.forEach(s=>{const g=gwOf(q,s);
+    if(g){served++;gs.add(g.id);far=Math.max(far,dist(g,s));}});
   const std=q.scale>0?Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9)):0;
-  return{a,n:list.length,need:z.fixed>0?z.fixed:std,std,g:g?1:0,far:q.scale>0?far/q.scale:0};}
+  return{a,n:list.length,need:z.fixed>0?z.fixed:std,std,g:gs.size,
+    unserved:list.length-served,far:q.scale>0?far/q.scale:0};}
 function planTot(q){
   const area=q.scale>0?q.zones.reduce((s,z)=>s+polyArea(z.pts)/(q.scale*q.scale),0):0;
   return{area,sensors:q.sensors.length,gates:q.gateways.length};}
@@ -1560,15 +1623,18 @@ function renumber(){
   q.zones.forEach((z,zi)=>{let n=0;
     q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>{n++;s.code=ar(zi+1)+"-"+ar(n);});});
   q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).forEach((s,i)=>s.code=t("orphan")+"-"+ar(i+1));
-  q.gateways.forEach((g,i)=>{const z=q.zones.find(z=>z.id===g.zoneId);
-    g.code=t("gwPrefix")+ar(z?q.zones.indexOf(z)+1:i+1);});}
+  q.gateways.forEach((g,i)=>{g.code=t("gwPrefix")+ar(i+1);});}
 function instRows(){
   const q=pl(),out=[];
   q.zones.forEach(z=>{const b=bbox(z.pts);
     q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>out.push({zone:z.name,code:s.code,kind:t("sensor"),
-      x:q.scale>0?(s.x-b.minX)/q.scale:0,y:q.scale>0?(s.y-b.minY)/q.scale:0}));
-    const g=q.gateways.find(g=>g.zoneId===z.id);
-    if(g)out.push({zone:z.name,code:g.code,kind:t("gateway"),
+      x:q.scale>0?(s.x-b.minX)/q.scale:0,y:q.scale>0?(s.y-b.minY)/q.scale:0}));});
+  q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).forEach(s=>
+    out.push({zone:"—",code:s.code,kind:t("sensor"),x:0,y:0}));
+  q.gateways.forEach(g=>{
+    const zs=gwZones(q,g),b=zs.length?bbox(zs[0].pts):{minX:0,minY:0};
+    out.push({zone:zs.length?zs.map(z=>z.name).join(" + "):"—",
+      code:g.code,kind:t("gateway"),
       x:q.scale>0?(g.x-b.minX)/q.scale:0,y:q.scale>0?(g.y-b.minY)/q.scale:0});});
   return out;}
 function supply(){
@@ -1583,15 +1649,19 @@ function supply(){
   if(P.cfg.gw==="gsm")items.push({n:t("supSim"),q:tt.gates});
   return items.filter(i=>i.q>0);}
 function issues(){
-  const q=pl(),out=[];
+  const q=pl(),out=[],mode=P.cfg.gwMode||"room";
   if(q.scale<=0)out.push(t("isScale"));
   if(!q.zones.length)out.push(t("isNoZones"));
   q.zones.forEach(z=>{const st=zoneStat(q,z);
     if(!st.n)out.push(t("isNoSensors",z.name));
     else if(st.n<st.need)out.push(t("isLess",z.name,ar(st.n),ar(st.need)));
     if(z.fixed>0&&z.fixed!==st.std)out.push(t("isManual",z.name,ar(z.fixed),ar(st.std)));
-    if(P.cfg.perRoom&&!st.g&&st.n)out.push(t("isNoGw",z.name));
+    if(st.n&&!st.g)out.push(t("isNoGw",z.name));
     if(st.far>P.cfg.gwRange)out.push(t("isFar",z.name,ar(m1(st.far))));});
+  const nogw=q.sensors.filter(s=>!gwOf(q,s)).length;
+  if(nogw)out.push(t("isNoGwS",ar(nogw)));
+  if(mode==="room")q.gateways.forEach(g=>{const zs=gwZones(q,g);
+    if(zs.length>1)out.push(t("isShared",g.code,zs.map(z=>z.name).join(" + ")));});
   const orph=q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).length;
   if(orph)out.push(t("isOrphan",ar(orph)));
   if(!P.name)out.push(t("isName"));
@@ -1700,7 +1770,7 @@ function updateLogoUI(){
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
   P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
-  P.cfg.gw=selGw.value;P.cfg.gwRange=+inGwRange.value||50;P.cfg.perRoom=chkPerRoom.checked;
+  P.cfg.gw=selGw.value;P.cfg.gwRange=+inGwRange.value||50;P.cfg.gwMode=selGwMode.value;
   P.cfg.bat=+inBat.value||0;P.cfg.brk=+inBrk.value||0;P.cfg.psu=+inPsu.value||0;P.cfg.spare=+inSpare.value||0;
   P.cfg.sym=(+rngSym.value||6)/10;
   lblSym.textContent=ar(P.cfg.sym.toFixed(1)).replace(".",L==="ar"?"٫":".");
@@ -1708,15 +1778,17 @@ function syncCfg(){
 function loadCfg(){
   pjName.value=P.name||"";pjRef.value=P.ref||"";pjClient.value=P.client||"";
   selSensor.value=P.cfg.sensor;inCov.value=P.cfg.cov;inMin.value=P.cfg.minPer;
-  selGw.value=P.cfg.gw;inGwRange.value=P.cfg.gwRange;chkPerRoom.checked=P.cfg.perRoom;
+  selGw.value=P.cfg.gw;inGwRange.value=P.cfg.gwRange;
+  if(!P.cfg.gwMode)P.cfg.gwMode=(P.cfg.perRoom===false)?"range":"room";
+  selGwMode.value=P.cfg.gwMode;
   inBat.value=P.cfg.bat;inBrk.value=P.cfg.brk;inPsu.value=P.cfg.psu;inSpare.value=P.cfg.spare;
   rngSym.value=Math.round((P.cfg.sym||.6)*10);
   lblSym.textContent=ar((P.cfg.sym||.6).toFixed(1)).replace(".",L==="ar"?"٫":".");
   lblStr.textContent=ar(rngStr.value);}
 ["pjName","pjRef","pjClient","selSensor","inCov","inMin","selGw","inGwRange",
- "inBat","inBrk","inPsu","inSpare","rngSym","rngStr"].forEach(id=>{
+ "inBat","inBrk","inPsu","inSpare","rngSym","rngStr","selGwMode"].forEach(id=>{
   document.getElementById(id).addEventListener("input",()=>{syncCfg();renderResults();renderIssues();render();});});
-chkPerRoom.onchange=()=>{syncCfg();gwPlan(pl());refresh();};
+selGwMode.onchange=()=>{syncCfg();snap();gwPlan(pl());refresh();};
 
 /* ================= دليل الاستخدام | User manual ================= */
 function manualHTML(){
@@ -1785,7 +1857,9 @@ Drag empty space to pan.</td></tr>
 <tr><td><b>Wall</b></td><td>Click point to point. Click the last point again to end the chain.</td></tr>
 <tr><td><b>Door</b></td><td>Click any wall — a 90 cm door with a swing arc is placed. Click it
 again to flip the swing.</td></tr>
-<tr><td><b>Sensor / Gateway</b></td><td>Click to add, click an existing one to remove.</td></tr></table>
+<tr><td><b>Sensor / Gateway</b></td><td>Click to add, click an existing one to remove.</td></tr>
+<tr><td><b>Link</b></td><td>Click a gateway to select it, then click any sensor to attach or
+detach it.</td></tr></table>
 <h4>Drawing aids</h4>
 <ul>
 <li><b>Angle lock</b> — lines near horizontal or vertical snap flat. Hold
@@ -1808,13 +1882,38 @@ covering the last 40 actions. Keyboard: <span class="kbd">Ctrl</span> +
 <span class="kbd">Z</span> and <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> +
 <span class="kbd">Z</span>.</p>
 
-<h3>7. Company standards</h3>
+<h3>7. Gateways — coverage and sharing</h3>
+<p>Section 4 holds the <b>Gateway policy</b> with three modes:</p>
+<table><tr><th>Mode</th><th>Behaviour</th></tr>
+<tr><td><b>One per room</b></td><td>Default. A separate gateway for each room — matches
+room-isolation requirements.</td></tr>
+<tr><td><b>Group by range</b></td><td>Sensors within range share the fewest gateways possible,
+ignoring room boundaries.</td></tr>
+<tr><td><b>Manual</b></td><td>Nothing is placed automatically — you place and link.</td></tr></table>
+<h4>A gateway between two rooms</h4>
+<p>Pick the <b>Gateway</b> tool and place it on the wall between the rooms. It immediately takes
+every sensor within range, in any room, that is not already served. Then use <b>Link</b> to tune
+exactly what it serves: click the gateway to select it, then click sensors to attach or detach.</p>
+<blockquote>A gateway you place by hand is <b>fixed</b> — redistribution never removes or
+rewires it. Only sensors that are not yet served get reassigned.</blockquote>
+<h4>On-plan indicators</h4>
+<ul>
+<li>A gateway serving more than one room is drawn <b>teal</b> instead of blue, with matching
+link lines — so shared gateways are visible at a glance.</li>
+<li>The <b>Links</b> button in the toolbar hides or shows the lines between gateways and their
+sensors.</li>
+</ul>
+<blockquote><b>Note:</b> if the policy is <b>One per room</b> and a gateway serves two rooms,
+the <b>Pre-Handover Check</b> names it. This does not block you — it makes sharing a deliberate
+decision rather than an oversight, which matters when a regulator requires isolation.</blockquote>
+
+<h3>8. Company standards</h3>
 <p>Section 4 holds every rule the counts depend on: sensor coverage, minimum per room, gateway
 type and range, one-gateway-per-room, symbol size on the drawing, and accessories per unit
 (batteries, mounts, adapters) with a spare percentage. Change a value and every count, table
 and output updates immediately.</p>
 
-<h3>8. Outputs — and who each one is for</h3>
+<h3>9. Outputs — and who each one is for</h3>
 <table><tr><th>Output</th><th>For</th></tr>
 <tr><td><b>Drawing image</b></td><td>Sales — a full sheet with project, company, AUX number,
 date, logo, drawing, symbol key and counts. Attach it to the quote.</td></tr>
@@ -1828,7 +1927,7 @@ applied.</td></tr>
 <tr><td><b>Client version</b></td><td>Tick it to hide coverage circles and link lines for a
 cleaner client-facing drawing.</td></tr></table>
 
-<h3>9. Saving and sharing</h3>
+<h3>10. Saving and sharing</h3>
 <ul>
 <li><b>Autosave</b> — your work is saved in this browser on every change and restored when you
 return. It is per-device, not a backup.</li>
@@ -1841,7 +1940,7 @@ appear, and the list shows who last saved each project and when.</li>
 <blockquote>If two people save the same cloud project at the same moment, the last save wins.
 Check the list for who edited last before you overwrite.</blockquote>
 
-<h3>10. Keyboard shortcuts</h3>
+<h3>11. Keyboard shortcuts</h3>
 <table><tr><th>Key</th><th>Action</th></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>Undo</td></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>Redo</td></tr>
@@ -1850,7 +1949,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><span class="kbd">Delete</span></td><td>Delete selected item</td></tr>
 <tr><td><span class="kbd">Shift</span> (held)</td><td>Free angle, ignore snapping</td></tr></table>
 
-<h3>11. Quick troubleshooting</h3>
+<h3>12. Quick troubleshooting</h3>
 <table><tr><th>Symptom</th><th>Fix</th></tr>
 <tr><td>Detection finds no rooms</td><td>Press <b>To line art</b> first, then detect</td></tr>
 <tr><td>Two rooms merge into one</td><td>An open doorway joins them — draw those with
@@ -1921,7 +2020,9 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><b>حائط</b></td><td>دوس نقطة نقطة. دوس على آخر نقطة تاني عشان تنهي السلسلة.</td></tr>
 <tr><td><b>باب</b></td><td>دوس على أي حائط — بيتحط باب ٩٠ سم بقوس فتح. دوسة تانية عليه
 تقلب اتجاه الفتح.</td></tr>
-<tr><td><b>حساس / جيت واي</b></td><td>دوسة تضيف، ودوسة على واحد موجود تشيله.</td></tr></table>
+<tr><td><b>حساس / جيت واي</b></td><td>دوسة تضيف، ودوسة على واحد موجود تشيله.</td></tr>
+<tr><td><b>ربط</b></td><td>دوس على جيت واي عشان تختاره، وبعدين دوس على أي حساس عشان
+تضيفه له أو تشيله منه.</td></tr></table>
 <h4>مساعدات الرسم</h4>
 <ul>
 <li><b>قفل الزوايا</b> — أي خط قريب من الأفقي أو الرأسي بيتقفل عليه. خلّي
@@ -1943,12 +2044,36 @@ Check the list for who edited last before you overwrite.</blockquote>
 ومن الكيبورد: <span class="kbd">Ctrl</span> + <span class="kbd">Z</span> و
 <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span>.</p>
 
-<h3>٧. معايير الشركة</h3>
+<h3>٧. الجيت واي — التوزيع والمشاركة</h3>
+<p>قسم ٤ فيه <b>سياسة الجيت واي</b> بتلات أوضاع:</p>
+<table><tr><th>الوضع</th><th>بيعمل إيه</th></tr>
+<tr><td><b>مستقل لكل غرفة</b></td><td>الافتراضي. جيت واي لكل غرفة لوحدها — ماشي مع اشتراط
+الفصل بين الغرف.</td></tr>
+<tr><td><b>تجميع حسب المدى</b></td><td>الأداة بتجمّع الحساسات القريبة من بعض تحت أقل عدد
+جيت واي ممكن، من غير نظر للغرف.</td></tr>
+<tr><td><b>يدوي</b></td><td>الأداة مبتحطش أي جيت واي — إنت اللي بتحط وتربط.</td></tr></table>
+<h4>جيت واي بين غرفتين</h4>
+<p>اختار أداة <b>جيت واي</b> وحطه على الحيطة بين الغرفتين. بياخد على طول كل حساس قريب منه
+في المدى، في أي غرفة، طالما مش متوصل بجيت واي تاني. وبعدين بأداة <b>ربط</b> تظبط بالظبط
+مين متوصل بيه: دوس عليه يتحدد، وبعدين دوس على أي حساس عشان تضمّه أو تفكه.</p>
+<blockquote>الجيت واي اللي بتحطه بإيدك <b>ثابت</b> — مبيتمسحش ولا بيتغير لما تدوس
+<b>وزّع</b> تاني، والأداة بتوزّع بس الحساسات اللي لسه مش متوصلة بحاجة.</blockquote>
+<h4>علامات على الرسمة</h4>
+<ul>
+<li>الجيت واي المشترك بين أكتر من غرفة بيبقى <b>أخضر مزرق</b> بدل الأزرق، ووصلاته بنفس اللون
+— عشان تشوفه بعينك من غير ما تدوّر.</li>
+<li>زر <b>الوصلات</b> في شريط الأدوات بيخفي أو يظهر الخطوط بين الجيت واي وحساساته.</li>
+</ul>
+<blockquote><b>انتبه:</b> لو السياسة <b>مستقل لكل غرفة</b> وحطيت جيت واي بيخدم غرفتين،
+<b>الفحص قبل التسليم</b> بينبهك بيه بالاسم. ده مش منع — ده تنبيه عشان المشاركة تبقى قرار
+واعي منك مش سهو، خصوصًا لو الجهة الرقابية شارطة الفصل.</blockquote>
+
+<h3>٨. معايير الشركة</h3>
 <p>قسم ٤ فيه كل قاعدة الأعداد بتعتمد عليها: تغطية الحساس، أقل عدد للغرفة، نوع الجيت واي ومداه،
 جيت واي مستقل لكل غرفة، حجم الرمز على الرسمة، والمستلزمات لكل وحدة (بطاريات، قواعد، محولات)
 مع نسبة احتياطي. غيّر أي قيمة وكل الأعداد والجداول والمخرجات تتحدث على طول.</p>
 
-<h3>٨. المخرجات — وكل واحد لمين</h3>
+<h3>٩. المخرجات — وكل واحد لمين</h3>
 <table><tr><th>المخرَج</th><th>لمين</th></tr>
 <tr><td><b>صورة الرسمة</b></td><td>المبيعات — ورقة كاملة باسم المشروع والشركة ورقم AUX
 والتاريخ والشعار والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
@@ -1961,7 +2086,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><b>نسخة العميل</b></td><td>علّم عليها عشان تخفي دوائر التغطية وخطوط الوصل ويطلع رسم
 أنضف للعميل.</td></tr></table>
 
-<h3>٩. الحفظ والمشاركة</h3>
+<h3>١٠. الحفظ والمشاركة</h3>
 <ul>
 <li><b>حفظ تلقائي</b> — شغلك بيتحفظ في المتصفح ده مع كل تعديل وبيرجع لما تفتح تاني. ده لكل
 جهاز لوحده، مش نسخة احتياطية.</li>
@@ -1974,7 +2099,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <blockquote>لو اتنين حفظوا نفس مشروع السحابة في نفس اللحظة، آخر واحد حفظ هو اللي يثبت. بص على
 القايمة وشوف مين عدّل آخر مرة قبل ما تكتب فوقه.</blockquote>
 
-<h3>١٠. اختصارات الكيبورد</h3>
+<h3>١١. اختصارات الكيبورد</h3>
 <table><tr><th>المفتاح</th><th>بيعمل إيه</th></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>تراجع</td></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>إعادة</td></tr>
@@ -1983,7 +2108,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><span class="kbd">Delete</span></td><td>يحذف العنصر المحدد</td></tr>
 <tr><td><span class="kbd">Shift</span> (مضغوطة)</td><td>زاوية حرة من غير لزق</td></tr></table>
 
-<h3>١١. حل المشاكل السريع</h3>
+<h3>١٢. حل المشاكل السريع</h3>
 <table><tr><th>العرض</th><th>الحل</th></tr>
 <tr><td>الاكتشاف مش لاقي غرف</td><td>دوس <b>تحويل لخطوط</b> الأول وبعدين اكتشف</td></tr>
 <tr><td>غرفتين بيتلزقوا في واحدة</td><td>فيه فتحة باب واصلاهم — ارسمهم بـ<b>مستطيل</b></td></tr>
@@ -2101,7 +2226,7 @@ document.getElementById("btnLang").onclick=()=>{L=L==="ar"?"en":"ar";P.lang=L;ap
 document.querySelectorAll(".tools [data-t]").forEach(b=>{b.onclick=()=>{
   document.querySelectorAll(".tools [data-t]").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");U.tool=b.dataset.t;U.draft=[];U.calib=[];U.rectStart=null;
-  U.wlast=U.wnow=null;U.pnow=null;U.sel=null;U.guides=null;
+  U.wlast=U.wnow=null;U.pnow=null;U.sel=null;U.guides=null;U.linkG=null;
   cv.style.cursor=U.tool==="pan"?"grab":U.tool==="edit"?"default":"crosshair";render();};});
 document.querySelectorAll("#segMode button").forEach(b=>{b.onclick=()=>{
   document.querySelectorAll("#segMode button").forEach(x=>x.classList.remove("on"));
@@ -2176,6 +2301,8 @@ document.getElementById("dbCancel").onclick=()=>{
 document.getElementById("btnFit").onclick=fitView;
 document.getElementById("btnCover").onclick=e=>{U.showCover=!U.showCover;
   e.currentTarget.classList.toggle("on",U.showCover);render();};
+document.getElementById("btnLinks").onclick=e=>{U.showLinks=!U.showLinks;
+  e.currentTarget.classList.toggle("on",U.showLinks);render();};
 document.getElementById("btnNums").onclick=e=>{U.showNums=!U.showNums;
   e.currentTarget.classList.toggle("on",U.showNums);render();};
 document.getElementById("btnPng").onclick=()=>{const q=pl();
@@ -2205,7 +2332,7 @@ document.getElementById("btnCopy").onclick=()=>{
   s+=t("sumArea")+": "+m1(tt.area)+" "+t("unitM2")+"\n";
   s+="\n"+t("sumTot")+": "+tt.sensors+" "+t("sensor")+" · "+tt.gates+" "+t("gateway")+"\n\n"+t("sumSup")+":\n";
   supply().forEach(i=>s+="- "+i.n+": "+i.q+"\n");
-  s+="\n"+t("sumStd")+": "+t("sumEach",P.cfg.cov)+" · "+(P.cfg.perRoom?t("cPerRoom"):t("cGroup"))+
+  s+="\n"+t("sumStd")+": "+t("sumEach",P.cfg.cov)+" · "+gwModeLabel()+
      " · "+t("cRange",P.cfg.gwRange)+" · "+t("sumSpare",P.cfg.spare);
   const done=()=>toast(t("tCopied"));
   const fb=()=>{const ta=document.createElement("textarea");ta.value=s;
@@ -2229,7 +2356,7 @@ document.getElementById("btnPdf").onclick=()=>{
       '<span><i style="background:#1f63d6;border-radius:2px"></i>'+t("gateway")+' ('+ar(tt.gates)+')</span>'+
       '<span>'+dev+'</span><span>'+t("cCov",ar(P.cfg.cov))+'</span>'+
       '<span>'+gwt+' · '+t("cRange",ar(P.cfg.gwRange))+'</span>'+
-      '<span>'+(P.cfg.perRoom?t("cPerRoom"):t("cGroup"))+'</span></div></div>';}
+      '<span>'+gwModeLabel()+'</span></div></div>';}
   if(opCount.checked){
     let rows="";
     q.zones.forEach(z=>{const st=zoneStat(q,z);
