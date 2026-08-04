@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0d141c">
 <title>Sensor Layout — توزيع الحساسات</title>
 <style>
 :root{
@@ -12,13 +13,21 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
-body{background:var(--ink);color:var(--text);
+@supports(height:100dvh){html,body{height:100dvh}}
+body{background:var(--ink);color:var(--text);-webkit-user-select:none;user-select:none;
   font-family:"Segoe UI","Noto Sans Arabic","Dubai",Tahoma,Arial,sans-serif;font-size:15px;overflow:hidden}
+input,textarea{-webkit-user-select:text;user-select:text}
 .app{display:grid;grid-template-columns:395px 1fr;height:100%}
 @media (max-width:900px){
   .app{grid-template-columns:1fr;grid-template-rows:44vh 1fr}
   .side{order:2;border-inline-start:none;border-top:1px solid var(--line)}
   .stage{order:1}
+  input[type=text],input[type=number],select,textarea{font-size:16px}
+  button{min-height:38px}
+  .tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .tools::-webkit-scrollbar{display:none}
+  .tools button{flex:0 0 auto;padding:10px 13px}
+  .tools .sep{flex:0 0 1px}
 }
 .side{background:var(--panel);border-inline-start:1px solid var(--line);overflow-y:auto;padding:0 0 70px}
 .brand{padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5;
@@ -116,6 +125,12 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   padding:9px 14px;border-radius:9px;font-size:13px;opacity:0;transform:translateY(-8px);
   transition:.25s;pointer-events:none;z-index:10}
 .toast.on{opacity:1;transform:none}
+.draftbar{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);
+  display:none;gap:8px;z-index:6}
+.draftbar.on{display:flex}
+.draftbar button{background:rgba(21,31,43,.96);border:1.5px solid var(--bad);color:var(--bad);
+  border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px}
+.draftbar #dbDone{border-color:var(--ok);color:var(--ok)}
 .gate{position:fixed;inset:0;background:var(--ink);display:none;place-items:center;z-index:50;padding:20px}
 .gate.on{display:grid}
 .gate .card{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--line);
@@ -354,6 +369,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
       <button id="btnFit" data-i="tFit">ضبط</button>
     </div>
+    <div class="draftbar" id="draftBar">
+      <button id="dbDone">✓ <span data-i="dbDone">خلاص</span></button>
+      <button id="dbCancel">✕ <span data-i="dbCancel">إلغاء</span></button>
+    </div>
     <div class="empty" id="emptyMsg" data-i="emptyMsg" data-html="1"></div>
     <div class="wait" id="wait" data-i="waiting">شغّال…</div>
     <div class="toast" id="toast"></div>
@@ -416,6 +435,7 @@ hImgOut:"الصورة بتطلع ورقة كاملة: اسم المشروع وا
 tPan:"تحريك",tEdit:"تعديل",tCal:"معايرة",tPoly:"مضلع",tRect:"مستطيل",tWand:"غرفة بضغطة",tWall:"حائط",tDoor:"باب",tSensor:"حساس",tGate:"جيت واي",
 tUndo:"تراجع",tCover:"التغطية",tNums:"الأرقام",tFit:"ضبط",
 tNearWall:"دوس على حائط أو ضلع غرفة",aDrawOnly:"الحائط والباب للرسم من الصفر — مش فوق صورة",
+dbDone:"خلاص",dbCancel:"إلغاء",
 emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
 lgSensor:"حساس",lgGate:"جيت واي",
 pillNo:"لسه",pillCal:"محتاجة معايرة",pillReady:"جاهزة",
@@ -490,6 +510,7 @@ hImgOut:"The image comes out as a full sheet: project, company and date on top, 
 tPan:"Pan",tEdit:"Edit",tCal:"Scale",tPoly:"Polygon",tRect:"Rectangle",tWand:"Magic Room",tWall:"Wall",tDoor:"Door",tSensor:"Sensor",tGate:"Gateway",
 tUndo:"Undo",tCover:"Coverage",tNums:"Labels",tFit:"Fit",
 tNearWall:"Click on a wall or room edge",aDrawOnly:"Wall and door are for drawing from scratch — not over an image",
+dbDone:"Done",dbCancel:"Cancel",
 emptyMsg:"Upload a plan image or write the description<br>Or draw from scratch: rectangle for rooms, wall and door for details<br>You can also drop a project file here",waiting:"Working…",
 lgSensor:"Sensor",lgGate:"Gateway",
 pillNo:"Empty",pillCal:"Needs scale",pillReady:"Ready",
@@ -802,6 +823,8 @@ function render(){
       ctx.beginPath();ctx.moveTo(bx-4,by-4);ctx.lineTo(bx+4,by+4);
       ctx.moveTo(bx+4,by-4);ctx.lineTo(bx-4,by+4);ctx.stroke();
       U.delBtn={x:bx,y:by,r:11};}}
+  draftBar.classList.toggle("on",
+    (U.tool==="poly"&&U.draft.length>0)||(U.tool==="wall"&&!!U.wlast));
   document.getElementById("emptyMsg").style.display=(IMG[q.id]||q.zones.length)?"none":"grid";
   badge.textContent=q.scale>0?t("mScale",ar(q.scale.toFixed(1)),ar(Math.round(V.k*100))):t("mNoScale");}
 
@@ -1057,6 +1080,7 @@ cv.addEventListener("pointerdown",e=>{
     if(U.calib.length===2)askScale();render();return;}
   if(U.tool==="poly"){
     if(!IMG[q.id]&&q.scale<=0){q.scale=30;q.drawn=true;}
+    if(U.draft.length>=3&&dist(w,U.draft[0])<12/V.k){closePoly();return;}
     U.draft.push(snapPt(q,w,U.draft[U.draft.length-1]||null,e.shiftKey));U.pnow=null;render();return;}
   if(U.tool==="rect"){
     if(!IMG[q.id]&&q.scale<=0){q.scale=30;q.drawn=true;}
@@ -1065,8 +1089,8 @@ cv.addEventListener("pointerdown",e=>{
     if(!ensureDraw(q))return;
     const p2=snapPt(q,w,U.wlast,e.shiftKey);
     if(!U.wlast){U.wlast=p2;U.wnow=p2;render();return;}
-    if(dist(U.wlast,p2)>q.scale*.15){snap();
-      q.walls.push({x1:U.wlast.x,y1:U.wlast.y,x2:p2.x,y2:p2.y});}
+    if(dist(U.wlast,p2)<=q.scale*.15){U.wlast=U.wnow=null;render();return;}
+    snap();q.walls.push({x1:U.wlast.x,y1:U.wlast.y,x2:p2.x,y2:p2.y});
     U.wlast=p2;U.wnow=p2;refresh();return;}
   if(U.tool==="door"){
     if(!ensureDraw(q))return;
@@ -1185,7 +1209,7 @@ function selBBox(q,s){
   if(s.kind==="door"){A.push({x:s.d.x1,y:s.d.y1});A.push({x:s.d.x2,y:s.d.y2});}
   return A.length?bbox(A):null;}
 function hitTest(q,w){
-  const r=10/V.k,sy=Math.max(r,(P.cfg.sym||.6)*Math.max(q.scale,0)*.7);
+  const r=12/V.k,sy=Math.max(r,(P.cfg.sym||.6)*Math.max(q.scale,0)*.7);
   for(let i=q.sensors.length-1;i>=0;i--)if(dist(q.sensors[i],w)<sy)return{kind:"sensor",s:q.sensors[i]};
   for(let i=q.gateways.length-1;i>=0;i--)if(dist(q.gateways[i],w)<sy*1.2)return{kind:"gate",g:q.gateways[i]};
   for(const z of q.zones)for(let i=0;i<z.pts.length;i++)
@@ -1591,6 +1615,11 @@ document.getElementById("btnAddRoom").onclick=()=>{
 document.getElementById("btnRun").onclick=()=>{syncCfg();snap();if(runPlan(pl()))refresh();};
 document.getElementById("btnClear").onclick=()=>{snap();pl().sensors=[];pl().gateways=[];refresh();};
 document.getElementById("btnUndo").onclick=undo;
+document.getElementById("dbDone").onclick=()=>{
+  if(U.tool==="poly")closePoly();
+  if(U.tool==="wall"){U.wlast=U.wnow=null;render();}};
+document.getElementById("dbCancel").onclick=()=>{
+  U.draft=[];U.wlast=U.wnow=null;U.pnow=null;U.guides=null;render();};
 document.getElementById("btnFit").onclick=fitView;
 document.getElementById("btnCover").onclick=e=>{U.showCover=!U.showCover;
   e.currentTarget.classList.toggle("on",U.showCover);render();};
