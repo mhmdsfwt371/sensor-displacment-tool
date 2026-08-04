@@ -192,6 +192,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <span id="userChip"></span>
       <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
       <button id="btnLang">English</button>
+      <button id="btnNew" data-i="bNew">جديد</button>
       <button id="btnSave" data-i="save">حفظ</button>
       <button id="btnOpen" data-i="open">فتح</button>
       <input type="file" id="fileProj" accept=".json,application/json" style="display:none">
@@ -206,6 +207,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         </div>
         <label data-i="fClient">اسم الشركة (العميل / الجهة)</label>
         <input type="text" id="pjClient" data-ph="phClient">
+        <label data-i="fLogo">شعار شركتك — اختياري، بيظهر على المخرجات</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="btnLogo" data-i="bLogo" style="flex:1">اختيار شعار</button>
+          <img id="logoPrev" alt="" style="height:32px;display:none;background:#fff;border-radius:6px;padding:2px 6px">
+          <button id="btnLogoX" data-i="bLogoX" style="display:none">شيله</button>
+        </div>
+        <input type="file" id="fileLogo" accept="image/*" style="display:none">
         <p class="hint" data-i="hSave" data-html="1"></p>
         <div id="cloudBox" style="display:none">
           <label data-i="s1Cloud">مشاريع السحابة</label>
@@ -255,6 +263,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         <div id="paneText" style="display:none">
           <label data-i="fDesc">وصف الرسمة — بالمتر</label>
           <textarea id="txtPlan" spellcheck="false" dir="auto"></textarea>
+          <div class="hint" id="descSum" style="display:none"></div>
           <div class="btns"><button class="btn-main" id="btnDraw" data-i="bDraw">ارسم المخطط</button></div>
           <div class="btns"><button class="btn-line" id="btnSample" data-i="bSample">مثال جاهز</button></div>
           <p class="hint" data-i="hDesc" data-html="1"></p>
@@ -416,7 +425,7 @@ bTo2D:"تحويل لخطوط",bOrig:"الأصلية",fStrength:"درجة الت�
 hImg:"التنضيف بيوضّح الخطوط بس الرسمة تفضل <b>صورة</b>. عايزها مرسومة بحوائط وأبواب ومقياس مظبوط؟ استعمل <b>وصف مكتوب</b>.",
 fRoomName:"اسم الغرفة",phRoom:"مخزن التبريد",fLen:"الطول (متر)",fWid:"العرض (متر)",bAddRoom:"إضافة الغرفة",
 fDesc:"وصف الرسمة — بالمتر",bDraw:"ارسم المخطط",bSample:"مثال جاهز",
-hDesc:'<code>غرفة "مخزن" 0,0 12x8</code> — ركن الغرفة ثم مقاسها<br><code>مضلع "الاسم" 0,0 6,0 6,4 0,4</code> — للأشكال غير المستطيلة<br><code>باب 5,8 6,8</code> · <code>حائط 3,0 3,8</code>',
+hDesc:'اكتب <b>بكلامك العادي</b> والأداة تفهم وترسم وتحط الأبواب: «مستودع ١٠٠ متر مربع فيه غرفتين واحدة ٤×٥ والتانية ٤×٦».<br>وللتحكم الدقيق: <code>غرفة "مخزن" 0,0 12x8</code> · <code>مضلع "الاسم" 0,0 6,0 6,4 0,4</code> · <code>باب 5,8 6,8</code> · <code>حائط 3,0 3,8</code>',
 s3:"الغرف",bAuto:"اكتشاف كل الغرف",
 hRooms:"أسرع طريقة: <b>اكتشاف كل الغرف</b> والأداة تقرا الصورة لوحدها. أو <b>غرفة بضغطة</b> ودوس جوّه أي غرفة. والرسم اليدوي بالمضلع والمستطيل موجود لو الرسمة مش واضحة.",
 s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 — بشاشة",optOther:"حساس آخر",
@@ -436,6 +445,11 @@ tPan:"تحريك",tEdit:"تعديل",tCal:"معايرة",tPoly:"مضلع",tRect:
 tUndo:"تراجع",tCover:"التغطية",tNums:"الأرقام",tFit:"ضبط",
 tNearWall:"دوس على حائط أو ضلع غرفة",aDrawOnly:"الحائط والباب للرسم من الصفر — مش فوق صورة",
 dbDone:"خلاص",dbCancel:"إلغاء",
+phDesc:"اكتب بكلامك العادي:\nمستودع ١٠٠ متر مربع فيه غرفتين\nواحدة ٤×٥ والتانية ٤×٦",
+sumRead:"اللي فهمته:",remainName:"باقي {0}",remainArea:"المساحة المتبقية",roomsWord:"غرف",
+bNew:"جديد",cNew:"نبدأ مشروع جديد؟ الشغل الحالي هيتمسح من الحفظ التلقائي.",
+tRestored:"رجّعتلك شغلك الأخير",
+fLogo:"شعار شركتك — اختياري، بيظهر على المخرجات",bLogo:"اختيار شعار",bLogoX:"شيله",
 emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
 lgSensor:"حساس",lgGate:"جيت واي",
 pillNo:"لسه",pillCal:"محتاجة معايرة",pillReady:"جاهزة",
@@ -455,7 +469,7 @@ aScale:"حدّد المقياس الأول من زر معايرة.",aZone:"ار�
 aImg:"محتاج صورة رسمة الأول.",aImgTool:"الأداة دي بتشتغل على صورة رسمة.",
 aBig:"الصورة كبيرة أوي.",aRead:"مش قادر أقرا الصورة.",aFile:"الملف مش سليم.",
 aStart:"ارفع صورة الرسمة الأول أو اكتب الوصف.",aNoPlan:"مفيش رسمة للتصدير.",aDims:"اكتب الطول والعرض بالمتر.",
-aSheet:"اختار ورقة واحدة على الأقل.",aDescLine:'اكتب على الأقل سطر زي: غرفة "مخزن" 0,0 12x8',
+aSheet:"اختار ورقة واحدة على الأقل.",aDescLine:'مش فاهم الوصف — جرّب زي: مستودع ١٠٠ متر مربع فيه غرفتين واحدة ٤×٥ والتانية ٤×٦',
 pScale:"طول الخط اللي حددته بالمتر؟",pAll:"{0} الرسمة كله كام متر؟\n(رقم تقريبي دلوقتي، وتقدر تضبطه بالمعايرة بعدين)",
 pWidth:"عرض",pHeight:"ارتفاع",
 tSaved:"اتحفظ",tOpened:"اتفتح",tCopied:"اتنسخ",tDone:"خلص: {0} حساس · {1} جيت واي",
@@ -491,7 +505,7 @@ bTo2D:"To line art",bOrig:"Original",fStrength:"Cleanup strength",
 hImg:"Cleanup sharpens the lines but the plan stays an <b>image</b>. Want real walls, doors and an exact scale? Use <b>Description</b>.",
 fRoomName:"Room name",phRoom:"Cold store",fLen:"Length (m)",fWid:"Width (m)",bAddRoom:"Add Room",
 fDesc:"Plan description — in metres",bDraw:"Draw Plan",bSample:"Load sample",
-hDesc:'<code>room "Store" 0,0 12x8</code> — corner then size<br><code>poly "Name" 0,0 6,0 6,4 0,4</code> — for non-rectangular shapes<br><code>door 5,8 6,8</code> · <code>wall 3,0 3,8</code>',
+hDesc:'Write it <b>your way</b> and the tool understands, draws and adds doors: "warehouse 100 sqm with two rooms, one 4x5 and one 4x6".<br>For exact control: <code>room "Store" 0,0 12x8</code> · <code>poly "Name" 0,0 6,0 6,4 0,4</code> · <code>door 5,8 6,8</code> · <code>wall 3,0 3,8</code>',
 s3:"Rooms",bAuto:"Detect All Rooms",
 hRooms:"Fastest route: <b>Detect All Rooms</b> and the tool reads the image itself. Or <b>Magic Room</b> and click inside any room. Manual polygon and rectangle are still there for unclear plans.",
 s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",optOther:"Other sensor",
@@ -511,6 +525,11 @@ tPan:"Pan",tEdit:"Edit",tCal:"Scale",tPoly:"Polygon",tRect:"Rectangle",tWand:"Ma
 tUndo:"Undo",tCover:"Coverage",tNums:"Labels",tFit:"Fit",
 tNearWall:"Click on a wall or room edge",aDrawOnly:"Wall and door are for drawing from scratch — not over an image",
 dbDone:"Done",dbCancel:"Cancel",
+phDesc:"Write it your way:\nwarehouse 100 sqm with two rooms\none 4x5 and one 4x6",
+sumRead:"Understood:",remainName:"Rest of {0}",remainArea:"Remaining area",roomsWord:"rooms",
+bNew:"New",cNew:"Start a new project? Current autosaved work will be cleared.",
+tRestored:"Restored your last session",
+fLogo:"Your company logo — optional, appears on outputs",bLogo:"Choose logo",bLogoX:"Remove",
 emptyMsg:"Upload a plan image or write the description<br>Or draw from scratch: rectangle for rooms, wall and door for details<br>You can also drop a project file here",waiting:"Working…",
 lgSensor:"Sensor",lgGate:"Gateway",
 pillNo:"Empty",pillCal:"Needs scale",pillReady:"Ready",
@@ -530,7 +549,7 @@ aScale:"Set the scale first using the Scale tool.",aZone:"Draw at least one room
 aImg:"A plan image is needed first.",aImgTool:"This tool works on a plan image.",
 aBig:"Image is too large.",aRead:"Cannot read the image.",aFile:"Invalid file.",
 aStart:"Upload a plan image first, or write the description.",aNoPlan:"Nothing to export.",aDims:"Enter length and width in metres.",
-aSheet:"Select at least one sheet.",aDescLine:'Write at least one line like: room "Store" 0,0 12x8',
+aSheet:"Select at least one sheet.",aDescLine:"Couldn't read that — try like: warehouse 100 sqm with two rooms, one 4x5 and one 4x6",
 pScale:"Length of the line you marked, in metres?",pAll:"How many metres is the full plan {0}?\n(A rough figure is fine — refine it with the Scale tool later)",
 pWidth:"width",pHeight:"height",
 tSaved:"Saved",tOpened:"Opened",tCopied:"Copied",tDone:"Done: {0} sensors · {1} gateways",
@@ -565,7 +584,7 @@ function applyLang(){
   document.querySelectorAll("[data-ph]").forEach(e=>e.placeholder=t(e.getAttribute("data-ph")));
   btnLang.textContent=t("langBtn");
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
-  txtPlan.placeholder=t("sample");
+  txtPlan.placeholder=t("phDesc");
   refresh();}
 
 /* ================= الحالة ================= */
@@ -573,7 +592,7 @@ let SEQ=1;
 const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
   scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
-function newProject(){return{v:2,lang:"ar",name:"",ref:"",client:"",cloudId:"",
+function newProject(){return{v:2,lang:"ar",name:"",ref:"",client:"",cloudId:"",brand:{logo:null},
   cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,perRoom:true,bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
 let P=newProject();
@@ -607,8 +626,11 @@ const today=()=>new Date().toLocaleDateString(L==="ar"?"ar-EG":"en-GB");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(x){const e=document.getElementById("toast");e.textContent=x;e.classList.add("on");
   clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove("on"),1800);}
+const AS_KEY="sensorToolAuto";let asT=null;
+function schedAS(){clearTimeout(asT);
+  asT=setTimeout(()=>{try{P.lang=L;localStorage.setItem(AS_KEY,JSON.stringify(P));}catch(e){}},700);}
 function snap(){U.undo.push(JSON.stringify({z:pl().zones,s:pl().sensors,g:pl().gateways,
-  w:pl().walls,d:pl().doors,sc:pl().scale}));if(U.undo.length>25)U.undo.shift();}
+  w:pl().walls,d:pl().doors,sc:pl().scale}));if(U.undo.length>25)U.undo.shift();schedAS();}
 function undo(){const s=U.undo.pop();if(!s)return;const o=JSON.parse(s);
   pl().zones=o.z;pl().sensors=o.s;pl().gateways=o.g;pl().walls=o.w;pl().doors=o.d;pl().scale=o.sc;refresh();}
 
@@ -629,9 +651,83 @@ function parsePlan(text){
     else if(/^(باب|door)$/.test(kw)&&nums.length>=4)doors.push({x1:nums[0],y1:nums[1],x2:nums[2],y2:nums[3]});
     else if(/^(حائط|حيطة|حيطه|wall)$/.test(kw)&&nums.length>=4)walls.push({x1:nums[0],y1:nums[1],x2:nums[2],y2:nums[3]});});
   return{ppm,rooms,walls,doors};}
+const NUMW={"غرفتين":2,"اوضتين":2,"أوضتين":2,"اتنين":2,"اثنين":2,"إثنين":2,
+ "تلات":3,"تلاتة":3,"ثلاث":3,"ثلاثة":3,"اربع":4,"أربع":4,"اربعة":4,"أربعة":4,
+ "خمس":5,"خمسة":5,"ست":6,"ستة":6,"سبع":7,"سبعة":7,
+ "تمان":8,"تمانية":8,"ثمان":8,"ثمانية":8,"تسع":9,"تسعة":9,"عشر":10,"عشرة":10,
+ "two":2,"three":3,"four":4,"five":5,"six":6,"seven":7,"eight":8,"nine":9,"ten":10};
+const r5=v=>Math.max(.5,Math.round(v*2)/2);
+function freeParse(text){
+  let s=text.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d))
+            .replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+            .replace(/(\d)\s*(?:[×xX*]|في|فى|by)\s*(?=\d)/g,"$1x");
+  const CW=/(مستودع|مخزن|هنجر|عنبر|صالة|صاله|warehouse|hangar|hall|facility)/i;
+  const TYPE=/(تبريد|تجميد|ثلاجة|ثلاجه|براد|أدوية|ادوية|ادويه|تخزين|استقبال|مكتب|معمل|ممر|إنتاج|انتاج|تعبئة|تعبئه|cold|freezer|fridge|medicine|storage|office|lab|corridor|reception|production|packing)/i;
+  const rooms=[];let total=null,count=0,each=null;
+  s.split(/\n/).forEach(line=>{
+    line=line.trim();if(!line)return;
+    const dims=[...line.matchAll(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/g)];
+    // عدد الغرف — بالكلمة أو بالرقم
+    for(const k in NUMW){
+      if(!line.includes(k))continue;
+      const direct=/غرفتين|اوضتين|أوضتين/.test(k);
+      if(direct||/(غرف|غرفة|غرفه|اوض|أوض|room)/i.test(line)){count=Math.max(count,NUMW[k]);break;}}
+    const cm=line.match(/(\d+)\s*(غرف|غرفة|غرفه|اوض|أوض|rooms?)/i);
+    if(cm)count=Math.max(count,+cm[1]);
+    // مساحة إجمالية — سطر فيه كلمة مساحة أو اسم مبنى ومن غير مقاسين
+    if(!dims.length&&(/مساح|مربع|م2|م٢|sqm|square|m2/i.test(line)||CW.test(line))){
+      const am=line.replace(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/g,"").match(/(\d+(?:\.\d+)?)/);
+      if(am&&+am[1]>=4&&+am[1]<100000){
+        const nm=line.match(CW);
+        total={a:+am[1],name:nm?nm[1]:""};}}
+    // الغرف بمقاساتها
+    if(dims.length){
+      const isEach=/(^|\s)(كل|each)(\s|$)/i.test(line);
+      let prev=0;
+      dims.forEach(m=>{const w=+m[1],h=+m[2];
+        const seg=line.slice(prev,m.index);prev=m.index+m[0].length;
+        if(!(w>0&&h>0&&w<500&&h<500))return;
+        if(isEach){each={w,h};return;}
+        let name="";const tm=seg.match(TYPE);
+        if(tm)name=(L==="ar"?"غرفة ":"")+tm[1];
+        rooms.push({name,w,h});});}});
+  if(each&&count>rooms.length)
+    while(rooms.length<count)rooms.push({name:"",w:each.w,h:each.h});
+  const used=()=>rooms.reduce((t2,r)=>t2+r.w*r.h,0);
+  if(total){
+    if(!rooms.length){
+      const n=Math.max(1,count),a=total.a/n;
+      for(let i=0;i<n;i++){const w=r5(Math.sqrt(a)*1.15),h=r5(a/w);rooms.push({name:"",w,h});}}
+    else if(count>rooms.length){
+      const miss=count-rooms.length,rem=total.a-used();
+      if(rem>3){const a=rem/miss;
+        for(let i=0;i<miss;i++){const w=r5(Math.sqrt(a)*1.15),h=r5(a/w);rooms.push({name:"",w,h});}}}
+    else{const rem=total.a-used();
+      if(rem>=4){const H=Math.max(...rooms.map(r=>r.h));
+        let tn=total.name;
+        if(tn&&L==="ar"&&!/^ال/.test(tn))tn="ال"+tn;
+        rooms.push({name:tn?t("remainName",tn):t("remainArea"),
+          w:r5(rem/H),h:H});}}}
+  if(!rooms.length)return null;
+  let idx=0;rooms.forEach(r=>{if(!r.name)r.name=t("room")+" "+ar(++idx);});
+  const sumA=rooms.reduce((t2,r)=>t2+r.w*r.h,0);
+  const maxRow=Math.max(12,r5(Math.sqrt(sumA)*1.35));
+  let x=0,y=0,rH=0;const out=[],doors=[];
+  rooms.forEach(r=>{
+    if(x>0&&x+r.w>maxRow){x=0;y+=rH;rH=0;}
+    out.push({name:r.name,x,y,w:r.w,h:r.h});
+    doors.push({x1:x+r.w/2-.45,y1:y+r.h,x2:x+r.w/2+.45,y2:y+r.h});
+    x+=r.w;rH=Math.max(rH,r.h);});
+  const parts=[];
+  if(total)parts.push(((total.name||"")+" "+ar(fmt(total.a))+" "+t("unitM2")).trim());
+  out.forEach(r=>parts.push(r.name+" ("+ar(nice(r.w))+"×"+ar(nice(r.h))+")"));
+  return{ppm:30,rooms:out,walls:[],doors,summary:t("sumRead")+" "+parts.join(" · ")};}
 function buildPlan(){
-  const p=parsePlan(txtPlan.value);
-  if(!p.rooms.length){alert(t("aDescLine"));return;}
+  let p=parsePlan(txtPlan.value),sum="";
+  if(p.rooms.length)sum=t("sumRead")+" "+ar(p.rooms.length)+" "+t("roomsWord");
+  else{const f=freeParse(txtPlan.value);
+    if(!f){alert(t("aDescLine"));return;}
+    p=f;sum=f.summary;}
   snap();const k=p.ppm,q=pl();
   q.text=txtPlan.value;q.imgData=null;q.imgW=q.imgH=0;q.drawn=true;q.scale=k;q.clean=null;
   delete IMG[q.id];delete ORIG[q.id];delete MASK[q.id];
@@ -642,7 +738,9 @@ function buildPlan(){
     q.zones.push({id:SEQ++,name:r.name||(t("room")+" "+ar(i+1)),pts,color:ZC[i%ZC.length]});});
   q.walls=p.walls.map(w=>({x1:w.x1*k,y1:w.y1*k,x2:w.x2*k,y2:w.y2*k}));
   q.doors=p.doors.map(d=>({x1:d.x1*k,y1:d.y1*k,x2:d.x2*k,y2:d.y2*k}));
-  paneClean.style.display="none";fitView();refresh();}
+  paneClean.style.display="none";
+  descSum.textContent=sum;descSum.style.display="block";
+  fitView();refresh();schedAS();}
 
 /* ================= الرسم ================= */
 function contentBox(q){
@@ -856,9 +954,15 @@ function exportSheet(q,W,clean){
   g.fillText(P.name||t("prTitle"),X1,side+Math.round(W*.032));
   g.fillStyle="#555";g.font=fnt(.020);
   g.fillText(P.client||"",X1,side+Math.round(W*.062));
+  let metaX=X2;
+  if(P.brand&&P.brand.logo&&LOGOI.complete&&LOGOI.naturalWidth){
+    const lh=headH*.52,lw=lh*LOGOI.naturalWidth/LOGOI.naturalHeight;
+    const lx=rtl?LX:RX-lw;
+    g.drawImage(LOGOI,lx,side,lw,lh);
+    metaX=rtl?LX+lw+Math.round(W*.012):RX-lw-Math.round(W*.012);}
   g.textAlign=A2;g.font=fnt(.017);
   [P.ref?"AUX: "+P.ref:"",today()].filter(Boolean)
-    .forEach((x,i)=>g.fillText(x,X2,side+Math.round(W*.030)+i*Math.round(W*.025)));
+    .forEach((x,i)=>g.fillText(x,metaX,side+Math.round(W*.030)+i*Math.round(W*.025)));
   g.strokeStyle="#111";g.lineWidth=Math.max(1,W*.0014);
   const hy=side+headH-Math.round(W*.014);
   g.beginPath();g.moveTo(LX,hy);g.lineTo(RX,hy);g.stroke();
@@ -1411,7 +1515,7 @@ function renderZones(){
       '<div class="r"><span class="meta">'+ar(fmt(st.a))+' '+t("unitM2")+'</span>'+
       (z.fixed>0?'<button class="rs">'+t("resetAuto")+'</button>':'<span class="meta">'+t("auto")+'</span>')+
       '<span class="cnt"><button class="mn">−</button><b>'+ar(st.n)+'</b><button class="pl">+</button></span></div>';
-    d.querySelector("input").oninput=e=>{z.name=e.target.value;render();};
+    d.querySelector("input").oninput=e=>{z.name=e.target.value;render();schedAS();};
     d.querySelector(".mn").onclick=()=>setZoneCount(z,st.n-1);
     d.querySelector(".pl").onclick=()=>setZoneCount(z,st.n+1);
     const rs=d.querySelector(".rs");if(rs)rs.onclick=()=>zoneAuto(z);
@@ -1450,7 +1554,7 @@ function saveProject(){
   a.download=(P.name||t("fileProj"))+".json";a.click();toast(t("tSaved"));}
 function applyProject(o){
   if(!o||!o.plans)throw 0;
-  P=o;P.cur=0;
+  P=o;P.cur=0;P.brand=P.brand||{logo:null};setLogoImg();
   for(const k in IMG)delete IMG[k];for(const k in ORIG)delete ORIG[k];for(const k in MASK)delete MASK[k];
   SEQ=1;P.plans.forEach(q=>{SEQ=Math.max(SEQ,q.id+1);
     q.zones.forEach(z=>SEQ=Math.max(SEQ,z.id+1));
@@ -1466,6 +1570,12 @@ function readProject(f){
   rd.onload=()=>{try{applyProject(JSON.parse(rd.result));toast(t("tOpened"));}
     catch(e){alert(t("aFile"));}};
   rd.readAsText(f);}
+function restoreAS(){try{
+  const s=localStorage.getItem(AS_KEY);if(!s)return;
+  const o=JSON.parse(s);if(!o||!o.plans)return;
+  const q0=o.plans[0];
+  if(!(q0&&(q0.zones.length||q0.imgData||q0.text)))return;
+  applyProject(o);toast(t("tRestored"));}catch(e){}}
 function readImage(f){
   const rd=new FileReader();
   rd.onload=()=>{const im=new Image();
@@ -1477,6 +1587,16 @@ function readImage(f){
   rd.readAsDataURL(f);}
 
 /* ================= الإعدادات ================= */
+const LOGOI=new Image();LOGOI.onload=()=>render();
+function setLogoImg(){
+  if(P.brand&&P.brand.logo)LOGOI.src=P.brand.logo;
+  else LOGOI.removeAttribute("src");
+  updateLogoUI();}
+function updateLogoUI(){
+  const has=!!(P.brand&&P.brand.logo);
+  logoPrev.style.display=has?"block":"none";
+  if(has)logoPrev.src=P.brand.logo;
+  btnLogoX.style.display=has?"inline-block":"none";}
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
   P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
@@ -1484,7 +1604,7 @@ function syncCfg(){
   P.cfg.bat=+inBat.value||0;P.cfg.brk=+inBrk.value||0;P.cfg.psu=+inPsu.value||0;P.cfg.spare=+inSpare.value||0;
   P.cfg.sym=(+rngSym.value||6)/10;
   lblSym.textContent=ar(P.cfg.sym.toFixed(1)).replace(".",L==="ar"?"٫":".");
-  lblStr.textContent=ar(rngStr.value);}
+  lblStr.textContent=ar(rngStr.value);schedAS();}
 function loadCfg(){
   pjName.value=P.name||"";pjRef.value=P.ref||"";pjClient.value=P.client||"";
   selSensor.value=P.cfg.sensor;inCov.value=P.cfg.cov;inMin.value=P.cfg.minPer;
@@ -1591,6 +1711,26 @@ document.getElementById("fileImg").onchange=e=>{if(e.target.files[0])readImage(e
 document.getElementById("btnOpen").onclick=()=>fileProj.click();
 document.getElementById("fileProj").onchange=e=>{if(e.target.files[0])readProject(e.target.files[0]);};
 document.getElementById("btnSave").onclick=saveProject;
+document.getElementById("btnNew").onclick=()=>{
+  if(!confirm(t("cNew")))return;
+  try{localStorage.removeItem(AS_KEY);}catch(e){}
+  txtPlan.value="";descSum.style.display="none";
+  applyProject(newProject());};
+document.getElementById("btnLogo").onclick=()=>fileLogo.click();
+document.getElementById("btnLogoX").onclick=()=>{
+  P.brand.logo=null;setLogoImg();schedAS();render();};
+document.getElementById("fileLogo").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{const im=new Image();
+    im.onload=()=>{const s2=Math.min(1,120/im.height);
+      const c=document.createElement("canvas");
+      c.width=Math.max(2,Math.round(im.width*s2));
+      c.height=Math.max(2,Math.round(im.height*s2));
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      P.brand.logo=c.toDataURL("image/png");setLogoImg();schedAS();render();};
+    im.src=rd.result;};
+  rd.readAsDataURL(f);e.target.value="";};
 document.getElementById("btnAll").onclick=autoAll;
 document.getElementById("btnAuto").onclick=()=>autoRooms();
 document.getElementById("btnTo2D").onclick=()=>{wait.classList.add("on");
@@ -1664,7 +1804,9 @@ document.getElementById("btnPdf").onclick=()=>{
   const q=pl(),tt=projTot();
   const dev=P.cfg.sensor==="tg08"?"TZone TG08":t("optOther");
   const gwt=P.cfg.gw==="gsm"?t("optGsm"):t("optWifi");
-  const head=(sub)=>'<div class="ttl"><h2>'+esc(P.name||t("prTitle"))+'</h2>'+
+  const lg=(P.brand&&P.brand.logo)?'<img src="'+P.brand.logo+'" style="height:30px">':'';
+  const head=(sub)=>'<div class="ttl"><div style="display:flex;align-items:center;gap:10px">'+lg+
+    '<h2>'+esc(P.name||t("prTitle"))+'</h2></div>'+
     '<div class="rt">'+esc(sub)+'<br>'+esc(P.client||"")+
     (P.ref?" · AUX "+esc(P.ref):"")+'<br>'+today()+'</div></div>';
   let html="";
@@ -1702,7 +1844,7 @@ document.getElementById("btnPdf").onclick=()=>{
   document.getElementById("print").innerHTML=html;
   setTimeout(()=>window.print(),150);};
 
-applyLang();loadCfg();resize();refresh();
+applyLang();loadCfg();updateLogoUI();resize();refresh();restoreAS();
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
 initFB();
 </script>
