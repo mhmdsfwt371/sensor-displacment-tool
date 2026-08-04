@@ -31,9 +31,12 @@ input,textarea{-webkit-user-select:text;user-select:text}
 }
 .side{background:var(--panel);border-inline-start:1px solid var(--line);overflow-y:auto;padding:0 0 70px}
 .brand{padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5;
-  display:flex;align-items:center;gap:8px}
-.brand h1{margin:0;font-size:16px;flex:1}
-.brand button{padding:6px 10px;font-size:12px}
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.brand h1{margin:0;font-size:16px;flex:1;min-width:90px}
+.brand button{padding:6px 9px;font-size:12px}
+#btnManual{border-radius:50%;width:28px;height:28px;padding:0;font-weight:700;
+  border-color:var(--line);color:var(--muted)}
+#btnManual:hover{color:var(--zone);border-color:var(--zone)}
 #btnLang{border-color:var(--zone);color:var(--zone)}
 .step{border-bottom:1px solid var(--line)}
 .step > summary{list-style:none;cursor:pointer;padding:13px 18px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px}
@@ -131,6 +134,40 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .draftbar button{background:rgba(21,31,43,.96);border:1.5px solid var(--bad);color:var(--bad);
   border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px}
 .draftbar #dbDone{border-color:var(--ok);color:var(--ok)}
+.histbar{position:absolute;bottom:52px;inset-inline-end:10px;display:flex;gap:6px;z-index:6}
+.histbar button{background:rgba(21,31,43,.94);border:1px solid var(--line);color:var(--text);
+  border-radius:10px;padding:9px 13px;font-size:15px;line-height:1;min-width:44px}
+.histbar button:disabled{opacity:.3;cursor:default}
+.updbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:60;
+  display:none;align-items:center;gap:10px;background:var(--ok);color:#07140d;
+  border-radius:11px;padding:9px 12px;font-size:13px;font-weight:600;
+  box-shadow:0 6px 24px rgba(0,0,0,.45);max-width:calc(100% - 24px)}
+.updbar.on{display:flex}
+.updbar button{background:#07140d;color:var(--ok);border:none;padding:7px 12px;font-weight:700;font-size:12.5px}
+.updbar .xb{background:transparent;color:#07140d;padding:4px 8px;font-size:16px}
+.sheetview{position:fixed;inset:0;background:var(--ink);z-index:70;display:none;
+  grid-template-rows:auto 1fr}
+.sheetview.on{display:grid}
+.svhead{display:flex;align-items:center;gap:10px;padding:12px 16px;
+  border-bottom:1px solid var(--line);background:var(--panel)}
+.svhead h2{margin:0;font-size:16px;flex:1}
+.svbody{overflow-y:auto;padding:18px 20px 60px;max-width:820px;margin:0 auto;width:100%;line-height:1.95}
+.svbody h3{margin:26px 0 8px;font-size:16px;color:var(--zone);
+  border-top:1px solid var(--line);padding-top:16px}
+.svbody h3:first-child{border-top:none;margin-top:4px;padding-top:0}
+.svbody h4{margin:16px 0 6px;font-size:14px}
+.svbody p,.svbody li{font-size:13.5px;color:#c8d6e3}
+.svbody ul,.svbody ol{padding-inline-start:20px;margin:6px 0}
+.svbody li{margin:4px 0}
+.svbody code{background:#0e1723;border:1px solid var(--line);border-radius:5px;
+  padding:1px 6px;font-family:inherit;color:var(--warn);font-size:12.5px}
+.svbody table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+.svbody th,.svbody td{border:1px solid var(--line);padding:7px 9px;text-align:start}
+.svbody th{background:var(--panel-2);color:var(--muted);font-size:12px}
+.svbody .kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:5px;
+  padding:1px 7px;font-size:12px}
+.svbody blockquote{margin:10px 0;padding:9px 13px;border-inline-start:3px solid var(--warn);
+  background:#0e1723;border-radius:0 8px 8px 0;font-size:13px;color:#c8d6e3}
 .gate{position:fixed;inset:0;background:var(--ink);display:none;place-items:center;z-index:50;padding:20px}
 .gate.on{display:grid}
 .gate .card{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--line);
@@ -195,6 +232,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <span id="userChip"></span>
       <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
       <button id="btnLang">English</button>
+      <button id="btnManual" title="دليل">؟</button>
       <button id="btnNew" data-i="bNew">جديد</button>
       <button id="btnSave" data-i="save">حفظ</button>
       <button id="btnOpen" data-i="open">فتح</button>
@@ -381,6 +419,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
       <button id="btnFit" data-i="tFit">ضبط</button>
     </div>
+    <div class="histbar">
+      <button id="fbUndo" title="تراجع">↶</button>
+      <button id="fbRedo" title="إعادة">↷</button>
+    </div>
     <div class="draftbar" id="draftBar">
       <button id="dbDone">✓ <span data-i="dbDone">خلاص</span></button>
       <button id="dbCancel">✕ <span data-i="dbCancel">إلغاء</span></button>
@@ -397,9 +439,25 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 </div>
 <div id="print"></div>
 
+<div class="updbar" id="updBar">
+  <span id="updTxt"></span>
+  <button id="updGo" data-i="bUpdate">حدّث</button>
+  <button class="xb" id="updX">✕</button>
+</div>
+
+<div class="sheetview" id="manual">
+  <div class="svhead">
+    <button id="mnBack">←</button>
+    <h2 id="mnTitle"></h2>
+    <button id="mnDl" data-i="bDownload">تحميل</button>
+    <button id="mnX">✕</button>
+  </div>
+  <div class="svbody" id="mnBody"></div>
+</div>
+
 <script>
 "use strict";
-const VERSION="1.2";
+const VERSION="1.3";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -455,6 +513,8 @@ sumRead:"اللي فهمته:",remainName:"باقي {0}",remainArea:"المسا�
 bNew:"جديد",cNew:"نبدأ مشروع جديد؟ الشغل الحالي هيتمسح من الحفظ التلقائي.",
 tRestored:"رجّعتلك شغلك الأخير",
 fLogo:"شعار شركتك — اختياري، بيظهر على المخرجات",bLogo:"اختيار شعار",bLogoX:"شيله",
+bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",
+updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",
 emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
 lgSensor:"حساس",lgGate:"جيت واي",
 pillNo:"لسه",pillCal:"محتاجة معايرة",pillReady:"جاهزة",
@@ -535,6 +595,8 @@ sumRead:"Understood:",remainName:"Rest of {0}",remainArea:"Remaining area",rooms
 bNew:"New",cNew:"Start a new project? Current autosaved work will be cleared.",
 tRestored:"Restored your last session",
 fLogo:"Your company logo — optional, appears on outputs",bLogo:"Choose logo",bLogoX:"Remove",
+bUpdate:"Update",bDownload:"Download",bManual:"Guide",
+updMsg:"Version {0} is available",manTitle:"User Manual",
 emptyMsg:"Upload a plan image or write the description<br>Or draw from scratch: rectangle for rooms, wall and door for details<br>You can also drop a project file here",waiting:"Working…",
 lgSensor:"Sensor",lgGate:"Gateway",
 pillNo:"Empty",pillCal:"Needs scale",pillReady:"Ready",
@@ -606,7 +668,7 @@ const IMG={},ORIG={},MASK={};
 const V={k:1,x:0,y:0};
 const U={tool:"edit",draft:[],calib:[],rectStart:null,rectNow:null,wlast:null,wnow:null,
   pnow:null,sel:null,drag:null,guides:null,snapped:false,delBtn:null,
-  showCover:true,showNums:true,panLast:null,pinch:null,undo:[]};
+  showCover:true,showNums:true,panLast:null,pinch:null,undo:[],redo:[]};
 const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
 const dpr=Math.min(window.devicePixelRatio||1,2);
 const pl=()=>P.plans[P.cur];
@@ -635,11 +697,18 @@ function toast(x){const e=document.getElementById("toast");e.textContent=x;e.cla
 const AS_KEY="sensorToolAuto";let asT=null;
 function schedAS(){clearTimeout(asT);
   asT=setTimeout(()=>{try{P.lang=L;localStorage.setItem(AS_KEY,JSON.stringify(P));}catch(e){}},700);}
-function snap(){U.undo.push(JSON.stringify({z:pl().zones,s:pl().sensors,g:pl().gateways,
-  w:pl().walls,d:pl().doors,sc:pl().scale}));if(U.undo.length>25)U.undo.shift();schedAS();}
-function undo(){const s=U.undo.pop();if(!s)return;const o=JSON.parse(s);
-  pl().zones=o.z;pl().sensors=o.s;pl().gateways=o.g;pl().walls=o.w;pl().doors=o.d;pl().scale=o.sc;refresh();}
-
+function stateNow(){const q=pl();
+  return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,sc:q.scale});}
+function applyState(s){const o=JSON.parse(s),q=pl();
+  q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.scale=o.sc;}
+function snap(){U.undo.push(stateNow());if(U.undo.length>40)U.undo.shift();
+  U.redo=[];schedAS();}
+function undo(){if(!U.undo.length)return;
+  U.redo.push(stateNow());applyState(U.undo.pop());
+  U.sel=null;U.drag=null;refresh();schedAS();}
+function redo(){if(!U.redo.length)return;
+  U.undo.push(stateNow());applyState(U.redo.pop());
+  U.sel=null;U.drag=null;refresh();schedAS();}
 /* ================= الوصف المكتوب ================= */
 function parsePlan(text){
   const rooms=[],walls=[],doors=[];let ppm=30;
@@ -1261,13 +1330,16 @@ cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoomAt(p.x,p.y
 cv.addEventListener("dblclick",()=>{if(U.tool==="poly")closePoly();
   if(U.tool==="wall"){U.wlast=U.wnow=null;render();}});
 window.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&manual.classList.contains("on")){closeManual();return;}
   if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT")return;
   if(e.key==="Enter"&&U.tool==="poly")closePoly();
   if(e.key==="Enter"&&U.tool==="wall"){U.wlast=U.wnow=null;render();}
   if((e.key==="Delete"||e.key==="Backspace")&&U.sel){e.preventDefault();delSel();}
   if(e.key==="Escape"){U.draft=[];U.calib=[];U.rectStart=null;U.wlast=U.wnow=null;
     U.pnow=null;U.sel=null;U.guides=null;render();}
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();undo();}});
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"){e.preventDefault();
+    if(e.shiftKey)redo();else undo();}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="y"){e.preventDefault();redo();}});
 function closePoly(){if(U.draft.length>=3)addZone(U.draft.slice());U.draft=[];U.pnow=null;render();}
 function addZone(p){snap();const q=pl();
   q.zones.push({id:SEQ++,name:t("room")+" "+ar(q.zones.length+1),pts:p,color:ZC[q.zones.length%ZC.length]});
@@ -1526,7 +1598,9 @@ function issues(){
   return out;}
 
 /* ================= الواجهة ================= */
-function refresh(){renumber();renderZones();renderResults();renderIssues();render();}
+function refresh(){renumber();renderZones();renderResults();renderIssues();render();
+  fbUndo.disabled=!U.undo.length;fbRedo.disabled=!U.redo.length;
+  btnUndo.disabled=!U.undo.length;}
 function renderZones(){
   const q=pl();
   pillZones.textContent=ar(q.zones.length);
@@ -1643,6 +1717,309 @@ function loadCfg(){
  "inBat","inBrk","inPsu","inSpare","rngSym","rngStr"].forEach(id=>{
   document.getElementById(id).addEventListener("input",()=>{syncCfg();renderResults();renderIssues();render();});});
 chkPerRoom.onchange=()=>{syncCfg();gwPlan(pl());refresh();};
+
+/* ================= دليل الاستخدام | User manual ================= */
+function manualHTML(){
+  if(L==="en")return `
+<h3>1. What this tool does</h3>
+<p>It turns a floor plan into a sensor and gateway layout, and produces everything three
+departments need from one file: a drawing image for <b>sales</b> to attach to a quote, an
+installation schedule for <b>operations</b>, and a permanent device map for <b>after-sales</b>.</p>
+<blockquote>Standards applied: one sensor per <b>25 m²</b> (adjustable) and one
+<b>independent gateway per room</b>. Both are set in section 4.</blockquote>
+
+<h3>2. Getting the plan in — three ways</h3>
+<h4>A. Image</h4>
+<p>Upload a photo or scan of the plan. If the lines are faint, press <b>To line art</b> and
+adjust <b>Cleanup strength</b> until walls read clearly. The plan stays an image — the tool
+detects rooms from it but cannot know real distances until you set the scale.</p>
+<h4>B. Dimensions</h4>
+<p>Type a room name, length and width in metres, then <b>Add Room</b>. Rooms are laid out
+side by side automatically. Best when you have a measurement sheet but no drawing.</p>
+<h4>C. Description — fastest</h4>
+<p>Write in plain language and press <b>Draw Plan</b>:</p>
+<p><code>warehouse 100 sqm with two rooms, one 4x5 and one 4x6</code></p>
+<p>The tool reads it, draws walls and doors to exact scale, names rooms from words it
+recognises (cold, medicine, office, corridor…), and if the rooms total less than the stated
+area it adds a <b>Remaining area</b> block so counts cover the whole building.</p>
+<p>A line reading <b>Understood:</b> appears under the box. Read it before you continue —
+it is your check that the tool got your intent.</p>
+<p>For exact control, use the precise syntax instead:</p>
+<table><tr><th>Line</th><th>Meaning</th></tr>
+<tr><td><code>room "Store" 0,0 12x8</code></td><td>corner at 0,0 then 12 × 8 m</td></tr>
+<tr><td><code>poly "Name" 0,0 6,0 6,4 0,4</code></td><td>non-rectangular shape</td></tr>
+<tr><td><code>door 5,8 6,8</code></td><td>door between two points</td></tr>
+<tr><td><code>wall 3,0 3,8</code></td><td>internal wall</td></tr></table>
+
+<h3>3. Run Everything</h3>
+<p>One button does the whole chain: detect rooms → measure → place sensors → place gateways.
+It asks a single question — <b>how many metres across is the plan</b> — because no image
+carries real-world distance. A rough number works; refine later with the <b>Scale</b> tool.</p>
+<p>If you drew the plan from a description or dimensions, the scale is already exact and the
+question is skipped.</p>
+
+<h3>4. Reviewing and adjusting — your main job</h3>
+<p>The tool goes first, you validate. Every room in section 3 has:</p>
+<ul>
+<li><b>+ and −</b> — change that room's sensor count; the tool immediately redistributes them
+evenly inside the room</li>
+<li><b>Back to auto</b> — appears once you have overridden a count, so you can always see
+which rooms you touched</li>
+</ul>
+<blockquote>Your manual counts survive redistribution. Pressing <b>Distribute</b> again
+recalculates only the rooms still on Auto.</blockquote>
+<p>Section 6, <b>Pre-Handover Check</b>, lists anything that needs a decision: rooms with no
+sensors, counts below standard, missing gateways, sensors beyond gateway range, sensors
+outside every room, and any room where your manual count differs from the standard.</p>
+
+<h3>5. Drawing and editing tools</h3>
+<table><tr><th>Tool</th><th>Use</th></tr>
+<tr><td><b>Edit</b></td><td>Default. Drag sensors, gateways, room corners, walls and doors.
+Drag empty space to pan.</td></tr>
+<tr><td><b>Pan</b></td><td>Move the view only — nothing can be moved by accident.</td></tr>
+<tr><td><b>Scale</b></td><td>Click two points on a known distance, type it in metres.</td></tr>
+<tr><td><b>Polygon</b></td><td>Click corner by corner. Click the first point again, or press
+<span class="kbd">Enter</span>, to close.</td></tr>
+<tr><td><b>Rectangle</b></td><td>Drag. Live dimensions show while you drag.</td></tr>
+<tr><td><b>Magic Room</b></td><td>Click inside any room on an image and it traces the walls.</td></tr>
+<tr><td><b>Wall</b></td><td>Click point to point. Click the last point again to end the chain.</td></tr>
+<tr><td><b>Door</b></td><td>Click any wall — a 90 cm door with a swing arc is placed. Click it
+again to flip the swing.</td></tr>
+<tr><td><b>Sensor / Gateway</b></td><td>Click to add, click an existing one to remove.</td></tr></table>
+<h4>Drawing aids</h4>
+<ul>
+<li><b>Angle lock</b> — lines near horizontal or vertical snap flat. Hold
+<span class="kbd">Shift</span> for a free angle.</li>
+<li><b>Alignment guides</b> — a green line appears when you line up with an existing corner.</li>
+<li><b>Half-metre grid</b> and snapping to existing corners.</li>
+<li><b>Live lengths</b> on every wall and room edge, updating as you drag.</li>
+</ul>
+<h4>Selecting and deleting</h4>
+<p>In <b>Edit</b>, click something to select it — a red <b>✕</b> appears next to it. Click the
+✕ or press <span class="kbd">Delete</span> to remove it.</p>
+<blockquote>A room moves only after it is selected: the first click selects, the second drags.
+This keeps you from nudging a room while panning.</blockquote>
+<p>A sensor dropped outside every room returns to the nearest point inside its own room.
+A sensor dropped inside a different room is reassigned to that room's gateway and renumbered.</p>
+
+<h3>6. Undo and redo</h3>
+<p>Two floating buttons sit at the bottom of the drawing: <b>↶</b> undo and <b>↷</b> redo,
+covering the last 40 actions. Keyboard: <span class="kbd">Ctrl</span> +
+<span class="kbd">Z</span> and <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> +
+<span class="kbd">Z</span>.</p>
+
+<h3>7. Company standards</h3>
+<p>Section 4 holds every rule the counts depend on: sensor coverage, minimum per room, gateway
+type and range, one-gateway-per-room, symbol size on the drawing, and accessories per unit
+(batteries, mounts, adapters) with a spare percentage. Change a value and every count, table
+and output updates immediately.</p>
+
+<h3>8. Outputs — and who each one is for</h3>
+<table><tr><th>Output</th><th>For</th></tr>
+<tr><td><b>Drawing image</b></td><td>Sales — a full sheet with project, company, AUX number,
+date, logo, drawing, symbol key and counts. Attach it to the quote.</td></tr>
+<tr><td><b>Print file</b></td><td>A multi-sheet set: drawing, counts, installation schedule,
+supply list. In the print dialog choose <i>Save as file</i>.</td></tr>
+<tr><td><b>Installation schedule</b></td><td>Operations — every device with its X/Y distance in
+metres from the room corner, plus blank serial number and sign-off columns.</td></tr>
+<tr><td><b>Supply list</b></td><td>Stores — devices and accessories with the spare percentage
+applied.</td></tr>
+<tr><td><b>Sales summary</b></td><td>Copies as text, ready to paste into an email.</td></tr>
+<tr><td><b>Client version</b></td><td>Tick it to hide coverage circles and link lines for a
+cleaner client-facing drawing.</td></tr></table>
+
+<h3>9. Saving and sharing</h3>
+<ul>
+<li><b>Autosave</b> — your work is saved in this browser on every change and restored when you
+return. It is per-device, not a backup.</li>
+<li><b>Save / Open</b> — a <code>.json</code> file holding everything: plan, rooms, layout,
+standards, logo and language. Send it to a colleague and they continue exactly where you
+stopped. You can also drop the file onto the drawing to open it.</li>
+<li><b>Cloud</b> — when sign-in is configured, <b>Save to cloud</b> and <b>Open from cloud</b>
+appear, and the list shows who last saved each project and when.</li>
+</ul>
+<blockquote>If two people save the same cloud project at the same moment, the last save wins.
+Check the list for who edited last before you overwrite.</blockquote>
+
+<h3>10. Keyboard shortcuts</h3>
+<table><tr><th>Key</th><th>Action</th></tr>
+<tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>Undo</td></tr>
+<tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>Redo</td></tr>
+<tr><td><span class="kbd">Enter</span></td><td>Close polygon / end wall chain</td></tr>
+<tr><td><span class="kbd">Esc</span></td><td>Cancel current drawing, clear selection</td></tr>
+<tr><td><span class="kbd">Delete</span></td><td>Delete selected item</td></tr>
+<tr><td><span class="kbd">Shift</span> (held)</td><td>Free angle, ignore snapping</td></tr></table>
+
+<h3>11. Quick troubleshooting</h3>
+<table><tr><th>Symptom</th><th>Fix</th></tr>
+<tr><td>Detection finds no rooms</td><td>Press <b>To line art</b> first, then detect</td></tr>
+<tr><td>Two rooms merge into one</td><td>An open doorway joins them — draw those with
+<b>Rectangle</b></td></tr>
+<tr><td>Counts look wrong</td><td>Check the scale — the badge under the drawing shows px/m</td></tr>
+<tr><td>"Understood" line is wrong</td><td>Rewrite the description or fix it with the drawing tools</td></tr>
+<tr><td>Too large for the cloud</td><td>Use <b>To line art</b>, or a smaller image</td></tr>
+<tr><td>A room drifted while panning</td><td>Press <b>↶</b>, then use the <b>Pan</b> tool</td></tr></table>`;
+
+  return `
+<h3>١. الأداة بتعمل إيه</h3>
+<p>بتحوّل رسمة الموقع لتوزيع حساسات وجيت واي، وتطلّع من ملف واحد كل اللي محتاجه تلات أقسام:
+صورة للـ<b>مبيعات</b> تتبعت مع عرض السعر، جدول تركيب لـ<b>الأوبريشن</b>، وخريطة أجهزة دائمة
+لـ<b>الافتر سيلز سبورت</b>.</p>
+<blockquote>المعايير المطبّقة: حساس لكل <b>٢٥ م٢</b> (قابل للتعديل)، و<b>جيت واي مستقل لكل
+غرفة</b>. الاتنين بيتظبطوا من قسم ٤.</blockquote>
+
+<h3>٢. إدخال الرسمة — تلات طرق</h3>
+<h4>أ. صورة</h4>
+<p>ارفع صورة أو مسح ضوئي للرسمة. لو الخطوط باهتة، دوس <b>تحويل لخطوط</b> وظبّط
+<b>درجة التنقية</b> لحد ما الحوائط تبان واضحة. الرسمة بتفضل <b>صورة</b> — الأداة بتكتشف الغرف
+منها بس مش هتعرف المسافات الحقيقية غير لما تحدد المقياس.</p>
+<h4>ب. أبعاد</h4>
+<p>اكتب اسم الغرفة وطولها وعرضها بالمتر ودوس <b>إضافة الغرفة</b>. الغرف بتترص جنب بعض
+تلقائيًا. مناسبة لما يكون معاك كشف مقاسات من غير رسمة.</p>
+<h4>ج. وصف مكتوب — الأسرع</h4>
+<p>اكتب بكلامك العادي ودوس <b>ارسم المخطط</b>:</p>
+<p><code>مستودع ١٠٠ متر مربع فيه غرفتين واحدة ٤×٥ والتانية ٤×٦</code></p>
+<p>الأداة تقرا وترسم الحوائط والأبواب بمقياس مضبوط، وتسمّي الغرف من الكلمات اللي تعرفها
+(تبريد، أدوية، مكتب، ممر…)، ولو مجموع الغرف أقل من المساحة المكتوبة بتضيف منطقة
+<b>المساحة المتبقية</b> عشان الأعداد تغطي المبنى كله.</p>
+<p>تحت الخانة بيظهر سطر <b>اللي فهمته:</b> — اقراه قبل ما تكمّل، ده ضمانك إن الأداة فهمت قصدك.</p>
+<p>وللتحكم الدقيق استعمل الصيغة المضبوطة:</p>
+<table><tr><th>السطر</th><th>المعنى</th></tr>
+<tr><td><code>غرفة "مخزن" 0,0 12x8</code></td><td>الركن عند 0,0 ثم ١٢ × ٨ م</td></tr>
+<tr><td><code>مضلع "الاسم" 0,0 6,0 6,4 0,4</code></td><td>شكل غير مستطيل</td></tr>
+<tr><td><code>باب 5,8 6,8</code></td><td>باب بين نقطتين</td></tr>
+<tr><td><code>حائط 3,0 3,8</code></td><td>حائط داخلي</td></tr></table>
+
+<h3>٣. شغّل كل حاجة</h3>
+<p>زر واحد بيعمل السلسلة كلها: يكتشف الغرف ← يحسب المساحات ← يوزّع الحساسات ← يحط الجيت واي.
+وبيسأل سؤال واحد بس — <b>الرسمة كلها كام متر</b> — لأن مفيش صورة بتحمل معلومة المسافة الحقيقية.
+رقم تقريبي يكفي، وتظبطه بعدين بأداة <b>معايرة</b>.</p>
+<p>ولو رسمت من وصف أو أبعاد، المقياس بيبقى مضبوط أصلًا والسؤال بيتخطّى.</p>
+
+<h3>٤. المراجعة والتعديل — دورك الأساسي</h3>
+<p>الأداة تشتغل الأول وإنت تراجع. كل غرفة في قسم ٣ عليها:</p>
+<ul>
+<li><b>+ و −</b> — تغيّر عدد حساسات الغرفة، والأداة تعيد توزيعهم متوازنين جوّاها فورًا</li>
+<li><b>رجّع للتلقائي</b> — بيظهر بعد ما تعدّل العدد بإيدك، عشان تعرف دايمًا إنت لمست أنهي غرف</li>
+</ul>
+<blockquote>أعدادك اليدوية مبتضيعش. لما تدوس <b>وزّع</b> تاني، الأداة بتعيد حساب الغرف اللي
+لسه على <b>تلقائي</b> بس.</blockquote>
+<p>قسم ٦ <b>فحص قبل التسليم</b> بيسرد أي حاجة محتاجة قرار: غرف من غير حساسات، أعداد أقل من
+المعيار، جيت واي ناقص، حساس خارج مدى الجيت واي، حساس برة كل الغرف، وأي غرفة عددك اليدوي فيها
+مختلف عن المعيار.</p>
+
+<h3>٥. أدوات الرسم والتعديل</h3>
+<table><tr><th>الأداة</th><th>الاستخدام</th></tr>
+<tr><td><b>تعديل</b></td><td>الافتراضية. اسحب الحساسات والجيت واي وأركان الغرف والحوائط
+والأبواب. والسحب على الفاضي بيحرّك اللوحة.</td></tr>
+<tr><td><b>تحريك</b></td><td>تحريك المشهد بس — مفيش حاجة ممكن تتحرك بالغلط.</td></tr>
+<tr><td><b>معايرة</b></td><td>دوس نقطتين على مسافة معروفة واكتبها بالمتر.</td></tr>
+<tr><td><b>مضلع</b></td><td>دوس ركن ركن. دوس على أول نقطة تاني أو
+<span class="kbd">Enter</span> عشان يقفل.</td></tr>
+<tr><td><b>مستطيل</b></td><td>اسحب. المقاسات بتظهر حية وإنت بتسحب.</td></tr>
+<tr><td><b>غرفة بضغطة</b></td><td>دوس جوّه أي غرفة في الصورة وهي تتبّع حدودها.</td></tr>
+<tr><td><b>حائط</b></td><td>دوس نقطة نقطة. دوس على آخر نقطة تاني عشان تنهي السلسلة.</td></tr>
+<tr><td><b>باب</b></td><td>دوس على أي حائط — بيتحط باب ٩٠ سم بقوس فتح. دوسة تانية عليه
+تقلب اتجاه الفتح.</td></tr>
+<tr><td><b>حساس / جيت واي</b></td><td>دوسة تضيف، ودوسة على واحد موجود تشيله.</td></tr></table>
+<h4>مساعدات الرسم</h4>
+<ul>
+<li><b>قفل الزوايا</b> — أي خط قريب من الأفقي أو الرأسي بيتقفل عليه. خلّي
+<span class="kbd">Shift</span> مضغوطة للزاوية الحرة.</li>
+<li><b>خطوط محاذاة</b> — خط أخضر بيظهر لما تتحاذى مع ركن موجود.</li>
+<li><b>شبكة نص متر</b> ولزق على الأركان الموجودة.</li>
+<li><b>أطوال حية</b> على كل حيطة وضلع غرفة، بتتحدث وإنت بتسحب.</li>
+</ul>
+<h4>التحديد والحذف</h4>
+<p>في <b>تعديل</b>، دوس على أي حاجة تتحدد ويظهر جنبها <b>✕</b> أحمر. دوس عليه أو على
+<span class="kbd">Delete</span> عشان تحذفها.</p>
+<blockquote>الغرفة بتتحرك بعد ما تتحدد بس: أول ضغطة تحدد، والتانية تسحب. ده بيمنعك إنك
+تزحلق غرفة وإنت بتحرك اللوحة.</blockquote>
+<p>الحساس اللي يتسحب برة كل الغرف بيرجع لأقرب نقطة جوّه غرفته. واللي يتسحب لغرفة تانية
+بيتحوّل لجيت واي الغرفة الجديدة ويتعاد ترقيمه.</p>
+
+<h3>٦. التراجع والإعادة</h3>
+<p>زرارين عايمين تحت الرسمة: <b>↶</b> تراجع و<b>↷</b> إعادة، بيغطّوا آخر ٤٠ خطوة.
+ومن الكيبورد: <span class="kbd">Ctrl</span> + <span class="kbd">Z</span> و
+<span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span>.</p>
+
+<h3>٧. معايير الشركة</h3>
+<p>قسم ٤ فيه كل قاعدة الأعداد بتعتمد عليها: تغطية الحساس، أقل عدد للغرفة، نوع الجيت واي ومداه،
+جيت واي مستقل لكل غرفة، حجم الرمز على الرسمة، والمستلزمات لكل وحدة (بطاريات، قواعد، محولات)
+مع نسبة احتياطي. غيّر أي قيمة وكل الأعداد والجداول والمخرجات تتحدث على طول.</p>
+
+<h3>٨. المخرجات — وكل واحد لمين</h3>
+<table><tr><th>المخرَج</th><th>لمين</th></tr>
+<tr><td><b>صورة الرسمة</b></td><td>المبيعات — ورقة كاملة باسم المشروع والشركة ورقم AUX
+والتاريخ والشعار والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
+<tr><td><b>ملف الطباعة</b></td><td>مجموعة أوراق: الرسمة، الأعداد، جدول التركيب، قائمة التوريد.
+من نافذة الطباعة اختار <i>حفظ كملف</i>.</td></tr>
+<tr><td><b>جدول التركيب</b></td><td>الأوبريشن — كل جهاز وبعده س/ص بالمتر من ركن الغرفة، وخانات
+فاضية للرقم التسلسلي والتوقيع.</td></tr>
+<tr><td><b>قائمة التوريد</b></td><td>المخزن — الأجهزة والمستلزمات بنسبة الاحتياطي محسوبة.</td></tr>
+<tr><td><b>ملخص المبيعات</b></td><td>بيتنسخ نص جاهز تلزقه في رسالة.</td></tr>
+<tr><td><b>نسخة العميل</b></td><td>علّم عليها عشان تخفي دوائر التغطية وخطوط الوصل ويطلع رسم
+أنضف للعميل.</td></tr></table>
+
+<h3>٩. الحفظ والمشاركة</h3>
+<ul>
+<li><b>حفظ تلقائي</b> — شغلك بيتحفظ في المتصفح ده مع كل تعديل وبيرجع لما تفتح تاني. ده لكل
+جهاز لوحده، مش نسخة احتياطية.</li>
+<li><b>حفظ / فتح</b> — ملف <code>.json</code> فيه كل حاجة: الرسمة والغرف والتوزيع والمعايير
+والشعار واللغة. ابعته لزميلك يكمّل من نفس النقطة بالظبط. وتقدر تسحب الملف على الرسمة عشان
+تفتحه.</li>
+<li><b>السحابة</b> — لما يكون الدخول متظبط، بيظهر <b>حفظ للسحابة</b> و<b>فتح من السحابة</b>،
+والقائمة بتوضّح مين آخر واحد حفظ كل مشروع وإمتى.</li>
+</ul>
+<blockquote>لو اتنين حفظوا نفس مشروع السحابة في نفس اللحظة، آخر واحد حفظ هو اللي يثبت. بص على
+القايمة وشوف مين عدّل آخر مرة قبل ما تكتب فوقه.</blockquote>
+
+<h3>١٠. اختصارات الكيبورد</h3>
+<table><tr><th>المفتاح</th><th>بيعمل إيه</th></tr>
+<tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>تراجع</td></tr>
+<tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>إعادة</td></tr>
+<tr><td><span class="kbd">Enter</span></td><td>يقفل المضلع / ينهي سلسلة الحائط</td></tr>
+<tr><td><span class="kbd">Esc</span></td><td>يلغي الرسم الحالي ويشيل التحديد</td></tr>
+<tr><td><span class="kbd">Delete</span></td><td>يحذف العنصر المحدد</td></tr>
+<tr><td><span class="kbd">Shift</span> (مضغوطة)</td><td>زاوية حرة من غير لزق</td></tr></table>
+
+<h3>١١. حل المشاكل السريع</h3>
+<table><tr><th>العرض</th><th>الحل</th></tr>
+<tr><td>الاكتشاف مش لاقي غرف</td><td>دوس <b>تحويل لخطوط</b> الأول وبعدين اكتشف</td></tr>
+<tr><td>غرفتين بيتلزقوا في واحدة</td><td>فيه فتحة باب واصلاهم — ارسمهم بـ<b>مستطيل</b></td></tr>
+<tr><td>الأعداد شكلها غلط</td><td>راجع المقياس — الشريط تحت الرسمة بيوريه بالبكسل لكل متر</td></tr>
+<tr><td>سطر «اللي فهمته» غلط</td><td>أعد صياغة الوصف أو ظبّطه بأدوات الرسم</td></tr>
+<tr><td>الملف كبير على السحابة</td><td>استعمل <b>تحويل لخطوط</b> أو صورة أصغر</td></tr>
+<tr><td>غرفة اتزحلقت وإنت بتحرك</td><td>دوس <b>↶</b> واستعمل أداة <b>تحريك</b></td></tr></table>`;}
+function openManual(){
+  mnTitle.textContent=t("manTitle")+" — v"+VERSION;
+  mnBody.innerHTML=manualHTML();
+  mnBody.scrollTop=0;manual.classList.add("on");}
+function closeManual(){manual.classList.remove("on");}
+function dlManual(){
+  const css=document.querySelector("style").textContent;
+  const doc='<!DOCTYPE html><html lang="'+L+'" dir="'+(L==="ar"?"rtl":"ltr")+'"><head>'+
+    '<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<title>'+t("manTitle")+' v'+VERSION+'</title><style>'+css+
+    'body{overflow:auto;height:auto;padding:24px 16px}.svbody{display:block}</style></head><body>'+
+    '<div class="svbody"><h2 style="margin:0 0 6px">'+t("manTitle")+'</h2>'+
+    '<p style="color:#8ea1b4;margin:0 0 18px">v'+VERSION+' · '+today()+'</p>'+
+    manualHTML()+'</div></body></html>';
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([doc],{type:"text/html;charset=utf-8"}));
+  a.download=t("manTitle")+" v"+VERSION+".html";a.click();}
+
+/* ================= التحديث التلقائي | Auto update ================= */
+let updSeen="";
+async function checkUpdate(){
+  try{
+    const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)return;
+    const j=await r.json();
+    if(j&&j.version&&j.version!==VERSION&&j.version!==updSeen){
+      updTxt.textContent=t("updMsg",j.version);
+      updBar.dataset.v=j.version;updBar.classList.add("on");}
+  }catch(e){}}
 
 /* ================= الدخول والسحابة | Auth & cloud ================= */
 let FBX=null;
@@ -1781,6 +2158,16 @@ document.getElementById("btnAddRoom").onclick=()=>{
 document.getElementById("btnRun").onclick=()=>{syncCfg();snap();if(runPlan(pl()))refresh();};
 document.getElementById("btnClear").onclick=()=>{snap();pl().sensors=[];pl().gateways=[];refresh();};
 document.getElementById("btnUndo").onclick=undo;
+document.getElementById("fbUndo").onclick=undo;
+document.getElementById("fbRedo").onclick=redo;
+document.getElementById("btnManual").onclick=openManual;
+document.getElementById("mnX").onclick=closeManual;
+document.getElementById("mnBack").onclick=closeManual;
+document.getElementById("mnDl").onclick=dlManual;
+document.getElementById("updX").onclick=()=>{
+  updSeen=updBar.dataset.v||"";updBar.classList.remove("on");};
+document.getElementById("updGo").onclick=()=>{
+  location.replace(location.pathname+"?v="+(updBar.dataset.v||Date.now()));};
 document.getElementById("dbDone").onclick=()=>{
   if(U.tool==="poly")closePoly();
   if(U.tool==="wall"){U.wlast=U.wnow=null;render();}};
@@ -1874,6 +2261,8 @@ applyLang();loadCfg();updateLogoUI();resize();refresh();restoreAS();
 cv.style.cursor="default";
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
 initFB();
+checkUpdate();setInterval(checkUpdate,300000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate();});
 </script>
 </body>
 </html>
