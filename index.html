@@ -17,12 +17,14 @@
   --ink:#0d141c; --panel:#151f2b; --panel-2:#1b2836; --line:#26374a;
   --text:#e7eef5; --muted:#8ea1b4; --field:#0e1723; --stage:#0a1017;
   --glass:rgba(21,31,43,.94); --veil:rgba(10,16,23,.75);
+  --text-soft:#c8d6e3; --on-accent:#07140d;
   --sensor:#e02b2b; --gate:#1f63d6; --zone:#5b93ff; --ok:#57d38c; --warn:#ffc44d; --bad:#ff6b6b;
 }
 html[data-theme="light"]{
   --ink:#eef2f7; --panel:#ffffff; --panel-2:#eef2f7; --line:#cfd9e4;
   --text:#16212c; --muted:#5b6b7c; --field:#f6f9fc; --stage:#dfe6ee;
   --glass:rgba(255,255,255,.95); --veil:rgba(240,244,248,.8);
+  --text-soft:#2c3a48; --on-accent:#ffffff;
   --zone:#2563eb; --ok:#0f9d58; --warn:#b45309; --bad:#d92d20;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -38,6 +40,8 @@ input,textarea{-webkit-user-select:text;user-select:text}
   .stage{order:1}
   input[type=text],input[type=number],select,textarea{font-size:16px}
   button{min-height:38px}
+  .brand button,.cnt button,.item .x,.glinks button,.kindsel button,.updbar .xb{min-height:0}
+  #btnManual,#btnTheme{width:32px;height:32px}
   .tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .tools::-webkit-scrollbar{display:none}
   .tools button{flex:0 0 auto;padding:10px 13px}
@@ -59,7 +63,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .step > summary:hover{background:var(--panel-2)}
 .num{width:23px;height:23px;flex:0 0 23px;border-radius:6px;background:var(--panel-2);
   border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--muted)}
-.step[open] .num{background:var(--zone);border-color:var(--zone);color:#08111d;font-weight:700}
+.step[open] .num{background:var(--zone);border-color:var(--zone);color:var(--on-accent);font-weight:700}
 .body{padding:4px 18px 18px}
 label{display:block;font-size:12.5px;color:var(--muted);margin:11px 0 5px}
 input[type=text],input[type=number],select,textarea{width:100%;padding:9px 10px;border-radius:8px;
@@ -74,8 +78,8 @@ button{font-family:inherit;font-size:13.5px;cursor:pointer;border-radius:8px;pad
   border:1px solid var(--line);background:var(--panel-2);color:var(--text)}
 button:hover{border-color:#3a5470}
 button:active{transform:translateY(1px)}
-.btn-main{background:var(--zone);border-color:var(--zone);color:#08111d;font-weight:700;width:100%;padding:11px}
-.btn-pdf{background:var(--ok);border-color:var(--ok);color:#07140d;font-weight:700;width:100%;padding:11px}
+.btn-main{background:var(--zone);border-color:var(--zone);color:var(--on-accent);font-weight:700;width:100%;padding:11px}
+.btn-pdf{background:var(--ok);border-color:var(--ok);color:var(--on-accent);font-weight:700;width:100%;padding:11px}
 .btn-line{width:100%}
 .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .btns button{flex:1;min-width:100px}
@@ -148,7 +152,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .wait{position:absolute;inset:0;display:none;place-items:center;background:var(--veil);
   color:var(--text);font-size:14px;z-index:9}
 .wait.on{display:grid}
-.toast{position:absolute;top:14px;inset-inline-end:14px;background:var(--ok);color:#07140d;font-weight:700;
+.toast{position:absolute;top:14px;inset-inline-end:14px;background:var(--ok);color:var(--on-accent);font-weight:700;
   padding:9px 14px;border-radius:9px;font-size:13px;opacity:0;transform:translateY(-8px);
   transition:.25s;pointer-events:none;z-index:10}
 .toast.on{opacity:1;transform:none}
@@ -163,12 +167,12 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   border-radius:10px;padding:9px 13px;font-size:15px;line-height:1;min-width:44px}
 .histbar button:disabled{opacity:.3;cursor:default}
 .updbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:60;
-  display:none;align-items:center;gap:10px;background:var(--ok);color:#07140d;
+  display:none;align-items:center;gap:10px;background:var(--ok);color:var(--on-accent);
   border-radius:11px;padding:9px 12px;font-size:13px;font-weight:600;
   box-shadow:0 6px 24px rgba(0,0,0,.45);max-width:calc(100% - 24px)}
 .updbar.on{display:flex}
-.updbar button{background:#07140d;color:var(--ok);border:none;padding:7px 12px;font-weight:700;font-size:12.5px}
-.updbar .xb{background:transparent;color:#07140d;padding:4px 8px;font-size:16px}
+.updbar button{background:var(--on-accent);color:var(--ok);border:none;padding:7px 12px;font-weight:700;font-size:12.5px}
+.updbar .xb{background:transparent;color:var(--on-accent);padding:4px 8px;font-size:16px}
 .sheetview{position:fixed;inset:0;background:var(--ink);z-index:70;display:none;
   grid-template-rows:auto 1fr}
 .sheetview.on{display:grid}
@@ -180,7 +184,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   border-top:1px solid var(--line);padding-top:16px}
 .svbody h3:first-child{border-top:none;margin-top:4px;padding-top:0}
 .svbody h4{margin:16px 0 6px;font-size:14px}
-.svbody p,.svbody li{font-size:13.5px;color:#c8d6e3}
+.svbody p,.svbody li{font-size:13.5px;color:var(--text-soft)}
 .svbody ul,.svbody ol{padding-inline-start:20px;margin:6px 0}
 .svbody li{margin:4px 0}
 .svbody code{background:var(--field);border:1px solid var(--line);border-radius:5px;
@@ -191,7 +195,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .svbody .kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:5px;
   padding:1px 7px;font-size:12px}
 .svbody blockquote{margin:10px 0;padding:9px 13px;border-inline-start:3px solid var(--warn);
-  background:var(--field);border-radius:0 8px 8px 0;font-size:13px;color:#c8d6e3}
+  background:var(--field);border-radius:0 8px 8px 0;font-size:13px;color:var(--text-soft)}
 .gate{position:fixed;inset:0;background:var(--ink);display:none;place-items:center;z-index:50;padding:20px}
 .gate.on{display:grid}
 .gate .card{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--line);
@@ -210,6 +214,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 #print{display:none}
 @media print{
   @page{size:A4 landscape;margin:9mm}
+  .gate,.updbar,.sheetview,.toast,.wait{display:none!important}
   html,body{height:auto;overflow:visible;background:#fff;color:#000}
   .app{display:none}
   #print{display:block;font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#000}
@@ -255,13 +260,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <span id="verChip"></span>
       <span id="userChip"></span>
       <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
+      <button id="btnNew" data-i="bNew">جديد</button>
+      <button id="btnSave" data-i="save">حفظ</button>
+      <button id="btnOpen" data-i="open">فتح</button>
       <button id="btnLang">English</button>
       <button id="btnTheme" title="الثيم">◐</button>
       <button id="btnInstall" data-i="bInstall" style="display:none">تثبيت</button>
       <button id="btnManual" title="دليل">؟</button>
-      <button id="btnNew" data-i="bNew">جديد</button>
-      <button id="btnSave" data-i="save">حفظ</button>
-      <button id="btnOpen" data-i="open">فتح</button>
       <input type="file" id="fileProj" accept=".json,application/json" style="display:none">
     </div>
 
@@ -274,13 +279,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         </div>
         <label data-i="fClient">اسم الشركة (العميل / الجهة)</label>
         <input type="text" id="pjClient" data-ph="phClient">
-        <label data-i="fLogo">شعار شركتك — اختياري، بيظهر على المخرجات</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button id="btnLogo" data-i="bLogo" style="flex:1">اختيار شعار</button>
-          <img id="logoPrev" alt="" style="height:32px;display:none;background:#fff;border-radius:6px;padding:2px 6px">
-          <button id="btnLogoX" data-i="bLogoX" style="display:none">شيله</button>
-        </div>
-        <input type="file" id="fileLogo" accept="image/*" style="display:none">
         <p class="hint" data-i="hSave" data-html="1"></p>
         <button id="btnRestore" class="btn-line" style="display:none;margin-top:9px"></button>
         <div id="cloudBox" style="display:none">
@@ -371,7 +369,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         <select id="selGwMode">
           <option value="room" data-i="optModeRoom">جيت واي مستقل لكل غرفة</option>
           <option value="range" data-i="optModeRange">تجميع حسب المدى</option>
-          <option value="manual" data-i="optModeManual">يدوي — أنا اللي أحط وأربط</option>
+          <option value="manual" data-i="optModeManual">يدوي — أنا اللي أحط الجيت واي</option>
         </select>
         <p class="hint" data-i="hGwMode" data-html="1"></p>
         <label><span data-i="fSym">حجم الرمز على الرسمة</span>: <span id="lblSym">٠٫٦</span> <span data-i="unitM">متر</span></label>
@@ -438,21 +436,20 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <button data-t="edit" class="on" data-i="tEdit">تعديل</button>
       <button data-t="cal" data-i="tCal">معايرة</button>
       <span class="sep"></span>
-      <button data-t="poly" data-i="tPoly">مضلع</button>
-      <button data-t="rect" data-i="tRect">مستطيل</button>
-      <button data-t="wand" data-i="tWand">غرفة بضغطة</button>
       <span class="kindsel" id="segKind">
         <button data-k="room" class="on" data-i="kd_room">غرفة</button>
         <button data-k="corr" data-i="kd_corr">ممر</button>
         <button data-k="fridge" data-i="kd_fridge">ثلاجة</button>
       </span>
+      <button data-t="poly" data-i="tPoly">مضلع</button>
+      <button data-t="rect" data-i="tRect">مستطيل</button>
+      <button data-t="wand" data-i="tWand">غرفة بضغطة</button>
       <button data-t="wall" data-i="tWall">حائط</button>
       <button data-t="door" data-i="tDoor">باب</button>
       <span class="sep"></span>
       <button data-t="sensor" data-i="tSensor">حساس</button>
       <button data-t="gate" data-i="tGate">جيت واي</button>
       <span class="sep"></span>
-      <button id="btnUndo" data-i="tUndo">تراجع</button>
       <button id="btnCover" class="on" data-i="tCover">التغطية</button>
       <button id="btnRange" class="on" data-i="tRange">مدى الجيت واي</button>
       <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
@@ -497,7 +494,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="1.9";
+const VERSION="2.0";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -534,10 +531,10 @@ hRooms:"أسرع طريقة: <b>اكتشاف كل الغرف</b> والأداة 
 s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 — بشاشة",optOther:"حساس آخر",
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
-optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",
+optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط الجيت واي",
+fSym:"حجم الرمز على الرسمة",unitM:"متر",
 tRange:"مدى الجيت واي",
-hGwMode:"«مستقل لكل غرفة» بيمشي مع اشتراط الفصل بين الغرف. لو حطيت جيت واي بإيدك بأداة الجيت واي، بياخد الحساسات القريبة منه في أي غرفة، وبيفضل ثابت مهما وزّعت تاني. أداة <b>ربط</b> بتضيف وتشيل حساسات منه بضغطة.",
+hGwMode:"«مستقل لكل غرفة» بيمشي مع اشتراط الفصل بين الغرف. الجيت واي شغال زي <b>تشيك بوينت</b>: أي حساس جوّه مداه متغطي، من غير خطوط ربط. واللي تحطه بإيدك بيفضل ثابت في مكانه مهما وزّعت تاني.",
 isOut:"{0}: {1} حساس خارج مدى أقرب جيت واي (أبعد {2} م)",
 isNoGwAll:"مفيش أي جيت واي متحدد",
 fAcc:"مستلزمات لكل وحدة",fBat:"بطاريات لكل حساس",fBrk:"قواعد تثبيت لكل حساس",
@@ -558,8 +555,7 @@ phDesc:"اكتب بكلامك العادي:\nمستودع ١٠٠ متر مربع
 sumRead:"اللي فهمته:",remainName:"باقي {0}",remainArea:"المساحة المتبقية",roomsWord:"غرف",
 bNew:"جديد",cNew:"نبدأ مشروع جديد؟ الشغل الحالي هيتمسح من الحفظ التلقائي.",
 tRestored:"رجّعتلك شغلك الأخير",
-fLogo:"شعار شركتك — اختياري، بيظهر على المخرجات",bLogo:"اختيار شعار",bLogoX:"شيله",
-bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",fNewKind:"نوع أي منطقة ترسمها",
+bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",thTheme:"الثيم",tRedo:"إعادة",
 verHint:"اضغط عشان تجيب آخر نسخة",cUpdate:"تجيب آخر نسخة؟ الصفحة هتتحمّل من الأول.",
 iosInstall:"للتثبيت على الآيفون:\n١) افتح الصفحة في سفاري\n٢) دوس زر المشاركة تحت\n٣) اختار «إضافة إلى الشاشة الرئيسية»",
 updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",manVer:"إصدار {0}",
@@ -580,7 +576,7 @@ okAll:"كل الغرف متغطية، والأعداد والمدى مظبوطي
 issNote:"{0} ملاحظة",issClear:"سليم",
 isScale:"المقياس غير محدد",isNoZones:"مفيش غرف متحددة",isNoSensors:"{0}: من غير حساسات",
 isLess:"{0}: {1} حساس والمطلوب {2}",isManual:"{0}: عدد يدوي {1} والمعيار {2}",
-isNoGw:"{0}: من غير جيت واي",isFar:"{0}: أبعد حساس {1} م خارج مدى الجيت واي",
+isNoGw:"{0}: من غير جيت واي",
 isOrphan:"{0} حساس مش داخل أي غرفة",isName:"اسم المشروع فاضي",
 aScale:"حدّد المقياس الأول من زر معايرة.",aZone:"ارسم غرفة واحدة على الأقل.",
 aImg:"محتاج صورة رسمة الأول.",aImgTool:"الأداة دي بتشتغل على صورة رسمة.",
@@ -628,10 +624,10 @@ hRooms:"Fastest route: <b>Detect All Rooms</b> and the tool reads the image itse
 s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",optOther:"Other sensor",
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
-optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",
+optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place gateways",
+fSym:"Symbol size on plan",unitM:"m",
 tRange:"Gateway range",
-hGwMode:"“One per room” matches room-isolation requirements. A gateway you place yourself picks up nearby sensors in any room and stays put through redistribution. The <b>Link</b> tool adds or removes sensors from it with one click.",
+hGwMode:"“One per room” matches room-isolation requirements. A gateway works like a <b>checkpoint</b>: any sensor inside its range is covered, no link lines. Gateways you place yourself stay put through redistribution.",
 isOut:"{0}: {1} sensors beyond the nearest gateway ({2} m away)",
 isNoGwAll:"No gateway placed",
 fAcc:"Accessories per unit",fBat:"Batteries per sensor",fBrk:"Mounts per sensor",
@@ -652,8 +648,7 @@ phDesc:"Write it your way:\nwarehouse 100 sqm with two rooms\none 4x5 and one 4x
 sumRead:"Understood:",remainName:"Rest of {0}",remainArea:"Remaining area",roomsWord:"rooms",
 bNew:"New",cNew:"Start a new project? Current autosaved work will be cleared.",
 tRestored:"Restored your last session",
-fLogo:"Your company logo — optional, appears on outputs",bLogo:"Choose logo",bLogoX:"Remove",
-bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",fNewKind:"Type for zones you draw",
+bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",thTheme:"Theme",tRedo:"Redo",
 verHint:"Click to fetch the latest version",cUpdate:"Fetch the latest version? The page will reload.",
 iosInstall:"To install on iPhone:\n1) Open the page in Safari\n2) Tap the Share button\n3) Choose “Add to Home Screen”",
 updMsg:"Version {0} is available",manTitle:"User Manual",manVer:"Version {0}",
@@ -674,7 +669,7 @@ okAll:"Every room is covered and the counts and range check out — ready to han
 issNote:"{0} issues",issClear:"Clear",
 isScale:"Scale not set",isNoZones:"No rooms defined",isNoSensors:"{0}: no sensors",
 isLess:"{0}: {1} sensors, {2} required",isManual:"{0}: manual count {1}, standard is {2}",
-isNoGw:"{0}: no gateway",isFar:"{0}: farthest sensor {1} m, beyond gateway range",
+isNoGw:"{0}: no gateway",
 isOrphan:"{0} sensors outside every room",isName:"Project name is empty",
 aScale:"Set the scale first using the Scale tool.",aZone:"Draw at least one room.",
 aImg:"A plan image is needed first.",aImgTool:"This tool works on a plan image.",
@@ -716,6 +711,10 @@ function applyTheme(){
   try{localStorage.setItem(TH_KEY,TH);}catch(e){}
   if(typeof render==="function")render();}
 function applyLang(){
+  btnManual.title=t("bManual");btnManual.textContent=L==="ar"?"؟":"?";
+  btnTheme.title=t("thTheme");
+  fbUndo.title=t("tUndo");fbRedo.title=t("tRedo");
+  mnBack.textContent=L==="ar"?"→":"←";
   document.documentElement.lang=L;
   document.documentElement.dir=L==="ar"?"rtl":"ltr";
   document.querySelectorAll("[data-i]").forEach(e=>{
@@ -734,7 +733,7 @@ let SEQ=1;
 const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
   scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
-function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",brand:{logo:null},
+function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",
   cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,gwMode:"room",bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
 let P=newProject();
@@ -822,24 +821,30 @@ function freeParse(text){
             .replace(/(\d)\s*(?:[×xX*]|في|فى|by)\s*(?=\d)/g,"$1x");
   const CW=/(مستودع|مخزن|هنجر|عنبر|صالة|صاله|warehouse|hangar|hall|facility)/i;
   const TYPE=/(تبريد|تجميد|ثلاجة|ثلاجه|تلاجة|تلاجه|براد|أدوية|ادوية|ادويه|تخزين|استقبال|مكتب|معمل|ممر|إنتاج|انتاج|تعبئة|تعبئه|cold|freezer|fridge|medicine|storage|office|lab|corridor|hallway|reception|production|packing)/i;
-  const KDW=/(ممر|corridor|hallway)/i,KDF=/(ثلاجة|ثلاجه|تلاجة|تلاجه|فريزر|براد|fridge|freezer|cooler)/i;
+  const KDW=/(ممرين|ممرات|ممر|corridors?|hallways?)/i,
+        KDF=/(ثلاجتين|تلاجتين|ثلاجات|تلاجات|ثلاجة|ثلاجه|تلاجة|تلاجه|فريزرين|فريزرات|فريزر|برادين|براد|fridges?|freezers?|coolers?)/i;
   const rooms=[];let total=null,count=0,each=null;
   s.split(/\n/).forEach(line=>{
     line=line.trim();if(!line)return;
     const dims=[...line.matchAll(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/g)];
     // عدد الغرف — بالكلمة أو بالرقم
+    const wordIn=(txt,k)=>new RegExp(
+      "(?:^|[^\\u0600-\\u06FFa-zA-Z]|^و|[^\\u0600-\\u06FFa-zA-Z]و)"+k+
+      "(?:$|[^\\u0600-\\u06FFa-zA-Z])").test(txt.replace(/(^|\s)و(?=[\u0600-\u06FF])/g,"$1و "));
     for(const k in NUMW){
-      if(!line.includes(k))continue;
+      if(!wordIn(line,k))continue;
       const direct=/غرفتين|اوضتين|أوضتين/.test(k);
       if(direct||/(غرف|غرفة|غرفه|اوض|أوض|room)/i.test(line)){count=Math.max(count,NUMW[k]);break;}}
     const cm=line.match(/(\d+)\s*(غرف|غرفة|غرفه|اوض|أوض|rooms?)/i);
     if(cm)count=Math.max(count,+cm[1]);
-    // مساحة إجمالية — سطر فيه كلمة مساحة أو اسم مبنى ومن غير مقاسين
-    if(!dims.length&&(/مساح|مربع|م2|م٢|sqm|square|m2/i.test(line)||CW.test(line))){
-      const am=line.replace(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/g,"").match(/(\d+(?:\.\d+)?)/);
-      if(am&&+am[1]>=4&&+am[1]<100000){
-        const nm=line.match(CW);
-        total={a:+am[1],name:nm?nm[1]:""};}}
+    // مساحة إجمالية — من الجزء اللي قبل أول مقاس، حتى لو السطر فيه مقاسات
+    const pre=dims.length?line.slice(0,dims[0].index):line;
+    if(!total&&(CW.test(pre)||(/مساح|مربع|م2|م٢|sqm|square|m2/i.test(pre)
+        &&!/^\s*و?\s*(غرفة|غرفه|اوضة|أوضة|ثلاجة|تلاجة|ممر|rooms?|fridge|corridor)/i.test(pre)))){
+      const nums=[...pre.replace(/(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)/g,"")
+        .matchAll(/(\d+(?:\.\d+)?)/g)].map(m2=>+m2[1]).filter(v=>v>=4&&v<100000);
+      if(nums.length){const nm=pre.match(CW);
+        total={a:Math.max(...nums),name:nm?nm[1]:""};}}
     // الغرف بمقاساتها
     if(dims.length){
       const isEach=/(^|\s)(كل|each)(\s|$)/i.test(line);
@@ -848,36 +853,48 @@ function freeParse(text){
         const seg=line.slice(prev,m.index);prev=m.index+m[0].length;
         if(!(w>0&&h>0&&w<500&&h<500))return;
         if(isEach){each={w,h};return;}
-        let name="",kind="room";const tm=seg.match(TYPE);
-        if(KDW.test(seg))kind="corr";else if(KDF.test(seg))kind="fridge";
-        if(tm)name=(L==="ar"&&kind==="room"?"غرفة ":"")+tm[1];
-        rooms.push({name,w,h,kind});});}});
-  if(each&&count>rooms.length)
-    while(rooms.length<count)rooms.push({name:"",w:each.w,h:each.h,kind:"room"});
+        let name="",kind="room",kw="";
+        const wm=seg.match(KDW),fm=seg.match(KDF);
+        if(wm){kind="corr";kw=wm[1];}else if(fm){kind="fridge";kw=fm[1];}
+        if(kind==="room"){const tm=seg.match(TYPE);
+          if(tm)name=(L==="ar"?"غرفة ":"")+tm[1];}
+        let copies=1;
+        if(/^(ممرين|ثلاجتين|تلاجتين|فريزرين|برادين)$/.test(kw))copies=2;
+        else if(kw&&/(ات|s)$/i.test(kw)){
+          const nm2=seg.match(/(\d+)(?!(?:\.\d+)?x)\D*$/);
+          if(nm2)copies=Math.min(20,+nm2[1]);
+          else for(const k in NUMW){if(wordIn(seg,k)){copies=NUMW[k];break;}}}
+        for(let ci=0;ci<copies;ci++)rooms.push({name,w,h,kind});});}});
+  const roomCnt=()=>rooms.filter(r=>(r.kind||"room")==="room").length;
+  if(each&&count>roomCnt())
+    while(roomCnt()<count)rooms.push({name:"",w:each.w,h:each.h,kind:"room"});
   const used=()=>rooms.reduce((t2,r)=>t2+r.w*r.h,0);
   if(total){
     if(!rooms.length){
       const n=Math.max(1,count),a=total.a/n;
       for(let i=0;i<n;i++){const w=r5(Math.sqrt(a)*1.15),h=r5(a/w);rooms.push({name:"",w,h});}}
-    else if(count>rooms.length){
-      const miss=count-rooms.length,rem=total.a-used();
+    else if(count>roomCnt()){
+      const miss=count-roomCnt(),rem=total.a-used();
       if(rem>3){const a=rem/miss;
         for(let i=0;i<miss;i++){const w=r5(Math.sqrt(a)*1.15),h=r5(a/w);rooms.push({name:"",w,h});}}}
     else{const rem=total.a-used();
       if(rem>=4){const H=Math.max(...rooms.map(r=>r.h));
         let tn=total.name;
-        if(tn&&L==="ar"&&!/^ال/.test(tn))tn="ال"+tn;
+        if(tn&&L==="ar"&&/^[\u0600-\u06FF]/.test(tn)&&!/^ال/.test(tn))tn="ال"+tn;
         rooms.push({name:tn?t("remainName",tn):t("remainArea"),
           w:r5(rem/H),h:H});}}}
   if(!rooms.length)return null;
-  let idx=0;rooms.forEach(r=>{if(!r.name)r.name=t("room")+" "+ar(++idx);});
+  const nk={room:0,corr:0,fridge:0};
+  rooms.forEach(r=>{const kd=r.kind||"room";
+    if(!r.name)r.name=t(kd==="room"?"room":"kd_"+kd)+" "+ar(++nk[kd]);});
   const sumA=rooms.reduce((t2,r)=>t2+r.w*r.h,0);
   const maxRow=Math.max(12,r5(Math.sqrt(sumA)*1.35));
   let x=0,y=0,rH=0;const out=[],doors=[];
   rooms.forEach(r=>{
     if(x>0&&x+r.w>maxRow){x=0;y+=rH;rH=0;}
     out.push({name:r.name,x,y,w:r.w,h:r.h,kind:r.kind||"room"});
-    doors.push({x1:x+r.w/2-.45,y1:y+r.h,x2:x+r.w/2+.45,y2:y+r.h});
+    if((r.kind||"room")==="room")
+      doors.push({x1:x+r.w/2-.45,y1:y+r.h,x2:x+r.w/2+.45,y2:y+r.h});
     x+=r.w;rH=Math.max(rH,r.h);});
   const parts=[];
   if(total)parts.push(((total.name||"")+" "+ar(fmt(total.a))+" "+t("unitM2")).trim());
@@ -1149,11 +1166,12 @@ function exportSheet(q,W,clean){
   g.fillStyle="#555";g.font=fnt(.020);
   g.fillText(P.client||"",X1,side+Math.round(W*.062));
   let metaX=X2;
-  if(P.brand&&P.brand.logo&&LOGOI.complete&&LOGOI.naturalWidth){
-    const lh=headH*.52,lw=lh*LOGOI.naturalWidth/LOGOI.naturalHeight;
-    const lx=rtl?LX:RX-lw;
-    g.drawImage(LOGOI,lx,side,lw,lh);
-    metaX=rtl?LX+lw+Math.round(W*.012):RX-lw-Math.round(W*.012);}
+  const lh=headH*.52;let lw;
+  if(LOGO_OK&&LOGOI.naturalWidth){
+    lw=lh*LOGOI.naturalWidth/LOGOI.naturalHeight;
+    g.drawImage(LOGOI,rtl?LX:RX-lw,side,lw,lh);}
+  else lw=brandFallbackPng(g,rtl?LX:RX,side,lh,!rtl);
+  metaX=rtl?LX+lw+Math.round(W*.012):RX-lw-Math.round(W*.012);
   g.textAlign=A2;g.font=fnt(.017);
   [P.ref?"AUX: "+P.ref:"",today()].filter(Boolean)
     .forEach((x,i)=>g.fillText(x,metaX,side+Math.round(W*.030)+i*Math.round(W*.025)));
@@ -1760,7 +1778,7 @@ function issues(){
 /* ================= الواجهة ================= */
 function refresh(){renumber();renderZones();renderResults();renderIssues();render();
   fbUndo.disabled=!U.undo.length;fbRedo.disabled=!U.redo.length;
-  btnUndo.disabled=!U.undo.length;}
+}
 function renderZones(){
   const q=pl();
   pillZones.textContent=ar(q.zones.length);
@@ -1818,7 +1836,7 @@ function saveProject(){
   a.download=(P.name||t("fileProj"))+".json";a.click();toast(t("tSaved"));}
 function applyProject(o){
   if(!o||!o.plans)throw 0;
-  P=o;P.cur=0;P.brand=P.brand||{logo:null};setLogoImg();
+  P=o;P.cur=0;descSum.style.display="none";
   for(const k in IMG)delete IMG[k];for(const k in ORIG)delete ORIG[k];for(const k in MASK)delete MASK[k];
   SEQ=1;P.plans.forEach(q=>{SEQ=Math.max(SEQ,q.id+1);
     q.zones.forEach(z=>SEQ=Math.max(SEQ,z.id+1));
@@ -1866,16 +1884,36 @@ function readImage(f){
   rd.readAsDataURL(f);}
 
 /* ================= الإعدادات ================= */
-const LOGOI=new Image();LOGOI.onload=()=>render();
-function setLogoImg(){
-  if(P.brand&&P.brand.logo)LOGOI.src=P.brand.logo;
-  else LOGOI.removeAttribute("src");
-  updateLogoUI();}
-function updateLogoUI(){
-  const has=!!(P.brand&&P.brand.logo);
-  logoPrev.style.display=has?"block":"none";
-  if(has)logoPrev.src=P.brand.logo;
-  btnLogoX.style.display=has?"inline-block":"none";}
+/* شعار آفاقي — ثابت لكل المخرجات، بيتجاب من الموقع الرسمي مرة واحدة ويتخزن */
+const BRAND={name:"AFAQY",color:"#2A7038",key:"afaqyLogoV1",
+  urls:["brand-logo.png",
+        "https://afaqy.com/images/Logo-Wh-BG.png",
+        "https://www.afaqy.com/images/Logo-Wh-BG.png"]};
+const LOGOI=new Image();let LOGO_OK=false;
+LOGOI.onload=()=>{if(LOGOI.naturalWidth>10){LOGO_OK=true;render();}};
+function initBrandLogo(){
+  try{const c=localStorage.getItem(BRAND.key);
+    if(c&&c.indexOf("data:image/")===0){LOGOI.src=c;return;}}catch(e){}
+  (async()=>{
+    for(const u of BRAND.urls){
+      try{
+        const r=await fetch(u,{mode:"cors",cache:"force-cache"});
+        if(!r.ok)continue;
+        const b=await r.blob();
+        if(!/^image\//.test(b.type)||b.size<300)continue;
+        const d=await new Promise((res,rej)=>{const f=new FileReader();
+          f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(b);});
+        try{localStorage.setItem(BRAND.key,d);}catch(e){}
+        LOGOI.src=d;return;
+      }catch(e){}
+    }
+  })();}
+/* لو الصورة لسه موصلتش: اسم الشركة بخط عريض بلون هوية آفاقي */
+function brandFallbackPng(g,x,y,h,alignEnd){
+  g.save();g.textAlign=alignEnd?"right":"left";g.textBaseline="middle";
+  g.fillStyle=BRAND.color;g.font="800 "+Math.round(h*.62)+'px Arial,"Segoe UI",sans-serif';
+  g.fillText(BRAND.name,x,y+h/2);
+  const w=g.measureText(BRAND.name).width;g.restore();return w;}
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
   P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
@@ -1908,6 +1946,11 @@ departments need from one file: a drawing image for <b>sales</b> to attach to a 
 installation schedule for <b>operations</b>, and a permanent device map for <b>after-sales</b>.</p>
 <blockquote>Standards applied: one sensor per <b>25 m²</b> (adjustable) and one
 <b>independent gateway per room</b>. Both are set in section 4.</blockquote>
+
+<p>The <b>AFAQY logo is fixed</b> on every output — the exported sheet and the print file. It
+appears on its own, nothing to configure and nobody can change it. On first launch with
+internet, the tool fetches it from the official AFAQY site and stores it on the device, so it
+keeps working offline afterwards.</p>
 
 <h3>2. Installing the tool on your device</h3>
 <p>It installs like any app, opens from an icon, and runs <b>offline</b> after the first visit —
@@ -2064,7 +2107,7 @@ and output updates immediately.</p>
 <h3>11. Outputs — and who each one is for</h3>
 <table><tr><th>Output</th><th>For</th></tr>
 <tr><td><b>Drawing image</b></td><td>Sales — a full sheet with project, company, AUX number,
-date, logo, drawing, symbol key and counts. Attach it to the quote.</td></tr>
+date, the <b>AFAQY logo</b> (fixed — appears on its own, nothing to set up), drawing, symbol key and counts. Attach it to the quote.</td></tr>
 <tr><td><b>Print file</b></td><td>A multi-sheet set: drawing, counts, installation schedule,
 supply list. In the print dialog choose <i>Save as file</i>.</td></tr>
 <tr><td><b>Installation schedule</b></td><td>Operations — every device with its X/Y distance in
@@ -2082,7 +2125,7 @@ interrupting you, and a <b>refresh starts clean</b>. To bring back the last sess
 <b>Restore last session</b> button inside <b>Project Details</b> — it shows how long ago it was
 saved and only appears when a session exists. Per-device, not a backup.</li>
 <li><b>Save / Open</b> — a <code>.json</code> file holding everything: plan, rooms, layout,
-standards, logo and language. Send it to a colleague and they continue exactly where you
+standards and language. Send it to a colleague and they continue exactly where you
 stopped. You can also drop the file onto the drawing to open it.</li>
 <li><b>Cloud</b> — when sign-in is configured, <b>Save to cloud</b> and <b>Open from cloud</b>
 appear, and the list shows who last saved each project and when.</li>
@@ -2116,6 +2159,9 @@ Check the list for who edited last before you overwrite.</blockquote>
 لـ<b>الافتر سيلز سبورت</b>.</p>
 <blockquote>المعايير المطبّقة: حساس لكل <b>٢٥ م٢</b> (قابل للتعديل)، و<b>جيت واي مستقل لكل
 غرفة</b>. الاتنين بيتظبطوا من قسم ٤.</blockquote>
+<p><b>شعار آفاقي ثابت</b> على كل المخرجات — الورقة المصدّرة وملف الطباعة — بيظهر لوحده،
+مفيش حاجة تتظبط ومحدش يقدر يغيّره. أول ما تفتح الأداة والنت شغال بتجيبه من موقع آفاقي
+الرسمي وتخزنه على الجهاز، فبيشتغل بعدها حتى أوفلاين.</p>
 
 <h3>٢. تثبيت الأداة على جهازك</h3>
 <p>الأداة بتتثبت زي أي تطبيق وتفتح من أيقونة على الشاشة، وبتشتغل <b>من غير إنترنت</b> بعد أول
@@ -2266,7 +2312,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <h3>١١. المخرجات — وكل واحد لمين</h3>
 <table><tr><th>المخرَج</th><th>لمين</th></tr>
 <tr><td><b>صورة الرسمة</b></td><td>المبيعات — ورقة كاملة باسم المشروع والشركة ورقم AUX
-والتاريخ والشعار والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
+والتاريخ و<b>شعار آفاقي</b> (ثابت، بيظهر لوحده من غير أي إعداد) والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
 <tr><td><b>ملف الطباعة</b></td><td>مجموعة أوراق: الرسمة، الأعداد، جدول التركيب، قائمة التوريد.
 من نافذة الطباعة اختار <i>حفظ كملف</i>.</td></tr>
 <tr><td><b>جدول التركيب</b></td><td>الأوبريشن — كل جهاز وبعده س/ص بالمتر من ركن الغرفة، وخانات
@@ -2283,7 +2329,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <b>استرجاع آخر شغل</b> جوّه قسم <b>بيانات المشروع</b> ومكتوب جنبه من إمتى — بيظهر بس لو فيه
 فعلًا شغل محفوظ. ده لكل جهاز لوحده — مش نسخة احتياطية.</li>
 <li><b>حفظ / فتح</b> — ملف <code>.json</code> فيه كل حاجة: الرسمة والغرف والتوزيع والمعايير
-والشعار واللغة. ابعته لزميلك يكمّل من نفس النقطة بالظبط. وتقدر تسحب الملف على الرسمة عشان
+واللغة. ابعته لزميلك يكمّل من نفس النقطة بالظبط. وتقدر تسحب الملف على الرسمة عشان
 تفتحه.</li>
 <li><b>السحابة</b> — لما يكون الدخول متظبط، بيظهر <b>حفظ للسحابة</b> و<b>فتح من السحابة</b>،
 والقائمة بتوضّح مين آخر واحد حفظ كل مشروع وإمتى.</li>
@@ -2442,23 +2488,9 @@ document.getElementById("btnSave").onclick=saveProject;
 document.getElementById("btnNew").onclick=()=>{
   if(!confirm(t("cNew")))return;
   try{localStorage.removeItem(AS_KEY);}catch(e){}
+  AS_DATA=null;btnRestore.style.display="none";
   txtPlan.value="";descSum.style.display="none";
   applyProject(newProject());};
-document.getElementById("btnLogo").onclick=()=>fileLogo.click();
-document.getElementById("btnLogoX").onclick=()=>{
-  P.brand.logo=null;setLogoImg();schedAS();render();};
-document.getElementById("fileLogo").onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  const rd=new FileReader();
-  rd.onload=()=>{const im=new Image();
-    im.onload=()=>{const s2=Math.min(1,120/im.height);
-      const c=document.createElement("canvas");
-      c.width=Math.max(2,Math.round(im.width*s2));
-      c.height=Math.max(2,Math.round(im.height*s2));
-      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
-      P.brand.logo=c.toDataURL("image/png");setLogoImg();schedAS();render();};
-    im.src=rd.result;};
-  rd.readAsDataURL(f);e.target.value="";};
 document.getElementById("btnAll").onclick=autoAll;
 document.getElementById("btnAuto").onclick=()=>autoRooms();
 document.getElementById("btnTo2D").onclick=()=>{wait.classList.add("on");
@@ -2482,7 +2514,6 @@ document.getElementById("btnAddRoom").onclick=()=>{
   rmName.value="";fitView();refresh();};
 document.getElementById("btnRun").onclick=()=>{syncCfg();snap();if(runPlan(pl()))refresh();};
 document.getElementById("btnClear").onclick=()=>{snap();pl().sensors=[];pl().gateways=[];refresh();};
-document.getElementById("btnUndo").onclick=undo;
 document.getElementById("fbUndo").onclick=undo;
 document.getElementById("fbRedo").onclick=redo;
 document.getElementById("btnManual").onclick=openManual;
@@ -2553,7 +2584,8 @@ document.getElementById("btnPdf").onclick=()=>{
   const q=pl(),tt=projTot();
   const dev=P.cfg.sensor==="tg08"?"TZone TG08":t("optOther");
   const gwt=P.cfg.gw==="gsm"?t("optGsm"):t("optWifi");
-  const lg=(P.brand&&P.brand.logo)?'<img src="'+P.brand.logo+'" style="height:30px">':'';
+  const lg=LOGO_OK?'<img src="'+LOGOI.src+'" style="height:30px">'
+    :'<b style="color:'+BRAND.color+';font-family:Arial;font-size:14pt;letter-spacing:.5px">'+BRAND.name+'</b>';
   const head=(sub)=>'<div class="ttl"><div style="display:flex;align-items:center;gap:10px">'+lg+
     '<h2>'+esc(P.name||t("prTitle"))+'</h2></div>'+
     '<div class="rt">'+esc(sub)+'<br>'+esc(P.client||"")+
@@ -2594,7 +2626,7 @@ document.getElementById("btnPdf").onclick=()=>{
   document.getElementById("print").innerHTML=html;
   setTimeout(()=>window.print(),150);};
 
-applyTheme();applyLang();loadCfg();updateLogoUI();resize();refresh();offerRestore();
+applyTheme();applyLang();loadCfg();initBrandLogo();resize();refresh();offerRestore();
 cv.style.cursor="default";
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
 initFB();
