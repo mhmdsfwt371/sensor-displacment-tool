@@ -514,7 +514,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="2.5";
+const VERSION="2.6";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -552,7 +552,7 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",unitArea:"إجمالي المساحة م٢",
 tRange:"مدى الجيت واي",
 hGwMode:"«مستقل لكل غرفة» معناها جيت واي لكل غرفة فيها حساسات — المدى مش معيار، عشان المطلوب فصل الشبكات. الثلاجة جوّه غرفة بتتبع جيت واي الغرفة. والجيت واي اللي بتحطه بإيدك بيتحسب للغرفة اللي هو جوّاها بس، وبيفضل ثابت مهما وزّعت تاني.",
 isOut:"{0}: {1} حساس خارج مدى أقرب جيت واي (أبعد {2} م)",
@@ -650,7 +650,7 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",unitArea:"Total area m²",
 tRange:"Gateway range",
 hGwMode:"“One per room” means a gateway for every room that has sensors — range is not a criterion, because the requirement is network isolation. A fridge inside a room follows the room's gateway. A gateway you place yourself counts for the room it sits inside, and stays put through redistribution.",
 isOut:"{0}: {1} sensors beyond the nearest gateway ({2} m away)",
@@ -1162,7 +1162,7 @@ function exportCanvas(q,maxPx,o){
 function exportSheet(q,W,clean){
   const b=contentBox(q);if(!b)return null;
   const pad=80,W0=(b.maxX-b.minX)+pad*2,H0=(b.maxY-b.minY)+pad*2;
-  const side=Math.round(W*.025),headH=Math.round(W*.082),footH=Math.round(W*.062);
+  const side=Math.round(W*.025),headH=Math.round(W*.082),footH=Math.round(W*.166);
   const k=Math.min((W-side*2)/W0,(W*.82)/H0),dw=W0*k,dh=H0*k;
   const H=Math.round(side*2+headH+dh+footH);
   const c=document.createElement("canvas");c.width=Math.round(W);c.height=H;
@@ -1199,23 +1199,47 @@ function exportSheet(q,W,clean){
   paintWorld(g,k,true,q,{clean:clean});
   g.restore();
   g.strokeStyle="#ccd4dc";g.lineWidth=1;g.strokeRect(ox+.5,oy+.5,dw-1,dh-1);
-  const tt=planTot(q),fy=oy+dh+Math.round(W*.032),fs=Math.round(W*.019);
-  g.font=fs+'px "Segoe UI",Tahoma,Arial,sans-serif';
-  g.textAlign="left";g.textBaseline="middle";
-  const its=[{c:"#e02b2b",sq:0,x:t("sensor")+" ("+ar(tt.sensors)+")"},
-             {c:"#1f63d6",sq:1,x:t("gateway")+" ("+ar(tt.gates)+")"},
-             {c:"#f5a300",sq:0,x:t("lgPower")+" — "+t("powerNote")}];
-  const wid=its.map(i=>fs*.84+fs*.45+g.measureText(i.x).width);
-  const total=wid.reduce((a,b2)=>a+b2,0)+fs*1.2*(its.length-1);
-  let x=rtl?RX-total:LX;
-  its.forEach((it,i)=>{const r=fs*.42;
-    g.fillStyle=it.c;
-    if(it.sq)g.fillRect(x,fy-r,r*2,r*2);else{g.beginPath();g.arc(x+r,fy,r,0,7);g.fill();}
-    g.fillStyle="#111";g.fillText(it.x,x+r*2+fs*.45,fy);
-    x+=wid[i]+fs*1.2;});
-  g.textAlign=A2;g.fillStyle="#555";g.font=fnt(.016);
-  g.fillText(t("cArea",fmt(tt.area))+" · "+t("cCov",ar(P.cfg.cov))+" · "+
-    gwModeLabel()+" · "+BRAND.mark+" "+BRAND.site+" · v"+VERSION,X2,fy);
+  /* ===== مفتاح الرموز والأعداد — صفوف متراصّة، العدد في عمود ثابت ===== */
+  const tt=planTot(q),fs=Math.round(W*.017),rowH=Math.round(fs*1.75);
+  const dir=rtl?-1:1,ky=oy+dh+Math.round(W*.030),r=fs*.44;
+  const rows=[{c:"#e02b2b",sq:0,n:t("sensor"),v:ar(tt.sensors)},
+              {c:"#1f63d6",sq:1,n:t("gateway"),v:ar(tt.gates)},
+              {c:"#f5a300",sq:0,n:t("lgPower"),v:null,note:t("powerNote")}];
+  const FT='px "Segoe UI",Tahoma,Arial,sans-serif';
+  g.textBaseline="middle";
+  g.font=fs+FT;
+  const labW=Math.max.apply(null,rows.map(o=>g.measureText(o.n).width));
+  const xSym=fs*.1,xLab=xSym+r*2+fs*.55,xVal=xLab+labW+fs*1.3;
+  rows.forEach((o,i)=>{
+    const y=ky+i*rowH+rowH/2,sx=X1+dir*xSym;
+    g.fillStyle=o.c;
+    if(o.sq)g.fillRect(rtl?sx-r*2:sx,y-r,r*2,r*2);
+    else{g.beginPath();g.arc(sx+dir*r,y,r,0,7);g.fill();}
+    g.textAlign=A1;g.font=fs+FT;g.fillStyle="#111";
+    g.fillText(o.n,X1+dir*xLab,y);
+    if(o.v!==null){g.font="700 "+Math.round(fs*1.12)+FT;g.fillStyle="#111";
+      g.fillText(o.v,X1+dir*xVal,y);}
+    else{g.font=Math.round(fs*.94)+FT;g.fillStyle="#666";
+      g.fillText("— "+o.note,X1+dir*xVal,y);}});
+  /* المساحة على الطرف التاني في أول صف */
+  g.textAlign=A2;g.font="700 "+Math.round(fs*1.12)+FT;g.fillStyle="#111";
+  g.fillText(fmt(tt.area),X2,ky+rowH/2);
+  g.font=fs+FT;g.fillStyle="#111";
+  const uA=t("unitArea");
+  g.fillText(uA,X2-dir*(g.measureText(fmt(tt.area)).width+fs*.5),ky+rowH/2);
+  /* سطر المعايير تحت خط رفيع */
+  const my=ky+rows.length*rowH+Math.round(fs*.55);
+  g.strokeStyle="#dfe6ee";g.lineWidth=Math.max(1,W*.0008);
+  g.beginPath();g.moveTo(LX,my);g.lineTo(RX,my);g.stroke();
+  const mL=t("cCov",ar(P.cfg.cov))+" · "+gwModeLabel(),
+        mR=BRAND.mark+" "+BRAND.site+" · v"+VERSION;
+  let mf=Math.round(W*.0145);
+  g.font=mf+FT;
+  while(g.measureText(mL).width+g.measureText(mR).width>(RX-LX)-fs*2&&mf>W*.009){
+    mf=Math.round(mf*.94);g.font=mf+FT;}
+  g.fillStyle="#666";
+  g.textAlign=A1;g.fillText(mL,X1,my+Math.round(fs*1.25));
+  g.textAlign=A2;g.fillText(mR,X2,my+Math.round(fs*1.25));
   g.textBaseline="alphabetic";return c;}
 
 /* ===== المخرَج بيشيل المشروع جوّاه ===== */
