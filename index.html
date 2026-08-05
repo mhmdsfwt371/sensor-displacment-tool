@@ -515,7 +515,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="2.9";
+const VERSION="3.0";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -2093,13 +2093,18 @@ function readImage(f){
 
 /* ================= الإعدادات ================= */
 /* هوية آفاقي — ثابتة، مش قابلة للاختيار */
+/* الشعار الرسمي لكل لغة. الترتيب: نسخة المستودع (نفس السيرفر — أفضل وأسرع وأوفلاين)،
+   بعدين الملف الرسمي مباشرة، بعدين نفس الملف الرسمي عن طريق محوّل صور بيسمح بالنسخ
+   (سيرفر آفاقي الإنجليزي مش بيسمح للمتصفح ينسخ الصورة، وده اللي كان بيمنع الشعار
+   الإنجليزي من الظهور). أول ما ينجح مصدر، الشعار بيتخزّن في المتصفح ومبيتحمّلش تاني. */
+const OFF_AR="https://cdn.prod.website-files.com/64934b1b5b168f3686f8521b/65c3a242df94bdf87b48865b_afaqy-logo-ar.svg",
+      OFF_EN="https://afaqy.com/images/afaqy-logo.svg";
+const px=u=>"https://wsrv.nl/?url="+encodeURIComponent(u)+"&h=240&output=png";
 const BRAND={
-  mark:"AFAQY",site:"www.afaqy.com",key:"afaqyBrandLogo_v1",
+  mark:"AFAQY",site:"www.afaqy.com",key:"afaqyBrandLogo_v2",
   co:{ar:"آفاقي لتقنية المعلومات",en:"AFAQY IT"},
-  src:{ar:["assets/afaqy-logo-ar.svg",
-           "https://cdn.prod.website-files.com/64934b1b5b168f3686f8521b/65c3a242df94bdf87b48865b_afaqy-logo-ar.svg"],
-       en:["assets/afaqy-logo.svg",
-           "https://afaqy.com/images/afaqy-logo.svg"]}};
+  src:{ar:["assets/afaqy-logo-ar.png","assets/afaqy-logo-ar.svg",OFF_AR,px(OFF_AR)],
+       en:["assets/afaqy-logo.png","assets/afaqy-logo.svg",OFF_EN,px(OFF_EN)]}};
 const LOGOI=new Image();
 let LOGO_URL="",LOGO_SAFE=false;
 function logoReady(){return LOGOI.complete&&LOGOI.naturalWidth>0;}
@@ -2118,29 +2123,25 @@ function showBrand(){
 function useLogo(u,safe){
   LOGO_URL=u;LOGO_SAFE=!!safe;
   LOGOI.onload=()=>{showBrand();render();};
-  if(safe)LOGOI.removeAttribute("crossorigin");else LOGOI.crossOrigin="anonymous";
+  LOGOI.removeAttribute("crossorigin");
   LOGOI.src=u;showBrand();}
-function tryLogo(list,lang,alt){
-  if(!list.length){
-    /* مصدر اللغة دي فشل — الشعار واحد للشركة، فنستعمل نسخة اللغة التانية
-       بدل ما المخرَج يطلع من غير هوية. */
-    const c=logoCache(),o=lang==="en"?"ar":"en";
-    if(c[o]){useLogo(c[o],true);return;}
-    if(!alt){tryLogo(BRAND.src[o].slice(),o,true);return;}
-    LOGO_URL="";LOGO_SAFE=false;showBrand();render();return;}
+function tryLogo(list,lang){
+  /* كل لغة ليها شعارها. لو كل مصادرها فشلت بينزل الاسم بالخط —
+     مش شعار اللغة التانية، عشان الورقة الإنجليزية متطلعش بشعار عربي. */
+  if(!list.length){LOGO_URL="";LOGO_SAFE=false;showBrand();render();return;}
   const u=list.shift(),im=new Image();im.crossOrigin="anonymous";
   im.onload=()=>{const d=bakeLogo(im);
     if(d){const c=logoCache();c[lang]=d;
       try{localStorage.setItem(BRAND.key,JSON.stringify(c));}catch(e){}
       useLogo(d,true);}
     else useLogo(u,false);};
-  im.onerror=()=>tryLogo(list,lang,alt);
+  im.onerror=()=>tryLogo(list,lang);
   im.src=u;}
 function loadBrand(){
   const lang=L==="en"?"en":"ar",c=logoCache();
   showBrand();
   if(c[lang]){useLogo(c[lang],true);return;}
-  tryLogo(BRAND.src[lang].slice(),lang,false);}
+  tryLogo(BRAND.src[lang].slice(),lang);}
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
   P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
