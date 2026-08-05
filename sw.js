@@ -1,9 +1,10 @@
 /* Service worker — شبكة أولًا مع رجوع للذاكرة عشان الأداة تشتغل أوفلاين
    ومع ذلك تفضل قابلة للتحديث. غيّر SW_V مع كل إصدار. */
-const SW_V = "3.0";
+const SW_V = "3.1";
 const CACHE = "sensor-tool-" + SW_V;
 const CORE = ["./", "./index.html", "./manifest.json",
-              "./icon-192.png", "./icon-512.png", "./icon-maskable.png"];
+              "./icon-192.png", "./icon-512.png", "./icon-maskable.png",
+              "./favicon.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
   self.skipWaiting();

@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Sensor Layout">
+<meta name="apple-mobile-web-app-title" content="توزيع الحساسات">
 <title>Sensor Displacement — توزيع الحساسات</title>
 <style>
 :root{
@@ -515,7 +515,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="3.0";
+const VERSION="3.1";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -585,7 +585,9 @@ tRestored:"رجّعتلك شغلك الأخير",
 fBrandLock:"شعار ثابت — بيطلع على كل المخرجات",
 bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",bTheme:"الثيم",tRedo:"إعادة",fNewKind:"نوع أي منطقة ترسمها",
 verHint:"اضغط عشان تجيب آخر نسخة",cUpdate:"تجيب آخر نسخة؟ الصفحة هتتحمّل من الأول.",
-iosInstall:"للتثبيت على الآيفون:\n١) افتح الصفحة في سفاري\n٢) دوس زر المشاركة تحت\n٣) اختار «إضافة إلى الشاشة الرئيسية»",
+iosInstall:"التثبيت على الآيفون أو الآيباد:\n\n١) لازم تكون فاتح الصفحة في «سفاري» — مش كروم ولا من جوّه تطبيق تاني.\n٢) دوس زر المشاركة تحت في النص (مربع وسهم طالع).\n٣) انزل تحت واختار «إضافة إلى الشاشة الرئيسية».\n٤) دوس «إضافة» فوق على اليمين.\n\nهتلاقي الأيقونة على الشاشة زي أي تطبيق، وبتفتح على طول من غير شريط المتصفح.",
+insAndroid:"التثبيت على أندرويد:\n\n١) افتح الصفحة في كروم.\n٢) من القايمة (٣ نقط فوق) اختار «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».\n٣) دوس «تثبيت».\n\nلو ظهرلك زر «تثبيت» الأخضر فوق في الأداة، دوسه على طول وهو بيعمل كل ده.",
+insDesktop:"التثبيت على ويندوز:\n\n١) افتح الصفحة في كروم أو إيدج.\n٢) في آخر شريط العنوان فوق هتلاقي أيقونة تثبيت (شاشة وعليها سهم) — دوسها.\n   أو من القايمة (٣ نقط) ← «تثبيت» / Install.\n٣) دوس «تثبيت».\n\nالأداة بتتحط في قايمة ابدأ وتقدر تثبّتها على شريط المهام، وبتفتح في شباك لوحدها.\n\nملحوظة: فايرفوكس مبيدعمش التثبيت — استعمل كروم أو إيدج.",
 updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",manVer:"إصدار {0}",
 bRestore:"استرجاع آخر شغل",cRestore:"ترجع الشغل المحفوظ؟ اللي على الشاشة دلوقتي هيتمسح.",
 agoNow:"دلوقتي",agoMin:"من {0} دقيقة",agoHr:"من {0} ساعة",agoDay:"من {0} يوم",
@@ -685,7 +687,9 @@ tRestored:"Restored your last session",
 fBrandLock:"Fixed brand — appears on every output",
 bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",bTheme:"Theme",tRedo:"Redo",fNewKind:"Type for zones you draw",
 verHint:"Click to fetch the latest version",cUpdate:"Fetch the latest version? The page will reload.",
-iosInstall:"To install on iPhone:\n1) Open the page in Safari\n2) Tap the Share button\n3) Choose “Add to Home Screen”",
+iosInstall:"Install on iPhone or iPad:\n\n1) The page must be open in Safari — not Chrome, and not inside another app.\n2) Tap the Share button at the bottom centre (square with an arrow).\n3) Scroll down and choose “Add to Home Screen”.\n4) Tap “Add” at the top right.\n\nThe icon appears on your Home Screen like any app and opens without the browser bar.",
+insAndroid:"Install on Android:\n\n1) Open the page in Chrome.\n2) From the menu (3 dots, top) choose “Install app” or “Add to Home screen”.\n3) Tap “Install”.\n\nIf the green “Install” button shows up in the tool, just tap it — it does all of this for you.",
+insDesktop:"Install on Windows:\n\n1) Open the page in Chrome or Edge.\n2) At the end of the address bar there is an install icon (a screen with an arrow) — click it.\n   Or from the menu (3 dots) → “Install”.\n3) Click “Install”.\n\nThe tool lands in the Start menu, can be pinned to the taskbar, and opens in its own window.\n\nNote: Firefox does not support installing — use Chrome or Edge.",
 updMsg:"Version {0} is available",manTitle:"User Manual",manVer:"Version {0}",
 bRestore:"Restore last session",cRestore:"Restore the saved session? Current work on screen will be replaced.",
 agoNow:"just now",agoMin:"{0} min ago",agoHr:"{0} h ago",agoDay:"{0} d ago",
@@ -2862,11 +2866,12 @@ const standalone=window.matchMedia("(display-mode: standalone)").matches||naviga
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;
   btnInstall.style.display="inline-block";});
 window.addEventListener("appinstalled",()=>{btnInstall.style.display="none";deferredPrompt=null;});
-if(iOS&&!standalone)btnInstall.style.display="inline-block";
+const isAndroid=/android/i.test(navigator.userAgent);
+if(!standalone)btnInstall.style.display="inline-block";
 document.getElementById("btnInstall").onclick=async()=>{
   if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;
     deferredPrompt=null;btnInstall.style.display="none";return;}
-  alert(t("iosInstall"));};
+  alert(iOS?t("iosInstall"):isAndroid?t("insAndroid"):t("insDesktop"));};
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate();});
 </script>
 </body>
