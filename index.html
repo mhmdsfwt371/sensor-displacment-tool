@@ -128,6 +128,14 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .tools button{padding:8px 11px;font-size:13px;border-color:transparent;background:transparent}
 .tools button.on{background:var(--panel-2);border-color:var(--line);font-weight:700}
 .tools .sep{width:1px;background:var(--line);margin:4px 2px}
+.kindsel{display:flex;gap:3px;align-items:center;background:var(--field);
+  border:1px solid var(--line);border-radius:9px;padding:3px;margin:0 3px;flex:0 0 auto}
+.kindsel button{padding:6px 10px;font-size:12.5px;border:1px solid transparent;
+  border-radius:7px;background:transparent;color:var(--muted)}
+.kindsel button.on{font-weight:700;color:#fff}
+.kindsel button[data-k="room"].on{background:#3b6fd4;border-color:#3b6fd4}
+.kindsel button[data-k="corr"].on{background:#6b7c8d;border-color:#6b7c8d}
+.kindsel button[data-k="fridge"].on{background:#0a8fa3;border-color:#0a8fa3}
 .badge{position:absolute;bottom:10px;inset-inline-start:10px;background:var(--glass);
   border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--muted);
   font-variant-numeric:tabular-nums}
@@ -433,6 +441,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <button data-t="poly" data-i="tPoly">مضلع</button>
       <button data-t="rect" data-i="tRect">مستطيل</button>
       <button data-t="wand" data-i="tWand">غرفة بضغطة</button>
+      <span class="kindsel" id="segKind">
+        <button data-k="room" class="on" data-i="kd_room">غرفة</button>
+        <button data-k="corr" data-i="kd_corr">ممر</button>
+        <button data-k="fridge" data-i="kd_fridge">ثلاجة</button>
+      </span>
       <button data-t="wall" data-i="tWall">حائط</button>
       <button data-t="door" data-i="tDoor">باب</button>
       <span class="sep"></span>
@@ -484,7 +497,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="1.8";
+const VERSION="1.9";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -515,7 +528,7 @@ bTo2D:"تحويل لخطوط",bOrig:"الأصلية",fStrength:"درجة الت�
 hImg:"التنضيف بيوضّح الخطوط بس الرسمة تفضل <b>صورة</b>. عايزها مرسومة بحوائط وأبواب ومقياس مظبوط؟ استعمل <b>وصف مكتوب</b>.",
 fRoomName:"اسم الغرفة",phRoom:"مخزن التبريد",fLen:"الطول (متر)",fWid:"العرض (متر)",bAddRoom:"إضافة الغرفة",
 fDesc:"وصف الرسمة — بالمتر",bDraw:"ارسم المخطط",bSample:"مثال جاهز",
-hDesc:'اكتب <b>بكلامك العادي</b> والأداة تفهم وترسم وتحط الأبواب: «مستودع ١٠٠ متر مربع فيه غرفتين واحدة ٤×٥ والتانية ٤×٦».<br>وللتحكم الدقيق: <code>غرفة "مخزن" 0,0 12x8</code> · <code>مضلع "الاسم" 0,0 6,0 6,4 0,4</code> · <code>باب 5,8 6,8</code> · <code>حائط 3,0 3,8</code>',
+hDesc:'اكتب <b>بكلامك العادي</b> والأداة تفهم وترسم وتحط الأبواب: «مستودع ١٠٠ متر مربع فيه غرفتين واحدة ٤×٥ والتانية ٤×٦».<br>وللتحكم الدقيق:<br><code>غرفة "مخزن" 0,0 12x8</code> · <code>ممر "الممر" 0,8 19x2.5</code> · <code>ثلاجة "ثلاجة ١" 1,1 2.5x1.5</code><br><code>مضلع "الاسم" 0,0 6,0 6,4 0,4</code> · <code>باب 5,8 6,8</code> · <code>حائط 3,0 3,8</code>',
 s3:"الغرف",bAuto:"اكتشاف كل الغرف",
 hRooms:"أسرع طريقة: <b>اكتشاف كل الغرف</b> والأداة تقرا الصورة لوحدها. أو <b>غرفة بضغطة</b> ودوس جوّه أي غرفة. والرسم اليدوي بالمضلع والمستطيل موجود لو الرسمة مش واضحة.",
 s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 — بشاشة",optOther:"حساس آخر",
@@ -546,7 +559,8 @@ sumRead:"اللي فهمته:",remainName:"باقي {0}",remainArea:"المسا�
 bNew:"جديد",cNew:"نبدأ مشروع جديد؟ الشغل الحالي هيتمسح من الحفظ التلقائي.",
 tRestored:"رجّعتلك شغلك الأخير",
 fLogo:"شعار شركتك — اختياري، بيظهر على المخرجات",bLogo:"اختيار شعار",bLogoX:"شيله",
-bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",
+bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",fNewKind:"نوع أي منطقة ترسمها",
+verHint:"اضغط عشان تجيب آخر نسخة",cUpdate:"تجيب آخر نسخة؟ الصفحة هتتحمّل من الأول.",
 iosInstall:"للتثبيت على الآيفون:\n١) افتح الصفحة في سفاري\n٢) دوس زر المشاركة تحت\n٣) اختار «إضافة إلى الشاشة الرئيسية»",
 updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",manVer:"إصدار {0}",
 bRestore:"استرجاع آخر شغل",cRestore:"ترجع الشغل المحفوظ؟ اللي على الشاشة دلوقتي هيتمسح.",
@@ -586,7 +600,7 @@ supPsu:"محولات كهرباء",supSim:"شرائح اتصال",
 sumProj:"مشروع",sumAux:"رقم AUX",sumComp:"الشركة",sumArea:"المساحة الإجمالية",sumTot:"الإجمالي",
 sumSup:"التوريد",sumStd:"المعايير",sumEach:"حساس لكل {0} م٢",sumSpare:"احتياطي {0}٪",
 fileProj:"مشروع",filePlan:"مخطط",fileCounts:"الأعداد",fileInst:"التركيب",
-sample:'غرفة "مخزن التبريد" 0,0 12x8\nغرفة "مخزن الأدوية" 12.3,0 7x8\nغرفة "الاستقبال" 0,8.3 19.3,4\nباب 5,8 6,8\nباب 12.3,3 12.3,4.2\n',
+sample:'غرفة "مخزن التبريد" 0,0 12x8\nغرفة "مخزن الأدوية" 12.3,0 7x8\nممر "الممر" 0,8.3 19.3x2.5\nغرفة "الاستقبال" 0,11.1 19.3x4\nثلاجة "ثلاجة ١" 1,1 2.5x1.5\nثلاجة "ثلاجة ٢" 1,3 2.5x1.5\nثلاجة "ثلاجة ٣" 13,1 2.5x1.5\nباب 5,8 6,8\nباب 12.3,3 12.3,4.2\n',
 gateTitle:"دخول",gateSub:"استخدم الحساب اللي الشركة فتحته لك.",fEmail:"البريد",fPass:"كلمة السر",
 bLogin:"دخول",bForgot:"نسيت كلمة السر",bOffline:"شغّل محلي من غير حساب",bLogout:"خروج",
 eLogin:"البريد أو كلمة السر غلط",tReset:"بعتنا رسالة على بريدك",
@@ -608,7 +622,7 @@ bTo2D:"To line art",bOrig:"Original",fStrength:"Cleanup strength",
 hImg:"Cleanup sharpens the lines but the plan stays an <b>image</b>. Want real walls, doors and an exact scale? Use <b>Description</b>.",
 fRoomName:"Room name",phRoom:"Cold store",fLen:"Length (m)",fWid:"Width (m)",bAddRoom:"Add Room",
 fDesc:"Plan description — in metres",bDraw:"Draw Plan",bSample:"Load sample",
-hDesc:'Write it <b>your way</b> and the tool understands, draws and adds doors: "warehouse 100 sqm with two rooms, one 4x5 and one 4x6".<br>For exact control: <code>room "Store" 0,0 12x8</code> · <code>poly "Name" 0,0 6,0 6,4 0,4</code> · <code>door 5,8 6,8</code> · <code>wall 3,0 3,8</code>',
+hDesc:'Write it <b>your way</b> and the tool understands, draws and adds doors: "warehouse 100 sqm with two rooms, one 4x5 and one 4x6".<br>For exact control:<br><code>room "Store" 0,0 12x8</code> · <code>corridor "Hall" 0,8 19x2.5</code> · <code>fridge "Fridge 1" 1,1 2.5x1.5</code><br><code>poly "Name" 0,0 6,0 6,4 0,4</code> · <code>door 5,8 6,8</code> · <code>wall 3,0 3,8</code>',
 s3:"Rooms",bAuto:"Detect All Rooms",
 hRooms:"Fastest route: <b>Detect All Rooms</b> and the tool reads the image itself. Or <b>Magic Room</b> and click inside any room. Manual polygon and rectangle are still there for unclear plans.",
 s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",optOther:"Other sensor",
@@ -639,7 +653,8 @@ sumRead:"Understood:",remainName:"Rest of {0}",remainArea:"Remaining area",rooms
 bNew:"New",cNew:"Start a new project? Current autosaved work will be cleared.",
 tRestored:"Restored your last session",
 fLogo:"Your company logo — optional, appears on outputs",bLogo:"Choose logo",bLogoX:"Remove",
-bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",
+bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",fNewKind:"Type for zones you draw",
+verHint:"Click to fetch the latest version",cUpdate:"Fetch the latest version? The page will reload.",
 iosInstall:"To install on iPhone:\n1) Open the page in Safari\n2) Tap the Share button\n3) Choose “Add to Home Screen”",
 updMsg:"Version {0} is available",manTitle:"User Manual",manVer:"Version {0}",
 bRestore:"Restore last session",cRestore:"Restore the saved session? Current work on screen will be replaced.",
@@ -679,7 +694,7 @@ supPsu:"Power adapters",supSim:"SIM cards",
 sumProj:"Project",sumAux:"AUX number",sumComp:"Company",sumArea:"Total area",sumTot:"Total",
 sumSup:"Supply",sumStd:"Standards",sumEach:"one sensor per {0} m²",sumSpare:"{0}% spare",
 fileProj:"project",filePlan:"layout",fileCounts:"counts",fileInst:"install",
-sample:'room "Cold Store" 0,0 12x8\nroom "Medicine Store" 12.3,0 7x8\nroom "Reception" 0,8.3 19.3,4\ndoor 5,8 6,8\ndoor 12.3,3 12.3,4.2\n',
+sample:'room "Cold Store" 0,0 12x8\nroom "Medicine Store" 12.3,0 7x8\ncorridor "Corridor" 0,8.3 19.3x2.5\nroom "Reception" 0,11.1 19.3x4\nfridge "Fridge 1" 1,1 2.5x1.5\nfridge "Fridge 2" 1,3 2.5x1.5\nfridge "Fridge 3" 13,1 2.5x1.5\ndoor 5,8 6,8\ndoor 12.3,3 12.3,4.2\n',
 gateTitle:"Sign in",gateSub:"Use the account your company created for you.",fEmail:"Email",fPass:"Password",
 bLogin:"Sign in",bForgot:"Forgot password",bOffline:"Continue offline",bLogout:"Sign out",
 eLogin:"Wrong email or password",tReset:"Reset email sent",
@@ -709,6 +724,7 @@ function applyLang(){
   document.querySelectorAll("[data-ph]").forEach(e=>e.placeholder=t(e.getAttribute("data-ph")));
   btnLang.textContent=t("langBtn");
   verChip.textContent="v"+VERSION;
+  verChip.title=t("verHint");
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
   txtPlan.placeholder=t("phDesc");
   refresh();}
@@ -726,7 +742,7 @@ const IMG={},ORIG={},MASK={};
 const V={k:1,x:0,y:0};
 const U={tool:"edit",draft:[],calib:[],rectStart:null,rectNow:null,wlast:null,wnow:null,
   pnow:null,sel:null,drag:null,guides:null,snapped:false,delBtn:null,
-  showCover:true,showNums:true,showRange:true,panLast:null,pinch:null,undo:[],redo:[]};
+  newKind:"room",showCover:true,showNums:true,showRange:true,panLast:null,pinch:null,undo:[],redo:[]};
 const cv=document.getElementById("cv"),ctx=cv.getContext("2d");
 const dpr=Math.min(window.devicePixelRatio||1,2);
 const pl=()=>P.plans[P.cur];
@@ -1449,7 +1465,10 @@ window.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="y"){e.preventDefault();redo();}});
 function closePoly(){if(U.draft.length>=3)addZone(U.draft.slice());U.draft=[];U.pnow=null;render();}
 function addZone(p){snap();const q=pl();
-  q.zones.push({id:SEQ++,name:t("room")+" "+ar(q.zones.length+1),pts:p,color:ZC[q.zones.length%ZC.length]});
+  const kd=U.newKind||"room";
+  const n=q.zones.filter(z=>zKind(z)===kd).length+1;
+  q.zones.push({id:SEQ++,name:t("kd_"+kd)+" "+ar(n),pts:p,kind:kd,
+    color:kd==="corr"?"#7d8ea0":kd==="fridge"?"#00b3c8":ZC[q.zones.length%ZC.length]});
   refresh();if(!IMG[q.id]&&q.zones.length===1)fitView();}
 function ensureDraw(q){
   if(IMG[q.id]){toast(t("aDrawOnly"));return false;}
@@ -1937,8 +1956,10 @@ carries real-world distance. A rough number works; refine later with the <b>Scal
 question is skipped.</p>
 
 <h3>5. Zone types — room, corridor, fridge</h3>
-<p>Every zone in section 3 has a <b>type</b> you pick from the small dropdown beside it. The type
-changes both how counts are calculated and how it is drawn:</p>
+<p>In the toolbar, next to <b>Rectangle</b> and <b>Polygon</b>, there is a three-button picker:
+<b>Room · Corridor · Fridge</b>. Whatever is selected becomes the type of the next zone you draw.
+You can also change any existing zone's type from the small dropdown on its card in the
+<b>Rooms</b> section. The type changes both how counts are calculated and how it is drawn:</p>
 <table><tr><th>Type</th><th>Counting</th><th>On the plan</th></tr>
 <tr><td><b>Room</b></td><td>One sensor per 25 m² of its net area</td><td>Full-thickness walls</td></tr>
 <tr><td><b>Corridor</b></td><td><b>Zero</b> sensors by default — it is not storage space</td>
@@ -1950,6 +1971,8 @@ so nothing is double-counted and no sensor lands in the wrong place.</blockquote
 <p>You can also write them straight into the <b>Description</b>:</p>
 <p><code>room cold 6x5</code> · <code>corridor 12x2</code> · <code>fridge 2x1.5</code></p>
 <p>If a corridor does need monitoring, just raise its count with <b>+</b>.</p>
+<blockquote>Press <b>Load sample</b> in the Drawing section to see all three types together: two
+stores, a corridor between them, and three fridges inside.</blockquote>
 
 <h3>6. Reviewing and adjusting — your main job</h3>
 <p>The tool goes first, you validate. Every room in section 3 has:</p>
@@ -2139,8 +2162,10 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p>ولو رسمت من وصف أو أبعاد، المقياس بيبقى مضبوط أصلًا والسؤال بيتخطّى.</p>
 
 <h3>٥. أنواع المناطق — غرفة وممر وثلاجة</h3>
-<p>كل منطقة في قسم ٣ ليها <b>نوع</b> تختاره من القايمة الصغيرة جنبها، والنوع بيغيّر
-حساب الأعداد وشكل الرسم:</p>
+<p>في شريط الأدوات فوق، جنب <b>مستطيل</b> و<b>مضلع</b>، فيه محدد بتلات أزرار:
+<b>غرفة · ممر · ثلاجة</b>. اللي مختاره هو نوع أي منطقة ترسمها بعد كده. وتقدر تغيّر نوع أي
+منطقة موجودة من القايمة الصغيرة في بطاقتها في قسم <b>الغرف</b>. والنوع بيغيّر حساب الأعداد
+وشكل الرسم:</p>
 <table><tr><th>النوع</th><th>الأعداد</th><th>على الرسمة</th></tr>
 <tr><td><b>غرفة</b></td><td>حساس لكل ٢٥ م٢ من مساحتها الصافية</td><td>حوائط بسُمك كامل</td></tr>
 <tr><td><b>ممر</b></td><td><b>صفر</b> حساسات افتراضيًا — الممر مش مساحة تخزين</td>
@@ -2152,6 +2177,8 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p>وتقدر تكتبهم في <b>الوصف المكتوب</b> على طول:</p>
 <p><code>غرفة تبريد 6x5</code> · <code>ممر 12x2</code> · <code>ثلاجة 2x1.5</code></p>
 <p>ولو عايز الممر يتراقب فعلًا، زوّد عدده بزر <b>+</b> عادي.</p>
+<blockquote>دوس <b>مثال جاهز</b> في قسم الرسمة وهتشوف الأنواع التلاتة مع بعض: غرفتين، وممر
+بينهم، وتلات ثلاجات جوّه المخازن.</blockquote>
 
 <h3>٦. المراجعة والتعديل — دورك الأساسي</h3>
 <p>الأداة تشتغل الأول وإنت تراجع. كل غرفة في قسم ٣ عليها:</p>
@@ -2312,7 +2339,8 @@ async function checkUpdate(){
     if(j&&j.version&&j.version!==VERSION&&j.version!==updSeen){
       if(!hasWork()){location.replace(location.pathname+"?v="+j.version);return;}
       updTxt.textContent=t("updMsg",j.version);
-      updBar.dataset.v=j.version;updBar.classList.add("on");}
+      updBar.dataset.v=j.version;updBar.classList.add("on");
+      verChip.style.borderColor="var(--ok)";verChip.style.color="var(--ok)";}
   }catch(e){}}
 
 /* ================= الدخول والسحابة | Auth & cloud ================= */
@@ -2397,6 +2425,9 @@ document.querySelectorAll(".tools [data-t]").forEach(b=>{b.onclick=()=>{
   b.classList.add("on");U.tool=b.dataset.t;U.draft=[];U.calib=[];U.rectStart=null;
   U.wlast=U.wnow=null;U.pnow=null;U.sel=null;U.guides=null;
   cv.style.cursor=U.tool==="pan"?"grab":U.tool==="edit"?"default":"crosshair";render();};});
+document.querySelectorAll("#segKind button").forEach(b=>{b.onclick=()=>{
+  document.querySelectorAll("#segKind button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");U.newKind=b.dataset.k;};});
 document.querySelectorAll("#segMode button").forEach(b=>{b.onclick=()=>{
   document.querySelectorAll("#segMode button").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");
@@ -2456,6 +2487,9 @@ document.getElementById("fbUndo").onclick=undo;
 document.getElementById("fbRedo").onclick=redo;
 document.getElementById("btnManual").onclick=openManual;
 document.getElementById("btnTheme").onclick=()=>{TH=TH==="light"?"dark":"light";applyTheme();};
+verChip.style.cursor="pointer";
+verChip.onclick=()=>{if(hasWork()&&!confirm(t("cUpdate")))return;
+  location.replace(location.pathname+"?v="+Date.now());};
 document.getElementById("mnX").onclick=closeManual;
 document.getElementById("mnBack").onclick=closeManual;
 document.getElementById("mnDl").onclick=dlManual;
