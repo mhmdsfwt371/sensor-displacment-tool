@@ -273,8 +273,8 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
         <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
         <button id="btnInstall" data-i="bInstall" style="display:none">تثبيت</button>
         <button id="btnLang">English</button>
-        <button id="btnTheme" title="الثيم">◐</button>
-        <button id="btnManual" title="دليل">؟</button>
+        <button id="btnTheme">◐</button>
+        <button id="btnManual">؟</button>
       </div>
       <div class="r2">
         <button id="btnNew" data-i="bNew">جديد</button>
@@ -476,8 +476,8 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
       </div>
     </div>
     <div class="histbar">
-      <button id="fbUndo" title="تراجع">↶</button>
-      <button id="fbRedo" title="إعادة">↷</button>
+      <button id="fbUndo">↶</button>
+      <button id="fbRedo">↷</button>
     </div>
     <div class="draftbar" id="draftBar">
       <button id="dbDone">✓ <span data-i="dbDone">خلاص</span></button>
@@ -514,7 +514,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="2.6";
+const VERSION="2.7";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -580,7 +580,7 @@ sumRead:"اللي فهمته:",remainName:"باقي {0}",remainArea:"المسا�
 bNew:"جديد",cNew:"نبدأ مشروع جديد؟ الشغل الحالي هيتمسح من الحفظ التلقائي.",
 tRestored:"رجّعتلك شغلك الأخير",
 fBrandLock:"شعار ثابت — بيطلع على كل المخرجات",
-bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",fNewKind:"نوع أي منطقة ترسمها",
+bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",bTheme:"الثيم",tRedo:"إعادة",fNewKind:"نوع أي منطقة ترسمها",
 verHint:"اضغط عشان تجيب آخر نسخة",cUpdate:"تجيب آخر نسخة؟ الصفحة هتتحمّل من الأول.",
 iosInstall:"للتثبيت على الآيفون:\n١) افتح الصفحة في سفاري\n٢) دوس زر المشاركة تحت\n٣) اختار «إضافة إلى الشاشة الرئيسية»",
 updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",manVer:"إصدار {0}",
@@ -678,7 +678,7 @@ sumRead:"Understood:",remainName:"Rest of {0}",remainArea:"Remaining area",rooms
 bNew:"New",cNew:"Start a new project? Current autosaved work will be cleared.",
 tRestored:"Restored your last session",
 fBrandLock:"Fixed brand — appears on every output",
-bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",fNewKind:"Type for zones you draw",
+bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",bTheme:"Theme",tRedo:"Redo",fNewKind:"Type for zones you draw",
 verHint:"Click to fetch the latest version",cUpdate:"Fetch the latest version? The page will reload.",
 iosInstall:"To install on iPhone:\n1) Open the page in Safari\n2) Tap the Share button\n3) Choose “Add to Home Screen”",
 updMsg:"Version {0} is available",manTitle:"User Manual",manVer:"Version {0}",
@@ -731,6 +731,7 @@ aNoCloud:"Cloud is not configured"
 function t(k){let s=DICT[L][k]!==undefined?DICT[L][k]:k;
   for(let i=1;i<arguments.length;i++)s=s.split("{"+(i-1)+"}").join(arguments[i]);
   return s;}
+let UPD_V=null;
 const TH_KEY="sensorToolTheme";
 let TH=(function(){try{return localStorage.getItem(TH_KEY)||"dark";}catch(e){return "dark";}})();
 function applyTheme(){
@@ -749,13 +750,24 @@ function applyLang(){
   document.querySelectorAll("[data-ph]").forEach(e=>e.placeholder=t(e.getAttribute("data-ph")));
   btnLang.textContent=t("langBtn");btnLang.title=t("langTip");
   btnNew.title=t("bNew");btnSave.title=t("save");btnOpen.title=t("open");
-  btnInstall.title=t("bInstall");
+  btnInstall.title=t("bInstall");btnTheme.title=t("bTheme");btnManual.title=t("bManual");
+  fbUndo.title=t("tUndo");fbRedo.title=t("tRedo");
   verChip.textContent="v"+VERSION;
   verChip.title=t("verHint");
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
   txtPlan.placeholder=t("phDesc");
-  loadBrand();
+  loadBrand();relabel();
   refresh();}
+/* كل نص بيتكتب مرة واحدة وقت التشغيل لازم يتكتب تاني مع تبديل اللغة */
+function relabel(){
+  lblSym.textContent=ar((P.cfg.sym||.6).toFixed(1)).replace(".",L==="ar"?"٫":".");
+  lblStr.textContent=ar(rngStr.value);
+  restoreLabel();
+  descSum.style.display="none";
+  if(UPD_V)updTxt.textContent=t("updMsg",UPD_V);
+  if(manual.classList.contains("on")){
+    mnTitle.textContent=t("manTitle")+" — v"+VERSION;
+    mnBody.innerHTML=manualHead()+manualHTML();}}
 
 /* ================= الحالة ================= */
 let SEQ=1;
@@ -2035,7 +2047,11 @@ function readProject(f){
   rd.onload=()=>{try{applyProject(JSON.parse(rd.result));toast(t("tOpened"));}
     catch(e){alert(t("aFile"));}};
   rd.readAsText(f);}
-let AS_DATA=null;
+let AS_DATA=null,AS_TIME=0;
+function restoreLabel(){
+  if(!AS_DATA){btnRestore.style.display="none";return;}
+  btnRestore.textContent=t("bRestore")+(AS_TIME?" ("+agoTxt(AS_TIME)+")":"");
+  btnRestore.style.display="block";}
 function agoTxt(ms){
   const m=Math.round((Date.now()-ms)/60000);
   if(m<1)return t("agoNow");
@@ -2050,10 +2066,8 @@ function offerRestore(){try{
   if(!data||!data.plans)return;
   const q0=data.plans[0];
   if(!(q0&&(q0.zones.length||q0.imgData||q0.text)))return;
-  AS_DATA=data;
-  const when=(o&&o.t)?" ("+agoTxt(o.t)+")":"";
-  btnRestore.textContent=t("bRestore")+when;
-  btnRestore.style.display="block";}catch(e){}}
+  AS_DATA=data;AS_TIME=(o&&o.t)?o.t:0;
+  restoreLabel();}catch(e){}}
 function hasWork(){const q=pl();
   return !!(q.zones.length||q.sensors.length||q.imgData||(q.text&&q.text.trim()));}
 function readImage(f){
@@ -2616,7 +2630,7 @@ async function checkUpdate(){
     const j=await r.json();
     if(j&&j.version&&j.version!==VERSION&&j.version!==updSeen){
       if(!hasWork()){location.replace(location.pathname+"?v="+j.version);return;}
-      updTxt.textContent=t("updMsg",j.version);
+      UPD_V=j.version;updTxt.textContent=t("updMsg",j.version);
       updBar.dataset.v=j.version;updBar.classList.add("on");
       verChip.style.borderColor="var(--ok)";verChip.style.color="var(--ok)";}
   }catch(e){}}
@@ -2697,7 +2711,7 @@ document.getElementById("gOffline").onclick=()=>gate.classList.remove("on");
 document.getElementById("btnLogout").onclick=async()=>{if(FBX)await FBX.b.signOut(FBX.auth);};
 document.getElementById("btnCloudSave").onclick=cloudSave;
 document.getElementById("btnCloudList").onclick=cloudList;
-document.getElementById("btnLang").onclick=()=>{L=L==="ar"?"en":"ar";P.lang=L;applyLang();};
+document.getElementById("btnLang").onclick=()=>{syncCfg();L=L==="ar"?"en":"ar";P.lang=L;applyLang();};
 document.querySelectorAll(".tools [data-t]").forEach(b=>{b.onclick=()=>{
   document.querySelectorAll(".tools [data-t]").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");U.tool=b.dataset.t;U.draft=[];U.calib=[];U.rectStart=null;
@@ -2761,7 +2775,7 @@ document.getElementById("btnRestore").onclick=()=>{
   if(!AS_DATA)return;
   if(hasWork()&&!confirm(t("cRestore")))return;
   try{applyProject(AS_DATA);toast(t("tRestored"));}catch(e){}
-  btnRestore.style.display="none";};
+  AS_DATA=null;AS_TIME=0;btnRestore.style.display="none";};
 document.getElementById("updX").onclick=()=>{
   updSeen=updBar.dataset.v||"";updBar.classList.remove("on");};
 document.getElementById("updGo").onclick=()=>{
