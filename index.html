@@ -3,13 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#0d141c">
+<meta name="theme-color" content="#0d141c" id="metaTheme">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sensor Layout">
 <title>Sensor Layout — توزيع الحساسات</title>
 <style>
 :root{
   --ink:#0d141c; --panel:#151f2b; --panel-2:#1b2836; --line:#26374a;
-  --text:#e7eef5; --muted:#8ea1b4;
+  --text:#e7eef5; --muted:#8ea1b4; --field:#0e1723; --stage:#0a1017;
+  --glass:rgba(21,31,43,.94); --veil:rgba(10,16,23,.75);
   --sensor:#e02b2b; --gate:#1f63d6; --zone:#5b93ff; --ok:#57d38c; --warn:#ffc44d; --bad:#ff6b6b;
+}
+html[data-theme="light"]{
+  --ink:#eef2f7; --panel:#ffffff; --panel-2:#eef2f7; --line:#cfd9e4;
+  --text:#16212c; --muted:#5b6b7c; --field:#f6f9fc; --stage:#dfe6ee;
+  --glass:rgba(255,255,255,.95); --veil:rgba(240,244,248,.8);
+  --zone:#2563eb; --ok:#0f9d58; --warn:#b45309; --bad:#d92d20;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
@@ -34,9 +48,10 @@ input,textarea{-webkit-user-select:text;user-select:text}
   display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .brand h1{margin:0;font-size:16px;flex:1;min-width:90px}
 .brand button{padding:6px 9px;font-size:12px}
-#btnManual{border-radius:50%;width:28px;height:28px;padding:0;font-weight:700;
+#btnManual,#btnTheme{border-radius:50%;width:28px;height:28px;padding:0;font-weight:700;
   border-color:var(--line);color:var(--muted)}
-#btnManual:hover{color:var(--zone);border-color:var(--zone)}
+#btnManual:hover,#btnTheme:hover{color:var(--zone);border-color:var(--zone)}
+#btnInstall{border-color:var(--ok);color:var(--ok)}
 #btnLang{border-color:var(--zone);color:var(--zone)}
 .step{border-bottom:1px solid var(--line)}
 .step > summary{list-style:none;cursor:pointer;padding:13px 18px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px}
@@ -48,7 +63,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .body{padding:4px 18px 18px}
 label{display:block;font-size:12.5px;color:var(--muted);margin:11px 0 5px}
 input[type=text],input[type=number],select,textarea{width:100%;padding:9px 10px;border-radius:8px;
-  background:#0e1723;border:1px solid var(--line);color:var(--text);font-family:inherit;font-size:14px;outline:none}
+  background:var(--field);border:1px solid var(--line);color:var(--text);font-family:inherit;font-size:14px;outline:none}
 textarea{min-height:140px;resize:vertical;line-height:1.9;font-size:13px}
 input[type=range]{width:100%;accent-color:var(--zone)}
 input:focus,select:focus,textarea:focus{border-color:var(--zone)}
@@ -64,18 +79,18 @@ button:active{transform:translateY(1px)}
 .btn-line{width:100%}
 .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .btns button{flex:1;min-width:100px}
-.hint{font-size:12px;color:var(--muted);line-height:1.75;margin:9px 0 0;background:#0e1723;
+.hint{font-size:12px;color:var(--muted);line-height:1.75;margin:9px 0 0;background:var(--field);
   border:1px dashed var(--line);border-radius:8px;padding:9px 11px}
 .hint b{color:var(--text)} .hint code{color:var(--warn);font-family:inherit}
-.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:20px;background:#0e1723;
+.pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:20px;background:var(--field);
   border:1px solid var(--line);color:var(--muted);margin-inline-start:auto}
 .pill.on{background:rgba(87,211,140,.14);border-color:var(--ok);color:var(--ok)}
 .pill.warn{background:rgba(255,107,107,.14);border-color:var(--bad);color:var(--bad)}
-.seg{display:flex;gap:5px;background:#0e1723;padding:4px;border-radius:10px;border:1px solid var(--line)}
+.seg{display:flex;gap:5px;background:var(--field);padding:4px;border-radius:10px;border:1px solid var(--line)}
 .seg button{flex:1;border:none;background:transparent;padding:8px 4px;font-size:12.5px}
 .seg button.on{background:var(--panel-2);border:1px solid var(--line);font-weight:700}
 .list{margin-top:10px;display:flex;flex-direction:column;gap:7px}
-.item{display:flex;align-items:center;gap:8px;background:#0e1723;border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.item{display:flex;align-items:center;gap:8px;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
 .item input[type=text]{padding:4px 6px;font-size:13px;background:transparent;border:none}
 .item .meta{font-size:11.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .item .x{background:transparent;border:none;color:var(--muted);padding:2px 6px;font-size:16px;line-height:1}
@@ -96,33 +111,33 @@ td.n,th.n{text-align:end;font-variant-numeric:tabular-nums}
 tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:none}
 .bad{color:var(--bad)}
 .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
-.kpi{background:#0e1723;border:1px solid var(--line);border-radius:10px;padding:11px 8px;text-align:center}
+.kpi{background:var(--field);border:1px solid var(--line);border-radius:10px;padding:11px 8px;text-align:center}
 .kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.2}
 .kpi span{font-size:11px;color:var(--muted)}
 .kpi.s b{color:var(--sensor)} .kpi.g b{color:var(--gate)} .kpi.a b{color:var(--zone)}
 .chks{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .issue{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.6;
-  background:#0e1723;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+  background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .issue.err{border-color:rgba(255,107,107,.5)} .issue.ok{border-color:rgba(87,211,140,.5)}
 .issue b{flex:0 0 auto}
-.stage{position:relative;background:#0a1017;overflow:hidden}
+.stage{position:relative;background:var(--stage);overflow:hidden}
 canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .tools{position:absolute;top:10px;inset-inline-start:10px;display:flex;gap:6px;flex-wrap:wrap;
-  background:rgba(21,31,43,.93);border:1px solid var(--line);border-radius:11px;padding:6px;
+  background:var(--glass);border:1px solid var(--line);border-radius:11px;padding:6px;
   backdrop-filter:blur(6px);max-width:calc(100% - 20px)}
 .tools button{padding:8px 11px;font-size:13px;border-color:transparent;background:transparent}
 .tools button.on{background:var(--panel-2);border-color:var(--line);font-weight:700}
 .tools .sep{width:1px;background:var(--line);margin:4px 2px}
-.badge{position:absolute;bottom:10px;inset-inline-start:10px;background:rgba(21,31,43,.93);
+.badge{position:absolute;bottom:10px;inset-inline-start:10px;background:var(--glass);
   border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--muted);
   font-variant-numeric:tabular-nums}
-.legend{position:absolute;bottom:10px;inset-inline-end:10px;display:flex;gap:12px;background:rgba(21,31,43,.93);
+.legend{position:absolute;bottom:10px;inset-inline-end:10px;display:flex;gap:12px;background:var(--glass);
   border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-inline-end:5px}
 .legend i.sq{border-radius:2px}
-.empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:#3f556d;
+.empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;color:var(--muted);opacity:.7;
   font-size:14px;text-align:center;line-height:2}
-.wait{position:absolute;inset:0;display:none;place-items:center;background:rgba(10,16,23,.75);
+.wait{position:absolute;inset:0;display:none;place-items:center;background:var(--veil);
   color:var(--text);font-size:14px;z-index:9}
 .wait.on{display:grid}
 .toast{position:absolute;top:14px;inset-inline-end:14px;background:var(--ok);color:#07140d;font-weight:700;
@@ -132,11 +147,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .draftbar{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);
   display:none;gap:8px;z-index:6}
 .draftbar.on{display:flex}
-.draftbar button{background:rgba(21,31,43,.96);border:1.5px solid var(--bad);color:var(--bad);
+.draftbar button{background:var(--glass);border:1.5px solid var(--bad);color:var(--bad);
   border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px}
 .draftbar #dbDone{border-color:var(--ok);color:var(--ok)}
 .histbar{position:absolute;bottom:52px;inset-inline-end:10px;display:flex;gap:6px;z-index:6}
-.histbar button{background:rgba(21,31,43,.94);border:1px solid var(--line);color:var(--text);
+.histbar button{background:var(--glass);border:1px solid var(--line);color:var(--text);
   border-radius:10px;padding:9px 13px;font-size:15px;line-height:1;min-width:44px}
 .histbar button:disabled{opacity:.3;cursor:default}
 .updbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:60;
@@ -163,7 +178,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .svbody p,.svbody li{font-size:13.5px;color:#c8d6e3}
 .svbody ul,.svbody ol{padding-inline-start:20px;margin:6px 0}
 .svbody li{margin:4px 0}
-.svbody code{background:#0e1723;border:1px solid var(--line);border-radius:5px;
+.svbody code{background:var(--field);border:1px solid var(--line);border-radius:5px;
   padding:1px 6px;font-family:inherit;color:var(--warn);font-size:12.5px}
 .svbody table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
 .svbody th,.svbody td{border:1px solid var(--line);padding:7px 9px;text-align:start}
@@ -171,7 +186,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 .svbody .kbd{background:var(--panel-2);border:1px solid var(--line);border-radius:5px;
   padding:1px 7px;font-size:12px}
 .svbody blockquote{margin:10px 0;padding:9px 13px;border-inline-start:3px solid var(--warn);
-  background:#0e1723;border-radius:0 8px 8px 0;font-size:13px;color:#c8d6e3}
+  background:var(--field);border-radius:0 8px 8px 0;font-size:13px;color:#c8d6e3}
 .gate{position:fixed;inset:0;background:var(--ink);display:none;place-items:center;z-index:50;padding:20px}
 .gate.on{display:grid}
 .gate .card{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--line);
@@ -236,6 +251,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <span id="userChip"></span>
       <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
       <button id="btnLang">English</button>
+      <button id="btnTheme" title="الثيم">◐</button>
+      <button id="btnInstall" data-i="bInstall" style="display:none">تثبيت</button>
       <button id="btnManual" title="دليل">؟</button>
       <button id="btnNew" data-i="bNew">جديد</button>
       <button id="btnSave" data-i="save">حفظ</button>
@@ -475,7 +492,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="1.6";
+const VERSION="1.7";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -537,8 +554,9 @@ sumRead:"اللي فهمته:",remainName:"باقي {0}",remainArea:"المسا�
 bNew:"جديد",cNew:"نبدأ مشروع جديد؟ الشغل الحالي هيتمسح من الحفظ التلقائي.",
 tRestored:"رجّعتلك شغلك الأخير",
 fLogo:"شعار شركتك — اختياري، بيظهر على المخرجات",bLogo:"اختيار شعار",bLogoX:"شيله",
-bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",
-updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",
+bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",
+iosInstall:"للتثبيت على الآيفون:\n١) افتح الصفحة في سفاري\n٢) دوس زر المشاركة تحت\n٣) اختار «إضافة إلى الشاشة الرئيسية»",
+updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",manVer:"إصدار {0}",
 restMsg:"فيه شغل محفوظ",bRestore:"رجّعه",
 agoNow:"دلوقتي",agoMin:"من {0} دقيقة",agoHr:"من {0} ساعة",agoDay:"من {0} يوم",
 emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
@@ -629,8 +647,9 @@ sumRead:"Understood:",remainName:"Rest of {0}",remainArea:"Remaining area",rooms
 bNew:"New",cNew:"Start a new project? Current autosaved work will be cleared.",
 tRestored:"Restored your last session",
 fLogo:"Your company logo — optional, appears on outputs",bLogo:"Choose logo",bLogoX:"Remove",
-bUpdate:"Update",bDownload:"Download",bManual:"Guide",
-updMsg:"Version {0} is available",manTitle:"User Manual",
+bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",
+iosInstall:"To install on iPhone:\n1) Open the page in Safari\n2) Tap the Share button\n3) Choose “Add to Home Screen”",
+updMsg:"Version {0} is available",manTitle:"User Manual",manVer:"Version {0}",
 restMsg:"Unsaved work found",bRestore:"Restore",
 agoNow:"just now",agoMin:"{0} min ago",agoHr:"{0} h ago",agoDay:"{0} d ago",
 emptyMsg:"Upload a plan image or write the description<br>Or draw from scratch: rectangle for rooms, wall and door for details<br>You can also drop a project file here",waiting:"Working…",
@@ -680,6 +699,15 @@ aNoCloud:"Cloud is not configured"
 function t(k){let s=DICT[L][k]!==undefined?DICT[L][k]:k;
   for(let i=1;i<arguments.length;i++)s=s.split("{"+(i-1)+"}").join(arguments[i]);
   return s;}
+const TH_KEY="sensorToolTheme";
+let TH=(function(){try{return localStorage.getItem(TH_KEY)||"dark";}catch(e){return "dark";}})();
+function applyTheme(){
+  document.documentElement.setAttribute("data-theme",TH);
+  const mt=document.getElementById("metaTheme");
+  if(mt)mt.setAttribute("content",TH==="light"?"#eef2f7":"#0d141c");
+  btnTheme.textContent=TH==="light"?"☾":"☀";
+  try{localStorage.setItem(TH_KEY,TH);}catch(e){}
+  if(typeof render==="function")render();}
 function applyLang(){
   document.documentElement.lang=L;
   document.documentElement.dir=L==="ar"?"rtl":"ltr";
@@ -947,11 +975,11 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
   g.direction=L==="ar"?"rtl":"ltr";
   zs.forEach(z=>{if(z.pts.length<2)return;
     const c=centroid(z.pts);g.textAlign="center";
-    g.fillStyle=pr?"#111":"rgba(231,238,245,.92)";
+    g.fillStyle="#1a2733";
     g.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
     g.fillText(z.name,c.x,c.y);
     if(sc>0){const d=q.drawn?null:rectDims(z,sc);
-      g.fillStyle=pr?"#555":"rgba(142,161,180,.95)";
+      g.fillStyle="#5d6f80";
       g.font=(11/k)+'px "Segoe UI",Tahoma,sans-serif';
       g.fillText(d?(nice(d.w)+" × "+nice(d.h)+" "+t("unitM")):(fmt(polyArea(z.pts)/(sc*sc))+" "+t("unitM2")),c.x,c.y+15/k);
       if(d)g.fillText(fmt(d.w*d.h)+" "+t("unitM2"),c.x,c.y+28/k);}});
@@ -1012,7 +1040,8 @@ function powerIcon(g,x,y,r,k){
 function render(){
   const r=cv.getBoundingClientRect(),k=V.k,q=pl();
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.fillStyle="#0a1017";ctx.fillRect(0,0,r.width,r.height);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--stage").trim()||"#0a1017";
+  ctx.fillRect(0,0,r.width,r.height);
   ctx.save();ctx.setTransform(k*dpr,0,0,k*dpr,V.x*dpr,V.y*dpr);
   paintWorld(ctx,k,false,q);
   if(U.draft.length){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;
@@ -1869,7 +1898,23 @@ installation schedule for <b>operations</b>, and a permanent device map for <b>a
 <blockquote>Standards applied: one sensor per <b>25 m²</b> (adjustable) and one
 <b>independent gateway per room</b>. Both are set in section 4.</blockquote>
 
-<h3>2. Getting the plan in — three ways</h3>
+<h3>2. Installing the tool on your device</h3>
+<p>It installs like any app, opens from an icon, and runs <b>offline</b> after the first visit —
+useful inside stores and cold rooms where signal is weak.</p>
+<table><tr><th>Device</th><th>Steps</th></tr>
+<tr><td><b>Android</b></td><td>Open the link in Chrome, then tap the green <b>Install</b> button
+at the top, or <i>Install app</i> from the browser menu.</td></tr>
+<tr><td><b>iPhone / iPad</b></td><td>Open the link in <b>Safari</b>, tap Share, then
+<i>Add to Home Screen</i>. (Safari has no one-tap install like Chrome.)</td></tr>
+<tr><td><b>Windows</b></td><td>Open in Chrome or Edge, use the install icon in the address bar
+or the <b>Install</b> button. It lands in the Start menu like any program.</td></tr></table>
+<blockquote>Once installed it still updates itself from the web — installing does not freeze it
+on one version.</blockquote>
+<h4>Theme</h4>
+<p>The <b>◐</b> button switches between <b>dark</b> and <b>light</b>. Light reads better in
+daylight on site, dark is easier on the eyes at a desk. Your choice is saved on the device.</p>
+
+<h3>3. Getting the plan in — three ways</h3>
 <h4>A. Image</h4>
 <p>Upload a photo or scan of the plan. If the lines are faint, press <b>To line art</b> and
 adjust <b>Cleanup strength</b> until walls read clearly. The plan stays an image — the tool
@@ -1892,14 +1937,14 @@ it is your check that the tool got your intent.</p>
 <tr><td><code>door 5,8 6,8</code></td><td>door between two points</td></tr>
 <tr><td><code>wall 3,0 3,8</code></td><td>internal wall</td></tr></table>
 
-<h3>3. Run Everything</h3>
+<h3>4. Run Everything</h3>
 <p>One button does the whole chain: detect rooms → measure → place sensors → place gateways.
 It asks a single question — <b>how many metres across is the plan</b> — because no image
 carries real-world distance. A rough number works; refine later with the <b>Scale</b> tool.</p>
 <p>If you drew the plan from a description or dimensions, the scale is already exact and the
 question is skipped.</p>
 
-<h3>4. Zone types — room, corridor, fridge</h3>
+<h3>5. Zone types — room, corridor, fridge</h3>
 <p>Every zone in section 3 has a <b>type</b> you pick from the small dropdown beside it. The type
 changes both how counts are calculated and how it is drawn:</p>
 <table><tr><th>Type</th><th>Counting</th><th>On the plan</th></tr>
@@ -1914,7 +1959,7 @@ so nothing is double-counted and no sensor lands in the wrong place.</blockquote
 <p><code>room cold 6x5</code> · <code>corridor 12x2</code> · <code>fridge 2x1.5</code></p>
 <p>If a corridor does need monitoring, just raise its count with <b>+</b>.</p>
 
-<h3>5. Reviewing and adjusting — your main job</h3>
+<h3>6. Reviewing and adjusting — your main job</h3>
 <p>The tool goes first, you validate. Every room in section 3 has:</p>
 <ul>
 <li><b>+ and −</b> — change that room's sensor count; the tool immediately redistributes them
@@ -1928,7 +1973,7 @@ recalculates only the rooms still on Auto.</blockquote>
 sensors, counts below standard, missing gateways, sensors beyond gateway range, sensors
 outside every room, and any room where your manual count differs from the standard.</p>
 
-<h3>6. Drawing and editing tools</h3>
+<h3>7. Drawing and editing tools</h3>
 <table><tr><th>Tool</th><th>Use</th></tr>
 <tr><td><b>Edit</b></td><td>Default. Drag sensors, gateways, room corners, walls and doors.
 Drag empty space to pan.</td></tr>
@@ -1959,13 +2004,13 @@ This keeps you from nudging a room while panning.</blockquote>
 <p>A sensor dropped outside every room returns to the nearest point inside its own room.
 A sensor dropped inside a different room is reassigned to that room's gateway and renumbered.</p>
 
-<h3>7. Undo and redo</h3>
+<h3>8. Undo and redo</h3>
 <p>Two floating buttons sit at the bottom of the drawing: <b>↶</b> undo and <b>↷</b> redo,
 covering the last 40 actions. Keyboard: <span class="kbd">Ctrl</span> +
 <span class="kbd">Z</span> and <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> +
 <span class="kbd">Z</span>.</p>
 
-<h3>8. Gateways — a checkpoint with a range</h3>
+<h3>9. Gateways — a checkpoint with a range</h3>
 <p>A gateway is a <b>collection point</b>, not a device bound to particular sensors. Any sensor
 inside its range reaches it. That is why no link lines are drawn — what you see is the dashed
 <b>range circle</b> around it, and every sensor inside is covered.</p>
@@ -1995,13 +2040,13 @@ positions only, with no lines inviting "why is this one wired to that one?"</li>
 <p>The <b>Pre-Handover Check</b> reports any sensor beyond the nearest gateway, with the distance
 in metres, and any room without a gateway inside it when the policy is one-per-room.</p>
 
-<h3>9. Company standards</h3>
+<h3>10. Company standards</h3>
 <p>Section 4 holds every rule the counts depend on: sensor coverage, minimum per room, gateway
 type and range, one-gateway-per-room, symbol size on the drawing, and accessories per unit
 (batteries, mounts, adapters) with a spare percentage. Change a value and every count, table
 and output updates immediately.</p>
 
-<h3>10. Outputs — and who each one is for</h3>
+<h3>11. Outputs — and who each one is for</h3>
 <table><tr><th>Output</th><th>For</th></tr>
 <tr><td><b>Drawing image</b></td><td>Sales — a full sheet with project, company, AUX number,
 date, logo, drawing, symbol key and counts. Attach it to the quote.</td></tr>
@@ -2015,7 +2060,7 @@ applied.</td></tr>
 <tr><td><b>Client version</b></td><td>Tick it to hide coverage circles and link lines for a
 cleaner client-facing drawing.</td></tr></table>
 
-<h3>11. Saving and sharing</h3>
+<h3>12. Saving and sharing</h3>
 <ul>
 <li><b>Autosave</b> — your work is saved in this browser on every change, but a
 <b>refresh starts clean</b>: if saved work exists, a blue bar offers <b>Restore</b> with how long
@@ -2029,7 +2074,7 @@ appear, and the list shows who last saved each project and when.</li>
 <blockquote>If two people save the same cloud project at the same moment, the last save wins.
 Check the list for who edited last before you overwrite.</blockquote>
 
-<h3>12. Keyboard shortcuts</h3>
+<h3>13. Keyboard shortcuts</h3>
 <table><tr><th>Key</th><th>Action</th></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>Undo</td></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>Redo</td></tr>
@@ -2038,7 +2083,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><span class="kbd">Delete</span></td><td>Delete selected item</td></tr>
 <tr><td><span class="kbd">Shift</span> (held)</td><td>Free angle, ignore snapping</td></tr></table>
 
-<h3>13. Quick troubleshooting</h3>
+<h3>14. Quick troubleshooting</h3>
 <table><tr><th>Symptom</th><th>Fix</th></tr>
 <tr><td>Detection finds no rooms</td><td>Press <b>To line art</b> first, then detect</td></tr>
 <tr><td>Two rooms merge into one</td><td>An open doorway joins them — draw those with
@@ -2056,7 +2101,23 @@ Check the list for who edited last before you overwrite.</blockquote>
 <blockquote>المعايير المطبّقة: حساس لكل <b>٢٥ م٢</b> (قابل للتعديل)، و<b>جيت واي مستقل لكل
 غرفة</b>. الاتنين بيتظبطوا من قسم ٤.</blockquote>
 
-<h3>٢. إدخال الرسمة — تلات طرق</h3>
+<h3>٢. تثبيت الأداة على جهازك</h3>
+<p>الأداة بتتثبت زي أي تطبيق وتفتح من أيقونة على الشاشة، وبتشتغل <b>من غير إنترنت</b> بعد أول
+فتحة — مفيد جوّه المخازن والثلاجات اللي الشبكة فيها ضعيفة.</p>
+<table><tr><th>الجهاز</th><th>الخطوات</th></tr>
+<tr><td><b>أندرويد</b></td><td>افتح الرابط في كروم ← دوس زر <b>تثبيت</b> الأخضر فوق،
+أو من قايمة المتصفح <i>تثبيت التطبيق</i>.</td></tr>
+<tr><td><b>آيفون / آيباد</b></td><td>افتح الرابط في <b>سفاري</b> ← زر المشاركة تحت ←
+<i>إضافة إلى الشاشة الرئيسية</i>. (سفاري مبيدعمش التثبيت بضغطة زي كروم.)</td></tr>
+<tr><td><b>ويندوز</b></td><td>افتح الرابط في كروم أو إيدج ← أيقونة التثبيت في شريط العنوان،
+أو زر <b>تثبيت</b> فوق. بيتحط في قائمة ابدأ زي أي برنامج.</td></tr></table>
+<blockquote>بعد التثبيت الأداة بتفضل بتحدّث نفسها من الإنترنت زي ما هي — التثبيت مش بيجمّدها
+على نسخة.</blockquote>
+<h4>الثيم</h4>
+<p>زر <b>◐</b> فوق بيبدّل بين <b>الغامق</b> و<b>الفاتح</b>. الفاتح أوضح تحت شمس الموقع،
+والغامق أريح للعين في المكتب. اختيارك بيتحفظ على الجهاز.</p>
+
+<h3>٣. إدخال الرسمة — تلات طرق</h3>
 <h4>أ. صورة</h4>
 <p>ارفع صورة أو مسح ضوئي للرسمة. لو الخطوط باهتة، دوس <b>تحويل لخطوط</b> وظبّط
 <b>درجة التنقية</b> لحد ما الحوائط تبان واضحة. الرسمة بتفضل <b>صورة</b> — الأداة بتكتشف الغرف
@@ -2078,13 +2139,13 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><code>باب 5,8 6,8</code></td><td>باب بين نقطتين</td></tr>
 <tr><td><code>حائط 3,0 3,8</code></td><td>حائط داخلي</td></tr></table>
 
-<h3>٣. شغّل كل حاجة</h3>
+<h3>٤. شغّل كل حاجة</h3>
 <p>زر واحد بيعمل السلسلة كلها: يكتشف الغرف ← يحسب المساحات ← يوزّع الحساسات ← يحط الجيت واي.
 وبيسأل سؤال واحد بس — <b>الرسمة كلها كام متر</b> — لأن مفيش صورة بتحمل معلومة المسافة الحقيقية.
 رقم تقريبي يكفي، وتظبطه بعدين بأداة <b>معايرة</b>.</p>
 <p>ولو رسمت من وصف أو أبعاد، المقياس بيبقى مضبوط أصلًا والسؤال بيتخطّى.</p>
 
-<h3>٤. أنواع المناطق — غرفة وممر وثلاجة</h3>
+<h3>٥. أنواع المناطق — غرفة وممر وثلاجة</h3>
 <p>كل منطقة في قسم ٣ ليها <b>نوع</b> تختاره من القايمة الصغيرة جنبها، والنوع بيغيّر
 حساب الأعداد وشكل الرسم:</p>
 <table><tr><th>النوع</th><th>الأعداد</th><th>على الرسمة</th></tr>
@@ -2099,7 +2160,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p><code>غرفة تبريد 6x5</code> · <code>ممر 12x2</code> · <code>ثلاجة 2x1.5</code></p>
 <p>ولو عايز الممر يتراقب فعلًا، زوّد عدده بزر <b>+</b> عادي.</p>
 
-<h3>٥. المراجعة والتعديل — دورك الأساسي</h3>
+<h3>٦. المراجعة والتعديل — دورك الأساسي</h3>
 <p>الأداة تشتغل الأول وإنت تراجع. كل غرفة في قسم ٣ عليها:</p>
 <ul>
 <li><b>+ و −</b> — تغيّر عدد حساسات الغرفة، والأداة تعيد توزيعهم متوازنين جوّاها فورًا</li>
@@ -2111,7 +2172,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 المعيار، جيت واي ناقص، حساس خارج مدى الجيت واي، حساس برة كل الغرف، وأي غرفة عددك اليدوي فيها
 مختلف عن المعيار.</p>
 
-<h3>٦. أدوات الرسم والتعديل</h3>
+<h3>٧. أدوات الرسم والتعديل</h3>
 <table><tr><th>الأداة</th><th>الاستخدام</th></tr>
 <tr><td><b>تعديل</b></td><td>الافتراضية. اسحب الحساسات والجيت واي وأركان الغرف والحوائط
 والأبواب. والسحب على الفاضي بيحرّك اللوحة.</td></tr>
@@ -2142,12 +2203,12 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p>الحساس اللي يتسحب برة كل الغرف بيرجع لأقرب نقطة جوّه غرفته. واللي يتسحب لغرفة تانية
 بيتحوّل لجيت واي الغرفة الجديدة ويتعاد ترقيمه.</p>
 
-<h3>٧. التراجع والإعادة</h3>
+<h3>٨. التراجع والإعادة</h3>
 <p>زرارين عايمين تحت الرسمة: <b>↶</b> تراجع و<b>↷</b> إعادة، بيغطّوا آخر ٤٠ خطوة.
 ومن الكيبورد: <span class="kbd">Ctrl</span> + <span class="kbd">Z</span> و
 <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span>.</p>
 
-<h3>٨. الجيت واي — تشيك بوينت بمدى</h3>
+<h3>٩. الجيت واي — تشيك بوينت بمدى</h3>
 <p>الجيت واي <b>نقطة تجميع</b>، مش جهاز مربوط بحساسات معيّنة. أي حساس جوّه مداه بيوصله.
 عشان كده مفيش خطوط ربط على الرسمة — اللي بيظهر هو <b>دايرة المدى</b> المتقطعة حواليه،
 وأي حساس جوّاها مغطّى.</p>
@@ -2177,12 +2238,12 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p><b>فحص قبل التسليم</b> بينبهك على أي حساس خارج مدى أقرب جيت واي وبالمسافة بالمتر،
 وعلى أي غرفة من غير جيت واي جوّاها لو السياسة «مستقل لكل غرفة».</p>
 
-<h3>٩. معايير الشركة</h3>
+<h3>١٠. معايير الشركة</h3>
 <p>قسم ٤ فيه كل قاعدة الأعداد بتعتمد عليها: تغطية الحساس، أقل عدد للغرفة، نوع الجيت واي ومداه،
 جيت واي مستقل لكل غرفة، حجم الرمز على الرسمة، والمستلزمات لكل وحدة (بطاريات، قواعد، محولات)
 مع نسبة احتياطي. غيّر أي قيمة وكل الأعداد والجداول والمخرجات تتحدث على طول.</p>
 
-<h3>١٠. المخرجات — وكل واحد لمين</h3>
+<h3>١١. المخرجات — وكل واحد لمين</h3>
 <table><tr><th>المخرَج</th><th>لمين</th></tr>
 <tr><td><b>صورة الرسمة</b></td><td>المبيعات — ورقة كاملة باسم المشروع والشركة ورقم AUX
 والتاريخ والشعار والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
@@ -2195,7 +2256,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><b>نسخة العميل</b></td><td>علّم عليها عشان تخفي دوائر التغطية وخطوط الوصل ويطلع رسم
 أنضف للعميل.</td></tr></table>
 
-<h3>١١. الحفظ والمشاركة</h3>
+<h3>١٢. الحفظ والمشاركة</h3>
 <ul>
 <li><b>حفظ تلقائي</b> — شغلك بيتحفظ في المتصفح ده مع كل تعديل. لكن <b>التحديث بيبدأ نضيف</b>:
 لو كان فيه شغل محفوظ بيظهر شريط أزرق تحت «فيه شغل محفوظ من ٥ دقايق» بزر <b>رجّعه</b>. ده لكل
@@ -2209,7 +2270,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <blockquote>لو اتنين حفظوا نفس مشروع السحابة في نفس اللحظة، آخر واحد حفظ هو اللي يثبت. بص على
 القايمة وشوف مين عدّل آخر مرة قبل ما تكتب فوقه.</blockquote>
 
-<h3>١٢. اختصارات الكيبورد</h3>
+<h3>١٣. اختصارات الكيبورد</h3>
 <table><tr><th>المفتاح</th><th>بيعمل إيه</th></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>تراجع</td></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>إعادة</td></tr>
@@ -2218,7 +2279,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><span class="kbd">Delete</span></td><td>يحذف العنصر المحدد</td></tr>
 <tr><td><span class="kbd">Shift</span> (مضغوطة)</td><td>زاوية حرة من غير لزق</td></tr></table>
 
-<h3>١٣. حل المشاكل السريع</h3>
+<h3>١٤. حل المشاكل السريع</h3>
 <table><tr><th>العرض</th><th>الحل</th></tr>
 <tr><td>الاكتشاف مش لاقي غرف</td><td>دوس <b>تحويل لخطوط</b> الأول وبعدين اكتشف</td></tr>
 <tr><td>غرفتين بيتلزقوا في واحدة</td><td>فيه فتحة باب واصلاهم — ارسمهم بـ<b>مستطيل</b></td></tr>
@@ -2226,9 +2287,12 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td>سطر «اللي فهمته» غلط</td><td>أعد صياغة الوصف أو ظبّطه بأدوات الرسم</td></tr>
 <tr><td>الملف كبير على السحابة</td><td>استعمل <b>تحويل لخطوط</b> أو صورة أصغر</td></tr>
 <tr><td>غرفة اتزحلقت وإنت بتحرك</td><td>دوس <b>↶</b> واستعمل أداة <b>تحريك</b></td></tr></table>`;}
+function manualHead(){
+  return '<p style="color:var(--muted);font-size:12.5px;margin:0 0 4px">'+
+    t("manVer",VERSION)+' · '+today()+'</p>';}
 function openManual(){
   mnTitle.textContent=t("manTitle")+" — v"+VERSION;
-  mnBody.innerHTML=manualHTML();
+  mnBody.innerHTML=manualHead()+manualHTML();
   mnBody.scrollTop=0;manual.classList.add("on");}
 function closeManual(){manual.classList.remove("on");}
 function dlManual(){
@@ -2238,7 +2302,7 @@ function dlManual(){
     '<title>'+t("manTitle")+' v'+VERSION+'</title><style>'+css+
     'body{overflow:auto;height:auto;padding:24px 16px}.svbody{display:block}</style></head><body>'+
     '<div class="svbody"><h2 style="margin:0 0 6px">'+t("manTitle")+'</h2>'+
-    '<p style="color:#8ea1b4;margin:0 0 18px">v'+VERSION+' · '+today()+'</p>'+
+    '<p style="color:#8ea1b4;margin:0 0 18px">'+t("manVer",VERSION)+' · '+today()+'</p>'+
     manualHTML()+'</div></body></html>';
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([doc],{type:"text/html;charset=utf-8"}));
@@ -2397,6 +2461,7 @@ document.getElementById("btnUndo").onclick=undo;
 document.getElementById("fbUndo").onclick=undo;
 document.getElementById("fbRedo").onclick=redo;
 document.getElementById("btnManual").onclick=openManual;
+document.getElementById("btnTheme").onclick=()=>{TH=TH==="light"?"dark":"light";applyTheme();};
 document.getElementById("mnX").onclick=closeManual;
 document.getElementById("mnBack").onclick=closeManual;
 document.getElementById("mnDl").onclick=dlManual;
@@ -2500,11 +2565,24 @@ document.getElementById("btnPdf").onclick=()=>{
   document.getElementById("print").innerHTML=html;
   setTimeout(()=>window.print(),150);};
 
-applyLang();loadCfg();updateLogoUI();resize();refresh();offerRestore();
+applyTheme();applyLang();loadCfg();updateLogoUI();resize();refresh();offerRestore();
 cv.style.cursor="default";
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
 initFB();
 checkUpdate();setInterval(checkUpdate,300000);
+if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+let deferredPrompt=null;
+const iOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;
+  btnInstall.style.display="inline-block";});
+window.addEventListener("appinstalled",()=>{btnInstall.style.display="none";deferredPrompt=null;});
+if(iOS&&!standalone)btnInstall.style.display="inline-block";
+document.getElementById("btnInstall").onclick=async()=>{
+  if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;
+    deferredPrompt=null;btnInstall.style.display="none";return;}
+  alert(t("iosInstall"));};
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate();});
 </script>
 </body>
