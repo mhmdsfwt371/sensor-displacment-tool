@@ -1,6 +1,6 @@
 {
-  "name": "توزيع الحساسات والجيت واي — Sensor Layout Tool",
-  "short_name": "Sensor Layout",
+  "name": "توزيع الحساسات — Sensor Displacement",
+  "short_name": "توزيع الحساسات",
   "description": "أداة تقييم الموقع وتوزيع الحساسات والجيت واي وإخراج الأعداد والرسمة وجداول التركيب",
   "start_url": "./",
   "scope": "./",
@@ -10,10 +10,29 @@
   "theme_color": "#0d141c",
   "lang": "ar",
   "dir": "rtl",
-  "categories": ["productivity", "business", "utilities"],
+  "categories": [
+    "productivity",
+    "business",
+    "utilities"
+  ],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

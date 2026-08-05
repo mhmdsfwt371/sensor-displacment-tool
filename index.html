@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sensor Layout">
-<title>Sensor Layout — توزيع الحساسات</title>
+<title>Sensor Displacement — توزيع الحساسات</title>
 <style>
 :root{
   --ink:#0d141c; --panel:#151f2b; --panel-2:#1b2836; --line:#26374a;
@@ -31,7 +31,7 @@ html,body{margin:0;height:100%}
 body{background:var(--ink);color:var(--text);-webkit-user-select:none;user-select:none;
   font-family:"Segoe UI","Noto Sans Arabic","Dubai",Tahoma,Arial,sans-serif;font-size:15px;overflow:hidden}
 input,textarea{-webkit-user-select:text;user-select:text}
-.app{display:grid;grid-template-columns:395px 1fr;height:100%}
+.app{display:grid;grid-template-columns:425px 1fr;height:100%}
 @media (max-width:900px){
   .app{grid-template-columns:1fr;grid-template-rows:44vh 1fr}
   .side{order:2;border-inline-start:none;border-top:1px solid var(--line)}
@@ -48,7 +48,8 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .brand .r1>*{flex:0 0 auto}
 .brand .r2{display:flex;gap:7px}
 .brand .r2 button{flex:1 1 0;padding:8px 6px;font-size:12.5px}
-.brand h1{margin:0;font-size:16px;flex:1 1 auto;min-width:52px;
+.brand h1{margin:0;font-size:15.5px;font-weight:700;letter-spacing:-.1px;
+  flex:1 1 auto;min-width:58px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .brand button{padding:6px 10px;font-size:12.5px;white-space:nowrap}
 #btnManual,#btnTheme{border-radius:50%;width:28px;height:28px;padding:0;font-weight:700;
@@ -217,7 +218,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .glinks{display:flex;gap:8px;margin-top:8px}
 .glinks button{flex:1;background:transparent;border:none;color:var(--muted);font-size:12px;padding:6px}
 .glinks button:hover{color:var(--text)}
-#userChip{font-size:11px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#userChip{font-size:11px;color:var(--muted);max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #verChip{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;
   padding:1px 7px;letter-spacing:.3px}
 .item .go{flex:1;font-size:12.5px;line-height:1.6}
@@ -267,7 +268,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   <aside class="side">
     <div class="brand">
       <div class="r1">
-        <h1 data-i="appTitle">ملف المشروع</h1>
+        <h1 data-i="appTitle">توزيع الحساسات</h1>
         <span id="verChip"></span>
         <span id="userChip"></span>
         <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
@@ -514,7 +515,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="2.8";
+const VERSION="2.9";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -533,7 +534,7 @@ const ALLOW_OFFLINE=true;   // خلّيها false لو عايز الدخول إ�
 let L="ar";
 const DICT={
 ar:{
-appTitle:"ملف المشروع",save:"حفظ",open:"فتح",langBtn:"English",langTip:"English",
+appTitle:"توزيع الحساسات",save:"حفظ",open:"فتح",langBtn:"English",langTip:"English",
 s1:"بيانات المشروع",fName:"اسم المشروع",phName:"مخازن النور",fAux:"رقم AUX",phAux:"AUX-1024",
 fClient:"اسم الشركة (العميل / الجهة)",phClient:"شركة النور للأدوية",
 hSave:"زر <b>حفظ</b> فوق بينزّل ملف المشروع كامل بالرسمة والتوزيع — تفتحه تاني أو تبعته لزميلك ويكمّل عليه.",
@@ -633,7 +634,7 @@ aTooBig:"الملف كبير على السحابة — استعمل «تحويل
 aNoCloud:"السحابة مش متظبطة"
 },
 en:{
-appTitle:"Project File",save:"Save",open:"Open",langBtn:"العربية",langTip:"العربية",
+appTitle:"Sensor Displacement",save:"Save",open:"Open",langBtn:"العربية",langTip:"العربية",
 s1:"Project Details",fName:"Project Name",phName:"Al Nour Stores",fAux:"AUX Number",phAux:"AUX-1024",
 fClient:"Company (Client / Entity)",phClient:"Al Nour Pharma",
 hSave:"<b>Save</b> downloads the whole project — drawing, rooms and layout. Reopen it later or send it to a colleague to continue.",
