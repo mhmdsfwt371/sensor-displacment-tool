@@ -79,6 +79,11 @@ button:active{transform:translateY(1px)}
 .btn-line{width:100%}
 .btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .btns button{flex:1;min-width:100px}
+.brandlock{display:flex;align-items:center;gap:10px;margin-top:9px;padding:9px 11px;
+  background:var(--field);border:1px solid var(--line);border-radius:10px}
+.brandlock img{height:30px;max-width:132px;object-fit:contain;background:#fff;border-radius:6px;padding:3px 7px;display:none}
+.brandlock b{display:block;font-size:12.5px;font-weight:600}
+.brandlock em{display:block;font-size:11px;color:var(--muted);font-style:normal;margin-top:2px}
 .hint{font-size:12px;color:var(--muted);line-height:1.75;margin:9px 0 0;background:var(--field);
   border:1px dashed var(--line);border-radius:8px;padding:9px 11px}
 .hint b{color:var(--text)} .hint code{color:var(--warn);font-family:inherit}
@@ -274,13 +279,10 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         </div>
         <label data-i="fClient">اسم الشركة (العميل / الجهة)</label>
         <input type="text" id="pjClient" data-ph="phClient">
-        <label data-i="fLogo">شعار شركتك — اختياري، بيظهر على المخرجات</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button id="btnLogo" data-i="bLogo" style="flex:1">اختيار شعار</button>
-          <img id="logoPrev" alt="" style="height:32px;display:none;background:#fff;border-radius:6px;padding:2px 6px">
-          <button id="btnLogoX" data-i="bLogoX" style="display:none">شيله</button>
+        <div class="brandlock">
+          <img id="brandLogo" alt="AFAQY">
+          <div><b id="brandName">آفاقي لتقنية المعلومات</b><em data-i="fBrandLock"></em></div>
         </div>
-        <input type="file" id="fileLogo" accept="image/*" style="display:none">
         <p class="hint" data-i="hSave" data-html="1"></p>
         <button id="btnRestore" class="btn-line" style="display:none;margin-top:9px"></button>
         <div id="cloudBox" style="display:none">
@@ -497,7 +499,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="1.9";
+const VERSION="2.0";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -558,7 +560,7 @@ phDesc:"اكتب بكلامك العادي:\nمستودع ١٠٠ متر مربع
 sumRead:"اللي فهمته:",remainName:"باقي {0}",remainArea:"المساحة المتبقية",roomsWord:"غرف",
 bNew:"جديد",cNew:"نبدأ مشروع جديد؟ الشغل الحالي هيتمسح من الحفظ التلقائي.",
 tRestored:"رجّعتلك شغلك الأخير",
-fLogo:"شعار شركتك — اختياري، بيظهر على المخرجات",bLogo:"اختيار شعار",bLogoX:"شيله",
+fBrandLock:"شعار ثابت — بيطلع على كل المخرجات",
 bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",fNewKind:"نوع أي منطقة ترسمها",
 verHint:"اضغط عشان تجيب آخر نسخة",cUpdate:"تجيب آخر نسخة؟ الصفحة هتتحمّل من الأول.",
 iosInstall:"للتثبيت على الآيفون:\n١) افتح الصفحة في سفاري\n٢) دوس زر المشاركة تحت\n٣) اختار «إضافة إلى الشاشة الرئيسية»",
@@ -652,7 +654,7 @@ phDesc:"Write it your way:\nwarehouse 100 sqm with two rooms\none 4x5 and one 4x
 sumRead:"Understood:",remainName:"Rest of {0}",remainArea:"Remaining area",roomsWord:"rooms",
 bNew:"New",cNew:"Start a new project? Current autosaved work will be cleared.",
 tRestored:"Restored your last session",
-fLogo:"Your company logo — optional, appears on outputs",bLogo:"Choose logo",bLogoX:"Remove",
+fBrandLock:"Fixed brand — appears on every output",
 bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",fNewKind:"Type for zones you draw",
 verHint:"Click to fetch the latest version",cUpdate:"Fetch the latest version? The page will reload.",
 iosInstall:"To install on iPhone:\n1) Open the page in Safari\n2) Tap the Share button\n3) Choose “Add to Home Screen”",
@@ -727,6 +729,7 @@ function applyLang(){
   verChip.title=t("verHint");
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
   txtPlan.placeholder=t("phDesc");
+  loadBrand();
   refresh();}
 
 /* ================= الحالة ================= */
@@ -734,7 +737,7 @@ let SEQ=1;
 const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
   scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
-function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",brand:{logo:null},
+function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",
   cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,gwMode:"room",bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
 let P=newProject();
@@ -1149,11 +1152,16 @@ function exportSheet(q,W,clean){
   g.fillStyle="#555";g.font=fnt(.020);
   g.fillText(P.client||"",X1,side+Math.round(W*.062));
   let metaX=X2;
-  if(P.brand&&P.brand.logo&&LOGOI.complete&&LOGOI.naturalWidth){
+  if(logoReady()&&LOGO_SAFE){
     const lh=headH*.52,lw=lh*LOGOI.naturalWidth/LOGOI.naturalHeight;
     const lx=rtl?LX:RX-lw;
     g.drawImage(LOGOI,lx,side,lw,lh);
     metaX=rtl?LX+lw+Math.round(W*.012):RX-lw-Math.round(W*.012);}
+  else{g.textAlign=A2;g.fillStyle="#111";g.font=fnt(.032,"800");
+    g.fillText(BRAND.mark,X2,side+Math.round(W*.036));
+    const bw=g.measureText(BRAND.mark).width;
+    metaX=rtl?LX+bw+Math.round(W*.014):RX-bw-Math.round(W*.014);
+    g.fillStyle="#555";}
   g.textAlign=A2;g.font=fnt(.017);
   [P.ref?"AUX: "+P.ref:"",today()].filter(Boolean)
     .forEach((x,i)=>g.fillText(x,metaX,side+Math.round(W*.030)+i*Math.round(W*.025)));
@@ -1182,7 +1190,7 @@ function exportSheet(q,W,clean){
     x+=wid[i]+fs*1.2;});
   g.textAlign=A2;g.fillStyle="#555";g.font=fnt(.016);
   g.fillText(t("cArea",fmt(tt.area))+" · "+t("cCov",ar(P.cfg.cov))+" · "+
-    gwModeLabel()+" · v"+VERSION,X2,fy);
+    gwModeLabel()+" · "+BRAND.mark+" "+BRAND.site+" · v"+VERSION,X2,fy);
   g.textBaseline="alphabetic";return c;}
 
 function dlCanvas(c,name,jpeg){
@@ -1818,7 +1826,7 @@ function saveProject(){
   a.download=(P.name||t("fileProj"))+".json";a.click();toast(t("tSaved"));}
 function applyProject(o){
   if(!o||!o.plans)throw 0;
-  P=o;P.cur=0;P.brand=P.brand||{logo:null};setLogoImg();
+  P=o;P.cur=0;delete P.brand;
   for(const k in IMG)delete IMG[k];for(const k in ORIG)delete ORIG[k];for(const k in MASK)delete MASK[k];
   SEQ=1;P.plans.forEach(q=>{SEQ=Math.max(SEQ,q.id+1);
     q.zones.forEach(z=>SEQ=Math.max(SEQ,z.id+1));
@@ -1866,16 +1874,49 @@ function readImage(f){
   rd.readAsDataURL(f);}
 
 /* ================= الإعدادات ================= */
-const LOGOI=new Image();LOGOI.onload=()=>render();
-function setLogoImg(){
-  if(P.brand&&P.brand.logo)LOGOI.src=P.brand.logo;
-  else LOGOI.removeAttribute("src");
-  updateLogoUI();}
-function updateLogoUI(){
-  const has=!!(P.brand&&P.brand.logo);
-  logoPrev.style.display=has?"block":"none";
-  if(has)logoPrev.src=P.brand.logo;
-  btnLogoX.style.display=has?"inline-block":"none";}
+/* هوية آفاقي — ثابتة، مش قابلة للاختيار */
+const BRAND={
+  mark:"AFAQY",site:"www.afaqy.com",key:"afaqyBrandLogo_v1",
+  co:{ar:"آفاقي لتقنية المعلومات",en:"AFAQY IT"},
+  src:{ar:["assets/afaqy-logo-ar.svg",
+           "https://cdn.prod.website-files.com/64934b1b5b168f3686f8521b/65c3a242df94bdf87b48865b_afaqy-logo-ar.svg"],
+       en:["assets/afaqy-logo.svg",
+           "https://afaqy.com/images/afaqy-logo.svg"]}};
+const LOGOI=new Image();
+let LOGO_URL="",LOGO_SAFE=false;
+function logoReady(){return LOGOI.complete&&LOGOI.naturalWidth>0;}
+function brandCo(){return BRAND.co[L]||BRAND.co.ar;}
+function logoCache(){try{return JSON.parse(localStorage.getItem(BRAND.key)||"{}");}catch(e){return{};}}
+function bakeLogo(im){
+  try{const h=140,w=Math.round(h*im.naturalWidth/im.naturalHeight);
+    if(!(w>0&&h>0))return null;
+    const c=document.createElement("canvas");c.width=w;c.height=h;
+    c.getContext("2d").drawImage(im,0,0,w,h);
+    return c.toDataURL("image/png");}catch(e){return null;}}
+function showBrand(){
+  const el=document.getElementById("brandLogo"),nm=document.getElementById("brandName");
+  if(nm)nm.textContent=brandCo();
+  if(el){if(LOGO_URL){el.src=LOGO_URL;el.style.display="block";}else el.style.display="none";}}
+function useLogo(u,safe){
+  LOGO_URL=u;LOGO_SAFE=!!safe;
+  LOGOI.onload=()=>{showBrand();render();};
+  if(safe)LOGOI.removeAttribute("crossorigin");else LOGOI.crossOrigin="anonymous";
+  LOGOI.src=u;showBrand();}
+function tryLogo(list,lang){
+  if(!list.length){LOGO_URL="";LOGO_SAFE=false;showBrand();render();return;}
+  const u=list.shift(),im=new Image();im.crossOrigin="anonymous";
+  im.onload=()=>{const d=bakeLogo(im);
+    if(d){const c=logoCache();c[lang]=d;
+      try{localStorage.setItem(BRAND.key,JSON.stringify(c));}catch(e){}
+      useLogo(d,true);}
+    else useLogo(u,false);};
+  im.onerror=()=>tryLogo(list,lang);
+  im.src=u;}
+function loadBrand(){
+  const lang=L==="en"?"en":"ar",c=logoCache();
+  showBrand();
+  if(c[lang]){useLogo(c[lang],true);return;}
+  tryLogo(BRAND.src[lang].slice(),lang);}
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
   P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
@@ -2062,6 +2103,11 @@ type and range, one-gateway-per-room, symbol size on the drawing, and accessorie
 and output updates immediately.</p>
 
 <h3>11. Outputs — and who each one is for</h3>
+<p><b>The AFAQY brand is fixed.</b> There is no logo picker and no way to change or remove it.
+The logo is placed automatically on the drawing sheet header and on every print sheet, with the
+company name and website in the footer. The tool fetches it from the official website once and
+keeps it in the browser, so it works offline afterwards. If it cannot be reached for any reason,
+<b>AFAQY</b> is typeset in its place — an output never leaves without identity.</p>
 <table><tr><th>Output</th><th>For</th></tr>
 <tr><td><b>Drawing image</b></td><td>Sales — a full sheet with project, company, AUX number,
 date, logo, drawing, symbol key and counts. Attach it to the quote.</td></tr>
@@ -2082,7 +2128,7 @@ interrupting you, and a <b>refresh starts clean</b>. To bring back the last sess
 <b>Restore last session</b> button inside <b>Project Details</b> — it shows how long ago it was
 saved and only appears when a session exists. Per-device, not a backup.</li>
 <li><b>Save / Open</b> — a <code>.json</code> file holding everything: plan, rooms, layout,
-standards, logo and language. Send it to a colleague and they continue exactly where you
+standards and language. Send it to a colleague and they continue exactly where you
 stopped. You can also drop the file onto the drawing to open it.</li>
 <li><b>Cloud</b> — when sign-in is configured, <b>Save to cloud</b> and <b>Open from cloud</b>
 appear, and the list shows who last saved each project and when.</li>
@@ -2264,6 +2310,10 @@ Check the list for who edited last before you overwrite.</blockquote>
 مع نسبة احتياطي. غيّر أي قيمة وكل الأعداد والجداول والمخرجات تتحدث على طول.</p>
 
 <h3>١١. المخرجات — وكل واحد لمين</h3>
+<p><b>هوية آفاقي ثابتة.</b> مفيش زر يختار الشعار ومحدش يقدر يغيّره أو يشيله. الشعار بيتحط
+تلقائي على ترويسة صورة العرض وعلى كل ورقة طباعة، واسم الشركة والموقع في التذييل. الأداة
+بتجيب الشعار من الموقع الرسمي أول مرة وبتخزّنه في المتصفح، فبعد كده بيشتغل من غير نت. ولو
+ملحقش يوصل لأي سبب، بيتكتب <b>AFAQY</b> بالخط مكانه — يعني مخرَج عمره ما يطلع من غير هوية.</p>
 <table><tr><th>المخرَج</th><th>لمين</th></tr>
 <tr><td><b>صورة الرسمة</b></td><td>المبيعات — ورقة كاملة باسم المشروع والشركة ورقم AUX
 والتاريخ والشعار والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
@@ -2283,7 +2333,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <b>استرجاع آخر شغل</b> جوّه قسم <b>بيانات المشروع</b> ومكتوب جنبه من إمتى — بيظهر بس لو فيه
 فعلًا شغل محفوظ. ده لكل جهاز لوحده — مش نسخة احتياطية.</li>
 <li><b>حفظ / فتح</b> — ملف <code>.json</code> فيه كل حاجة: الرسمة والغرف والتوزيع والمعايير
-والشعار واللغة. ابعته لزميلك يكمّل من نفس النقطة بالظبط. وتقدر تسحب الملف على الرسمة عشان
+واللغة. ابعته لزميلك يكمّل من نفس النقطة بالظبط. وتقدر تسحب الملف على الرسمة عشان
 تفتحه.</li>
 <li><b>السحابة</b> — لما يكون الدخول متظبط، بيظهر <b>حفظ للسحابة</b> و<b>فتح من السحابة</b>،
 والقائمة بتوضّح مين آخر واحد حفظ كل مشروع وإمتى.</li>
@@ -2444,21 +2494,6 @@ document.getElementById("btnNew").onclick=()=>{
   try{localStorage.removeItem(AS_KEY);}catch(e){}
   txtPlan.value="";descSum.style.display="none";
   applyProject(newProject());};
-document.getElementById("btnLogo").onclick=()=>fileLogo.click();
-document.getElementById("btnLogoX").onclick=()=>{
-  P.brand.logo=null;setLogoImg();schedAS();render();};
-document.getElementById("fileLogo").onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  const rd=new FileReader();
-  rd.onload=()=>{const im=new Image();
-    im.onload=()=>{const s2=Math.min(1,120/im.height);
-      const c=document.createElement("canvas");
-      c.width=Math.max(2,Math.round(im.width*s2));
-      c.height=Math.max(2,Math.round(im.height*s2));
-      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
-      P.brand.logo=c.toDataURL("image/png");setLogoImg();schedAS();render();};
-    im.src=rd.result;};
-  rd.readAsDataURL(f);e.target.value="";};
 document.getElementById("btnAll").onclick=autoAll;
 document.getElementById("btnAuto").onclick=()=>autoRooms();
 document.getElementById("btnTo2D").onclick=()=>{wait.classList.add("on");
@@ -2553,7 +2588,8 @@ document.getElementById("btnPdf").onclick=()=>{
   const q=pl(),tt=projTot();
   const dev=P.cfg.sensor==="tg08"?"TZone TG08":t("optOther");
   const gwt=P.cfg.gw==="gsm"?t("optGsm"):t("optWifi");
-  const lg=(P.brand&&P.brand.logo)?'<img src="'+P.brand.logo+'" style="height:30px">':'';
+  const lg=LOGO_URL?'<img src="'+LOGO_URL+'" style="height:30px">'
+    :'<b style="font-size:19px;letter-spacing:.6px">'+BRAND.mark+'</b>';
   const head=(sub)=>'<div class="ttl"><div style="display:flex;align-items:center;gap:10px">'+lg+
     '<h2>'+esc(P.name||t("prTitle"))+'</h2></div>'+
     '<div class="rt">'+esc(sub)+'<br>'+esc(P.client||"")+
@@ -2594,7 +2630,7 @@ document.getElementById("btnPdf").onclick=()=>{
   document.getElementById("print").innerHTML=html;
   setTimeout(()=>window.print(),150);};
 
-applyTheme();applyLang();loadCfg();updateLogoUI();resize();refresh();offerRestore();
+applyTheme();applyLang();loadCfg();resize();refresh();offerRestore();
 cv.style.cursor="default";
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
 initFB();
