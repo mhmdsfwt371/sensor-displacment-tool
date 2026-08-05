@@ -88,6 +88,7 @@ button:active{transform:translateY(1px)}
 .cnt button{padding:1px 9px;font-size:15px;border-radius:6px}
 .cnt b{min-width:26px;text-align:center;font-variant-numeric:tabular-nums;color:var(--sensor)}
 .item .rs{padding:3px 8px;font-size:11px;color:var(--muted)}
+.item .kd{width:auto;padding:3px 6px;font-size:11.5px;border-radius:6px}
 table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
 th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:start}
 th{color:var(--muted);font-weight:600;font-size:11.5px}
@@ -444,6 +445,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     <div class="legend">
       <span><i style="background:#e02b2b"></i><span data-i="lgSensor">حساس</span></span>
       <span><i class="sq" style="background:#1f63d6"></i><span data-i="lgGate">جيت واي</span></span>
+      <span><i style="background:#f5a300"></i><span data-i="lgPower">كهرباء</span></span>
     </div>
   </main>
 </div>
@@ -473,7 +475,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="1.5";
+const VERSION="1.6";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -540,7 +542,9 @@ updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدا
 restMsg:"فيه شغل محفوظ",bRestore:"رجّعه",
 agoNow:"دلوقتي",agoMin:"من {0} دقيقة",agoHr:"من {0} ساعة",agoDay:"من {0} يوم",
 emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
-lgSensor:"حساس",lgGate:"جيت واي",
+lgSensor:"حساس",lgGate:"جيت واي",lgPower:"كهرباء",
+kd_room:"غرفة",kd_corr:"ممر",kd_fridge:"ثلاجة",
+powerNote:"مكان الجيت واي محتاج مصدر كهرباء",
 pillNo:"لسه",pillCal:"محتاجة معايرة",pillReady:"جاهزة",
 thRoom:"الغرفة",thArea:"م٢",thSensors:"حساس",thGw:"جيت واي",thFar:"أبعد",thTotal:"الإجمالي",
 thSupply:"قائمة التوريد",thQty:"العدد",thCode:"الكود",thType:"النوع",thX:"بعد س من ركن الغرفة (م)",
@@ -630,7 +634,9 @@ updMsg:"Version {0} is available",manTitle:"User Manual",
 restMsg:"Unsaved work found",bRestore:"Restore",
 agoNow:"just now",agoMin:"{0} min ago",agoHr:"{0} h ago",agoDay:"{0} d ago",
 emptyMsg:"Upload a plan image or write the description<br>Or draw from scratch: rectangle for rooms, wall and door for details<br>You can also drop a project file here",waiting:"Working…",
-lgSensor:"Sensor",lgGate:"Gateway",
+lgSensor:"Sensor",lgGate:"Gateway",lgPower:"Power",
+kd_room:"Room",kd_corr:"Corridor",kd_fridge:"Fridge",
+powerNote:"Each gateway location needs a power source",
 pillNo:"Empty",pillCal:"Needs scale",pillReady:"Ready",
 thRoom:"Room",thArea:"m²",thSensors:"Sensors",thGw:"GW",thFar:"Farthest",thTotal:"Total",
 thSupply:"Supply list",thQty:"Qty",thCode:"Code",thType:"Type",thX:"X from room corner (m)",
@@ -710,6 +716,12 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 function inPoly(p,poly){let c=false;
   for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];
     if(((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x))c=!c;}return c;}
+function zKind(z){return z.kind||"room";}
+function kidsOf(q,z){
+  if(zKind(z)==="fridge")return[];
+  return q.zones.filter(x=>x!==z&&zKind(x)==="fridge"&&inPoly(centroid(x.pts),z.pts));}
+function netArea(q,z){let a=polyArea(z.pts);
+  kidsOf(q,z).forEach(x=>{a-=polyArea(x.pts);});return Math.max(0,a);}
 function polyArea(poly){let s=0;
   for(let i=0,j=poly.length-1;i<poly.length;j=i++)s+=(poly[j].x+poly[i].x)*(poly[j].y-poly[i].y);
   return Math.abs(s/2);}
@@ -753,7 +765,10 @@ function parsePlan(text){
     const rest=line.replace(/"[^"]*"/,"").trim(),kw=(rest.split(/\s+/)[0]||"").toLowerCase();
     const nums=(rest.match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);
     if(/^(مقياس|scale)$/.test(kw)){if(nums[0]>0)ppm=nums[0];return;}
-    if(/^(غرفة|غرفه|room)$/.test(kw)&&nums.length>=4)rooms.push({name,x:nums[0],y:nums[1],w:nums[2],h:nums[3]});
+    const KD=/^(ممر|ممرات|corridor|hallway)$/.test(kw)?"corr"
+      :/^(ثلاجة|ثلاجه|تلاجة|تلاجه|فريزر|fridge|freezer|cooler)$/.test(kw)?"fridge":null;
+    if((/^(غرفة|غرفه|room)$/.test(kw)||KD)&&nums.length>=4)
+      rooms.push({name,x:nums[0],y:nums[1],w:nums[2],h:nums[3],kind:KD||"room"});
     else if(/^(مضلع|poly|polygon)$/.test(kw)&&nums.length>=6){
       const pts=[];for(let i=0;i+1<nums.length;i+=2)pts.push({x:nums[i],y:nums[i+1]});rooms.push({name,pts});}
     else if(/^(باب|door)$/.test(kw)&&nums.length>=4)doors.push({x1:nums[0],y1:nums[1],x2:nums[2],y2:nums[3]});
@@ -770,7 +785,8 @@ function freeParse(text){
             .replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d))
             .replace(/(\d)\s*(?:[×xX*]|في|فى|by)\s*(?=\d)/g,"$1x");
   const CW=/(مستودع|مخزن|هنجر|عنبر|صالة|صاله|warehouse|hangar|hall|facility)/i;
-  const TYPE=/(تبريد|تجميد|ثلاجة|ثلاجه|براد|أدوية|ادوية|ادويه|تخزين|استقبال|مكتب|معمل|ممر|إنتاج|انتاج|تعبئة|تعبئه|cold|freezer|fridge|medicine|storage|office|lab|corridor|reception|production|packing)/i;
+  const TYPE=/(تبريد|تجميد|ثلاجة|ثلاجه|تلاجة|تلاجه|براد|أدوية|ادوية|ادويه|تخزين|استقبال|مكتب|معمل|ممر|إنتاج|انتاج|تعبئة|تعبئه|cold|freezer|fridge|medicine|storage|office|lab|corridor|hallway|reception|production|packing)/i;
+  const KDW=/(ممر|corridor|hallway)/i,KDF=/(ثلاجة|ثلاجه|تلاجة|تلاجه|فريزر|براد|fridge|freezer|cooler)/i;
   const rooms=[];let total=null,count=0,each=null;
   s.split(/\n/).forEach(line=>{
     line=line.trim();if(!line)return;
@@ -796,11 +812,12 @@ function freeParse(text){
         const seg=line.slice(prev,m.index);prev=m.index+m[0].length;
         if(!(w>0&&h>0&&w<500&&h<500))return;
         if(isEach){each={w,h};return;}
-        let name="";const tm=seg.match(TYPE);
-        if(tm)name=(L==="ar"?"غرفة ":"")+tm[1];
-        rooms.push({name,w,h});});}});
+        let name="",kind="room";const tm=seg.match(TYPE);
+        if(KDW.test(seg))kind="corr";else if(KDF.test(seg))kind="fridge";
+        if(tm)name=(L==="ar"&&kind==="room"?"غرفة ":"")+tm[1];
+        rooms.push({name,w,h,kind});});}});
   if(each&&count>rooms.length)
-    while(rooms.length<count)rooms.push({name:"",w:each.w,h:each.h});
+    while(rooms.length<count)rooms.push({name:"",w:each.w,h:each.h,kind:"room"});
   const used=()=>rooms.reduce((t2,r)=>t2+r.w*r.h,0);
   if(total){
     if(!rooms.length){
@@ -823,7 +840,7 @@ function freeParse(text){
   let x=0,y=0,rH=0;const out=[],doors=[];
   rooms.forEach(r=>{
     if(x>0&&x+r.w>maxRow){x=0;y+=rH;rH=0;}
-    out.push({name:r.name,x,y,w:r.w,h:r.h});
+    out.push({name:r.name,x,y,w:r.w,h:r.h,kind:r.kind||"room"});
     doors.push({x1:x+r.w/2-.45,y1:y+r.h,x2:x+r.w/2+.45,y2:y+r.h});
     x+=r.w;rH=Math.max(rH,r.h);});
   const parts=[];
@@ -843,7 +860,9 @@ function buildPlan(){
   p.rooms.forEach((r,i)=>{
     const pts=r.pts?r.pts.map(o=>({x:o.x*k,y:o.y*k}))
       :[{x:r.x*k,y:r.y*k},{x:(r.x+r.w)*k,y:r.y*k},{x:(r.x+r.w)*k,y:(r.y+r.h)*k},{x:r.x*k,y:(r.y+r.h)*k}];
-    q.zones.push({id:SEQ++,name:r.name||(t("room")+" "+ar(i+1)),pts,color:ZC[i%ZC.length]});});
+    const kd=r.kind||"room";
+    q.zones.push({id:SEQ++,name:r.name||(t("room")+" "+ar(i+1)),pts,kind:kd,
+      color:kd==="corr"?"#7d8ea0":kd==="fridge"?"#00b3c8":ZC[i%ZC.length]});});
   q.walls=p.walls.map(w=>({x1:w.x1*k,y1:w.y1*k,x2:w.x2*k,y2:w.y2*k}));
   q.doors=p.doors.map(d=>({x1:d.x1*k,y1:d.y1*k,x2:d.x2*k,y2:d.y2*k}));
   paneClean.style.display="none";
@@ -872,17 +891,29 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
       for(let x=b.minX-pad;x<b.maxX+pad;x+=sc){g.beginPath();g.moveTo(x,b.minY-pad);g.lineTo(x,b.maxY+pad);g.stroke();}
       for(let y=b.minY-pad;y<b.maxY+pad;y+=sc){g.beginPath();g.moveTo(b.minX-pad,y);g.lineTo(b.maxX+pad,y);g.stroke();}}}
 
-  q.zones.forEach(z=>{if(z.pts.length<2)return;
+  const zs=q.zones.slice().sort((a,b)=>polyArea(b.pts)-polyArea(a.pts));
+  zs.forEach(z=>{if(z.pts.length<2)return;const kd=zKind(z);
     g.beginPath();g.moveTo(z.pts[0].x,z.pts[0].y);
     for(let i=1;i<z.pts.length;i++)g.lineTo(z.pts[i].x,z.pts[i].y);
-    g.closePath();g.fillStyle=z.color+(pr?"12":"1c");g.fill();
-    if(!q.drawn){g.strokeStyle=z.color;g.lineWidth=2/k;g.stroke();}});
+    g.closePath();
+    g.fillStyle=kd==="corr"?(pr?"#f0f2f4":"#7d8ea022")
+      :kd==="fridge"?(pr?"#dff4f8":"#00b3c82e"):z.color+(pr?"12":"1c");
+    g.fill();
+    if(kd==="corr"){g.setLineDash([9/k,6/k]);g.strokeStyle=pr?"#9aa7b4":"#7d8ea0";
+      g.lineWidth=1.6/k;g.stroke();g.setLineDash([]);}
+    else if(kd==="fridge"&&!q.drawn){g.strokeStyle="#00b3c8";g.lineWidth=2.4/k;g.stroke();}
+    else if(!q.drawn){g.strokeStyle=z.color;g.lineWidth=2/k;g.stroke();}});
 
   if(q.drawn&&sc>0){
     const th=Math.max(2/k,.18*sc);g.lineCap="square";g.lineJoin="round";
     g.strokeStyle="#1c2733";g.lineWidth=th;
-    q.zones.forEach(z=>{g.beginPath();g.moveTo(z.pts[0].x,z.pts[0].y);
+    q.zones.forEach(z=>{const kd=zKind(z);
+      if(kd==="corr")return;
+      g.lineWidth=kd==="fridge"?th*.55:th;
+      g.strokeStyle=kd==="fridge"?"#0a7f90":"#1c2733";
+      g.beginPath();g.moveTo(z.pts[0].x,z.pts[0].y);
       for(let i=1;i<z.pts.length;i++)g.lineTo(z.pts[i].x,z.pts[i].y);g.closePath();g.stroke();});
+    g.lineWidth=th;g.strokeStyle="#1c2733";
     q.walls.forEach(w=>{g.beginPath();g.moveTo(w.x1,w.y1);g.lineTo(w.x2,w.y2);g.stroke();});
     g.lineCap="butt";
     g.strokeStyle=paper;g.lineWidth=th*1.45;
@@ -914,7 +945,7 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.textBaseline="alphabetic";}
 
   g.direction=L==="ar"?"rtl":"ltr";
-  q.zones.forEach(z=>{if(z.pts.length<2)return;
+  zs.forEach(z=>{if(z.pts.length<2)return;
     const c=centroid(z.pts);g.textAlign="center";
     g.fillStyle=pr?"#111":"rgba(231,238,245,.92)";
     g.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
@@ -945,7 +976,8 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
   q.gateways.forEach(gw=>{
     g.beginPath();g.rect(gw.x-gsz/2,gw.y-gsz/2,gsz,gsz);
     g.fillStyle="#1f63d6";g.fill();
-    g.strokeStyle="#ffffff";g.lineWidth=Math.max(gsz*.12,.8/k);g.stroke();});
+    g.strokeStyle="#ffffff";g.lineWidth=Math.max(gsz*.12,.8/k);g.stroke();
+    powerIcon(g,gw.x+gsz*.95,gw.y-gsz*.75,gsz*.62,k);});
   if(U.showNums){
     const fs=Math.max(symR*1.6,8/k);
     g.textAlign="center";g.textBaseline="middle";
@@ -965,6 +997,18 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.textAlign="left";g.textBaseline="middle";
     g.fillText(t("scaleBar"),x+Ln+6/k,y);g.textBaseline="alphabetic";}}
 
+function powerIcon(g,x,y,r,k){
+  g.beginPath();g.arc(x,y,r,0,7);
+  g.fillStyle="#f5a300";g.fill();
+  g.strokeStyle="#ffffff";g.lineWidth=Math.max(r*.18,.6/k);g.stroke();
+  g.beginPath();
+  g.moveTo(x+r*.16,y-r*.55);
+  g.lineTo(x-r*.34,y+r*.08);
+  g.lineTo(x-r*.02,y+r*.08);
+  g.lineTo(x-r*.16,y+r*.58);
+  g.lineTo(x+r*.34,y-r*.10);
+  g.lineTo(x+r*.02,y-r*.10);
+  g.closePath();g.fillStyle="#3d2500";g.fill();}
 function render(){
   const r=cv.getBoundingClientRect(),k=V.k,q=pl();
   ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -1089,7 +1133,8 @@ function exportSheet(q,W,clean){
   g.font=fs+'px "Segoe UI",Tahoma,Arial,sans-serif';
   g.textAlign="left";g.textBaseline="middle";
   const its=[{c:"#e02b2b",sq:0,x:t("sensor")+" ("+ar(tt.sensors)+")"},
-             {c:"#1f63d6",sq:1,x:t("gateway")+" ("+ar(tt.gates)+")"}];
+             {c:"#1f63d6",sq:1,x:t("gateway")+" ("+ar(tt.gates)+")"},
+             {c:"#f5a300",sq:0,x:t("lgPower")+" — "+t("powerNote")}];
   const wid=its.map(i=>fs*.84+fs*.45+g.measureText(i.x).width);
   const total=wid.reduce((a,b2)=>a+b2,0)+fs*1.2*(its.length-1);
   let x=rtl?RX-total:LX;
@@ -1507,14 +1552,15 @@ cv.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(!f)return;
   if(/json$/i.test(f.name))readProject(f);else readImage(f);});
 
 /* ================= التوزيع ================= */
-function samplePoly(poly,k){
+function samplePoly(poly,k,holes){
   const b=bbox(poly),w=Math.max(1,b.maxX-b.minX),h=Math.max(1,b.maxY-b.minY);
   const target=Math.min(3000,Math.max(600,k*80)),step=Math.max(1.5,Math.sqrt(w*h/target)),out=[];
+  const ok=p=>inPoly(p,poly)&&!(holes&&holes.some(hp=>inPoly(p,hp)));
   for(let x=b.minX+step/2;x<b.maxX;x+=step)
-    for(let y=b.minY+step/2;y<b.maxY;y+=step){const p={x,y};if(inPoly(p,poly))out.push(p);}
+    for(let y=b.minY+step/2;y<b.maxY;y+=step){const p={x,y};if(ok(p))out.push(p);}
   if(!out.length)out.push(centroid(poly));return out;}
-function evenPoints(poly,k){
-  const smp=samplePoly(poly,k),b=bbox(poly);
+function evenPoints(poly,k,holes){
+  const smp=samplePoly(poly,k,holes),b=bbox(poly);
   const w=Math.max(1,b.maxX-b.minX),h=Math.max(1,b.maxY-b.minY);
   let nx=1,best=1e18;
   for(let i=1;i<=k;i++){const j=Math.ceil(k/i);
@@ -1524,7 +1570,8 @@ function evenPoints(poly,k){
   let ny=Math.ceil(k/nx),c=[];
   for(let j=0;j<ny&&c.length<k;j++)for(let i=0;i<nx&&c.length<k;i++)
     c.push({x:b.minX+w*(i+.5)/nx,y:b.minY+h*(j+.5)/ny});
-  c=c.map(p=>inPoly(p,poly)?p:nearest(smp,p));
+  const okp=p=>inPoly(p,poly)&&!(holes&&holes.some(hp=>inPoly(p,hp)));
+  c=c.map(p=>okp(p)?p:nearest(smp,p));
   const it=k>60?8:16;
   for(let tI=0;tI<it;tI++){
     const acc=c.map(()=>({x:0,y:0,n:0}));
@@ -1536,7 +1583,7 @@ function evenPoints(poly,k){
       else{let f=smp[0],fd=-1;
         for(const s of smp){let mm=1e18;for(const o of c)mm=Math.min(mm,dist(s,o));if(mm>fd){fd=mm;f=s;}}
         c[i]={x:f.x,y:f.y};}}}
-  return c.map(p=>inPoly(p,poly)?p:nearest(smp,p));}
+  return c.map(p=>okp(p)?p:nearest(smp,p));}
 function oneCenter(list,poly){
   if(!list.length)return centroid(poly);
   let c={x:list[0].x,y:list[0].y};
@@ -1548,9 +1595,15 @@ function runPlan(q,silent){
   if(q.scale<=0){if(!silent)alert(t("aScale"));return false;}
   if(!q.zones.length){if(!silent)alert(t("aZone"));return false;}
   q.sensors=[];
-  q.zones.forEach(z=>{const a=polyArea(z.pts)/(q.scale*q.scale);
-    const k=z.fixed>0?z.fixed:Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9));
-    evenPoints(z.pts,k).forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));});
+  q.zones.forEach(z=>{
+    const a=netArea(q,z)/(q.scale*q.scale),kd=zKind(z);
+    let k;
+    if(z.fixed!==undefined&&z.fixed!==null)k=z.fixed;
+    else if(kd==="corr")k=0;
+    else k=Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9));
+    if(k<=0)return;
+    const holes=kidsOf(q,z).map(x=>x.pts);
+    evenPoints(z.pts,k,holes).forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));});
   gwPlan(q);return true;}
 function gwModeLabel(){const m=P.cfg.gwMode||"room";
   return m==="room"?t("cPerRoom"):m==="range"?t("cGroup"):t("optModeManual");}
@@ -1583,26 +1636,38 @@ function gwPlan(q){
       q.gateways.push({id:SEQ++,x:c.x,y:c.y,zoneId:null});
       un=un.filter(s=>!grp.includes(s));}}}
 function setZoneCount(z,n){
-  const q=pl();n=Math.max(1,Math.min(400,n));
+  const q=pl();n=Math.max(0,Math.min(400,n));
   snap();z.fixed=n;
   q.sensors=q.sensors.filter(s=>s.zoneId!==z.id);
-  evenPoints(z.pts,n).forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));
+  if(n>0)evenPoints(z.pts,n,kidsOf(q,z).map(x=>x.pts))
+    .forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));
   gwPlan(q);refresh();}
 function zoneAuto(z){
   const q=pl();delete z.fixed;
-  if(q.scale>0){const a=polyArea(z.pts)/(q.scale*q.scale);
-    setZoneCount(z,Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9)));delete z.fixed;refresh();}}
+  if(q.scale>0){const st=zoneStat(q,z);
+    setZoneCount(z,st.std);delete z.fixed;refresh();}}
+function setKind(z,k){
+  const q=pl();snap();z.kind=k;
+  z.color=k==="corr"?"#7d8ea0":k==="fridge"?"#00b3c8":ZC[q.zones.indexOf(z)%ZC.length];
+  delete z.fixed;
+  const st=zoneStat(q,z);
+  q.sensors=q.sensors.filter(s=>s.zoneId!==z.id);
+  if(st.std>0)evenPoints(z.pts,st.std,kidsOf(q,z).map(x=>x.pts))
+    .forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));
+  gwPlan(q);refresh();}
 
 /* ================= الحسابات ================= */
 function zoneStat(q,z){
-  const a=q.scale>0?polyArea(z.pts)/(q.scale*q.scale):0;
+  const a=q.scale>0?netArea(q,z)/(q.scale*q.scale):0;
   const list=q.sensors.filter(s=>s.zoneId===z.id);
   let far=0,out=0;
   list.forEach(s=>{const n=nearGw(q,s);
     if(n.g){far=Math.max(far,n.d);if(n.d>gwR(q))out++;}else out++;});
   const inside=q.gateways.filter(g=>inPoly(g,z.pts)).length;
-  const std=q.scale>0?Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9)):0;
-  return{a,n:list.length,need:z.fixed>0?z.fixed:std,std,g:inside,
+  const std=q.scale<=0?0:zKind(z)==="corr"?0
+    :Math.max(P.cfg.minPer,Math.ceil(a/P.cfg.cov-1e-9));
+  const need=(z.fixed!==undefined&&z.fixed!==null)?z.fixed:std;
+  return{a,n:list.length,need,std,g:inside,
     out,far:q.scale>0?far/q.scale:0};}
 function planTot(q){
   const area=q.scale>0?q.zones.reduce((s,z)=>s+polyArea(z.pts)/(q.scale*q.scale),0):0;
@@ -1641,10 +1706,10 @@ function issues(){
   if(q.scale<=0)out.push(t("isScale"));
   if(!q.zones.length)out.push(t("isNoZones"));
   q.zones.forEach(z=>{const st=zoneStat(q,z);
-    if(!st.n)out.push(t("isNoSensors",z.name));
+    if(!st.n&&st.need>0)out.push(t("isNoSensors",z.name));
     else if(st.n<st.need)out.push(t("isLess",z.name,ar(st.n),ar(st.need)));
     if(z.fixed>0&&z.fixed!==st.std)out.push(t("isManual",z.name,ar(z.fixed),ar(st.std)));
-    if(st.n&&mode==="room"&&!st.g)out.push(t("isNoGw",z.name));
+    if(st.n&&mode==="room"&&!st.g&&zKind(z)!=="fridge")out.push(t("isNoGw",z.name));
     if(st.out)out.push(t("isOut",z.name,ar(st.out),ar(m1(st.far))));});
   if(q.sensors.length&&!q.gateways.length)out.push(t("isNoGwAll"));
   const orph=q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).length;
@@ -1667,10 +1732,14 @@ function renderZones(){
     const d=document.createElement("div");d.className="item col";
     d.innerHTML='<div class="r"><span class="dot" style="background:'+z.color+'"></span>'+
       '<input type="text" value="'+esc(z.name)+'"><button class="x">✕</button></div>'+
-      '<div class="r"><span class="meta">'+ar(fmt(st.a))+' '+t("unitM2")+'</span>'+
+      '<div class="r"><select class="kd">'+
+      ['room','corr','fridge'].map(k=>'<option value="'+k+'"'+
+        (zKind(z)===k?' selected':'')+'>'+t("kd_"+k)+'</option>').join("")+'</select>'+
+      '<span class="meta">'+ar(fmt(st.a))+' '+t("unitM2")+'</span>'+
       (z.fixed>0?'<button class="rs">'+t("resetAuto")+'</button>':'<span class="meta">'+t("auto")+'</span>')+
       '<span class="cnt"><button class="mn">−</button><b>'+ar(st.n)+'</b><button class="pl">+</button></span></div>';
     d.querySelector("input").oninput=e=>{z.name=e.target.value;render();schedAS();};
+    d.querySelector(".kd").onchange=e=>setKind(z,e.target.value);
     d.querySelector(".mn").onclick=()=>setZoneCount(z,st.n-1);
     d.querySelector(".pl").onclick=()=>setZoneCount(z,st.n+1);
     const rs=d.querySelector(".rs");if(rs)rs.onclick=()=>zoneAuto(z);
@@ -1830,7 +1899,22 @@ carries real-world distance. A rough number works; refine later with the <b>Scal
 <p>If you drew the plan from a description or dimensions, the scale is already exact and the
 question is skipped.</p>
 
-<h3>4. Reviewing and adjusting — your main job</h3>
+<h3>4. Zone types — room, corridor, fridge</h3>
+<p>Every zone in section 3 has a <b>type</b> you pick from the small dropdown beside it. The type
+changes both how counts are calculated and how it is drawn:</p>
+<table><tr><th>Type</th><th>Counting</th><th>On the plan</th></tr>
+<tr><td><b>Room</b></td><td>One sensor per 25 m² of its net area</td><td>Full-thickness walls</td></tr>
+<tr><td><b>Corridor</b></td><td><b>Zero</b> sensors by default — it is not storage space</td>
+<td>Dashed grey outline, no walls</td></tr>
+<tr><td><b>Fridge</b></td><td>At least one sensor, more as it grows</td><td>Cyan frame, thinner wall</td></tr></table>
+<blockquote><b>Net area:</b> fridges placed inside a room have their area subtracted from the
+room before its sensors are counted, and room sensors are kept out of the fridge footprint —
+so nothing is double-counted and no sensor lands in the wrong place.</blockquote>
+<p>You can also write them straight into the <b>Description</b>:</p>
+<p><code>room cold 6x5</code> · <code>corridor 12x2</code> · <code>fridge 2x1.5</code></p>
+<p>If a corridor does need monitoring, just raise its count with <b>+</b>.</p>
+
+<h3>5. Reviewing and adjusting — your main job</h3>
 <p>The tool goes first, you validate. Every room in section 3 has:</p>
 <ul>
 <li><b>+ and −</b> — change that room's sensor count; the tool immediately redistributes them
@@ -1844,7 +1928,7 @@ recalculates only the rooms still on Auto.</blockquote>
 sensors, counts below standard, missing gateways, sensors beyond gateway range, sensors
 outside every room, and any room where your manual count differs from the standard.</p>
 
-<h3>5. Drawing and editing tools</h3>
+<h3>6. Drawing and editing tools</h3>
 <table><tr><th>Tool</th><th>Use</th></tr>
 <tr><td><b>Edit</b></td><td>Default. Drag sensors, gateways, room corners, walls and doors.
 Drag empty space to pan.</td></tr>
@@ -1875,13 +1959,13 @@ This keeps you from nudging a room while panning.</blockquote>
 <p>A sensor dropped outside every room returns to the nearest point inside its own room.
 A sensor dropped inside a different room is reassigned to that room's gateway and renumbered.</p>
 
-<h3>6. Undo and redo</h3>
+<h3>7. Undo and redo</h3>
 <p>Two floating buttons sit at the bottom of the drawing: <b>↶</b> undo and <b>↷</b> redo,
 covering the last 40 actions. Keyboard: <span class="kbd">Ctrl</span> +
 <span class="kbd">Z</span> and <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> +
 <span class="kbd">Z</span>.</p>
 
-<h3>7. Gateways — a checkpoint with a range</h3>
+<h3>8. Gateways — a checkpoint with a range</h3>
 <p>A gateway is a <b>collection point</b>, not a device bound to particular sensors. Any sensor
 inside its range reaches it. That is why no link lines are drawn — what you see is the dashed
 <b>range circle</b> around it, and every sensor inside is covered.</p>
@@ -1896,6 +1980,12 @@ room-isolation requirements.</td></tr>
 range in either room is covered — no manual linking involved.</p>
 <blockquote>A gateway you place by hand is <b>fixed</b>: redistribution never removes it, and the
 tool only adds gateways for rooms whose sensors are still out of range.</blockquote>
+<h4>Power</h4>
+<p>Every gateway is drawn with an <b>orange power symbol</b> beside it — a marker that the spot
+needs a power source. It appears on every output and in the symbol key, so operations can see
+where to run power straight from the drawing, before going on site.</p>
+<blockquote>This is why gateways often sit in the <b>corridor</b>: power is available there, while
+the sensors stay inside the fridges and rooms within its range.</blockquote>
 <h4>On the plan</h4>
 <ul>
 <li>The <b>Gateway range</b> button in the toolbar shows or hides the range circles.</li>
@@ -1905,13 +1995,13 @@ positions only, with no lines inviting "why is this one wired to that one?"</li>
 <p>The <b>Pre-Handover Check</b> reports any sensor beyond the nearest gateway, with the distance
 in metres, and any room without a gateway inside it when the policy is one-per-room.</p>
 
-<h3>8. Company standards</h3>
+<h3>9. Company standards</h3>
 <p>Section 4 holds every rule the counts depend on: sensor coverage, minimum per room, gateway
 type and range, one-gateway-per-room, symbol size on the drawing, and accessories per unit
 (batteries, mounts, adapters) with a spare percentage. Change a value and every count, table
 and output updates immediately.</p>
 
-<h3>9. Outputs — and who each one is for</h3>
+<h3>10. Outputs — and who each one is for</h3>
 <table><tr><th>Output</th><th>For</th></tr>
 <tr><td><b>Drawing image</b></td><td>Sales — a full sheet with project, company, AUX number,
 date, logo, drawing, symbol key and counts. Attach it to the quote.</td></tr>
@@ -1925,7 +2015,7 @@ applied.</td></tr>
 <tr><td><b>Client version</b></td><td>Tick it to hide coverage circles and link lines for a
 cleaner client-facing drawing.</td></tr></table>
 
-<h3>10. Saving and sharing</h3>
+<h3>11. Saving and sharing</h3>
 <ul>
 <li><b>Autosave</b> — your work is saved in this browser on every change, but a
 <b>refresh starts clean</b>: if saved work exists, a blue bar offers <b>Restore</b> with how long
@@ -1939,7 +2029,7 @@ appear, and the list shows who last saved each project and when.</li>
 <blockquote>If two people save the same cloud project at the same moment, the last save wins.
 Check the list for who edited last before you overwrite.</blockquote>
 
-<h3>11. Keyboard shortcuts</h3>
+<h3>12. Keyboard shortcuts</h3>
 <table><tr><th>Key</th><th>Action</th></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>Undo</td></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>Redo</td></tr>
@@ -1948,7 +2038,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><span class="kbd">Delete</span></td><td>Delete selected item</td></tr>
 <tr><td><span class="kbd">Shift</span> (held)</td><td>Free angle, ignore snapping</td></tr></table>
 
-<h3>12. Quick troubleshooting</h3>
+<h3>13. Quick troubleshooting</h3>
 <table><tr><th>Symptom</th><th>Fix</th></tr>
 <tr><td>Detection finds no rooms</td><td>Press <b>To line art</b> first, then detect</td></tr>
 <tr><td>Two rooms merge into one</td><td>An open doorway joins them — draw those with
@@ -1994,7 +2084,22 @@ Check the list for who edited last before you overwrite.</blockquote>
 رقم تقريبي يكفي، وتظبطه بعدين بأداة <b>معايرة</b>.</p>
 <p>ولو رسمت من وصف أو أبعاد، المقياس بيبقى مضبوط أصلًا والسؤال بيتخطّى.</p>
 
-<h3>٤. المراجعة والتعديل — دورك الأساسي</h3>
+<h3>٤. أنواع المناطق — غرفة وممر وثلاجة</h3>
+<p>كل منطقة في قسم ٣ ليها <b>نوع</b> تختاره من القايمة الصغيرة جنبها، والنوع بيغيّر
+حساب الأعداد وشكل الرسم:</p>
+<table><tr><th>النوع</th><th>الأعداد</th><th>على الرسمة</th></tr>
+<tr><td><b>غرفة</b></td><td>حساس لكل ٢٥ م٢ من مساحتها الصافية</td><td>حوائط بسُمك كامل</td></tr>
+<tr><td><b>ممر</b></td><td><b>صفر</b> حساسات افتراضيًا — الممر مش مساحة تخزين</td>
+<td>حدود متقطعة رمادية من غير حوائط</td></tr>
+<tr><td><b>ثلاجة</b></td><td>حساس على الأقل، بيزيد بمساحتها</td><td>إطار سماوي بحائط أرفع</td></tr></table>
+<blockquote><b>مساحة صافية:</b> لو حطيت ثلاجات جوّه غرفة، الأداة بتطرح مساحتهم من مساحة
+الغرفة قبل ما تحسب حساساتها، وبتمنع حساسات الغرفة إنها تقع جوّه الثلاجة. فمفيش عدّ مزدوج
+ومفيش حساس في المكان الغلط.</blockquote>
+<p>وتقدر تكتبهم في <b>الوصف المكتوب</b> على طول:</p>
+<p><code>غرفة تبريد 6x5</code> · <code>ممر 12x2</code> · <code>ثلاجة 2x1.5</code></p>
+<p>ولو عايز الممر يتراقب فعلًا، زوّد عدده بزر <b>+</b> عادي.</p>
+
+<h3>٥. المراجعة والتعديل — دورك الأساسي</h3>
 <p>الأداة تشتغل الأول وإنت تراجع. كل غرفة في قسم ٣ عليها:</p>
 <ul>
 <li><b>+ و −</b> — تغيّر عدد حساسات الغرفة، والأداة تعيد توزيعهم متوازنين جوّاها فورًا</li>
@@ -2006,7 +2111,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 المعيار، جيت واي ناقص، حساس خارج مدى الجيت واي، حساس برة كل الغرف، وأي غرفة عددك اليدوي فيها
 مختلف عن المعيار.</p>
 
-<h3>٥. أدوات الرسم والتعديل</h3>
+<h3>٦. أدوات الرسم والتعديل</h3>
 <table><tr><th>الأداة</th><th>الاستخدام</th></tr>
 <tr><td><b>تعديل</b></td><td>الافتراضية. اسحب الحساسات والجيت واي وأركان الغرف والحوائط
 والأبواب. والسحب على الفاضي بيحرّك اللوحة.</td></tr>
@@ -2037,12 +2142,12 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p>الحساس اللي يتسحب برة كل الغرف بيرجع لأقرب نقطة جوّه غرفته. واللي يتسحب لغرفة تانية
 بيتحوّل لجيت واي الغرفة الجديدة ويتعاد ترقيمه.</p>
 
-<h3>٦. التراجع والإعادة</h3>
+<h3>٧. التراجع والإعادة</h3>
 <p>زرارين عايمين تحت الرسمة: <b>↶</b> تراجع و<b>↷</b> إعادة، بيغطّوا آخر ٤٠ خطوة.
 ومن الكيبورد: <span class="kbd">Ctrl</span> + <span class="kbd">Z</span> و
 <span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span>.</p>
 
-<h3>٧. الجيت واي — تشيك بوينت بمدى</h3>
+<h3>٨. الجيت واي — تشيك بوينت بمدى</h3>
 <p>الجيت واي <b>نقطة تجميع</b>، مش جهاز مربوط بحساسات معيّنة. أي حساس جوّه مداه بيوصله.
 عشان كده مفيش خطوط ربط على الرسمة — اللي بيظهر هو <b>دايرة المدى</b> المتقطعة حواليه،
 وأي حساس جوّاها مغطّى.</p>
@@ -2057,6 +2162,12 @@ Check the list for who edited last before you overwrite.</blockquote>
 بيبقى مغطّى — من غير أي ربط يدوي.</p>
 <blockquote>الجيت واي اللي بتحطه بإيدك <b>ثابت</b>: مبيتمسحش لما تدوس <b>وزّع</b> تاني،
 والأداة بتحط جيت واي إضافي بس للغرف اللي لسه حساساتها برة أي مدى.</blockquote>
+<h4>الكهرباء</h4>
+<p>كل جيت واي بيتحط جنبه <b>رمز كهرباء برتقالي</b> تلقائيًا — علامة إن المكان ده محتاج
+مصدر كهرباء. الرمز بيظهر على كل المخرجات ومكتوب في مفتاح الرموز، فالأوبريشن بيعرف من الرسمة
+نفسها هيمد الكهرباء فين قبل ما ينزل الموقع.</p>
+<blockquote>عشان كده كتير بيتحط الجيت واي في <b>الممر</b>: الكهرباء متوفرة هناك، والحساسات
+تفضل جوّه الثلاجات والغرف في مداه.</blockquote>
 <h4>على الرسمة</h4>
 <ul>
 <li>زر <b>مدى الجيت واي</b> في شريط الأدوات بيظهر أو يخفي دواير المدى.</li>
@@ -2066,12 +2177,12 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p><b>فحص قبل التسليم</b> بينبهك على أي حساس خارج مدى أقرب جيت واي وبالمسافة بالمتر،
 وعلى أي غرفة من غير جيت واي جوّاها لو السياسة «مستقل لكل غرفة».</p>
 
-<h3>٨. معايير الشركة</h3>
+<h3>٩. معايير الشركة</h3>
 <p>قسم ٤ فيه كل قاعدة الأعداد بتعتمد عليها: تغطية الحساس، أقل عدد للغرفة، نوع الجيت واي ومداه،
 جيت واي مستقل لكل غرفة، حجم الرمز على الرسمة، والمستلزمات لكل وحدة (بطاريات، قواعد، محولات)
 مع نسبة احتياطي. غيّر أي قيمة وكل الأعداد والجداول والمخرجات تتحدث على طول.</p>
 
-<h3>٩. المخرجات — وكل واحد لمين</h3>
+<h3>١٠. المخرجات — وكل واحد لمين</h3>
 <table><tr><th>المخرَج</th><th>لمين</th></tr>
 <tr><td><b>صورة الرسمة</b></td><td>المبيعات — ورقة كاملة باسم المشروع والشركة ورقم AUX
 والتاريخ والشعار والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
@@ -2084,7 +2195,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><b>نسخة العميل</b></td><td>علّم عليها عشان تخفي دوائر التغطية وخطوط الوصل ويطلع رسم
 أنضف للعميل.</td></tr></table>
 
-<h3>١٠. الحفظ والمشاركة</h3>
+<h3>١١. الحفظ والمشاركة</h3>
 <ul>
 <li><b>حفظ تلقائي</b> — شغلك بيتحفظ في المتصفح ده مع كل تعديل. لكن <b>التحديث بيبدأ نضيف</b>:
 لو كان فيه شغل محفوظ بيظهر شريط أزرق تحت «فيه شغل محفوظ من ٥ دقايق» بزر <b>رجّعه</b>. ده لكل
@@ -2098,7 +2209,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <blockquote>لو اتنين حفظوا نفس مشروع السحابة في نفس اللحظة، آخر واحد حفظ هو اللي يثبت. بص على
 القايمة وشوف مين عدّل آخر مرة قبل ما تكتب فوقه.</blockquote>
 
-<h3>١١. اختصارات الكيبورد</h3>
+<h3>١٢. اختصارات الكيبورد</h3>
 <table><tr><th>المفتاح</th><th>بيعمل إيه</th></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Z</span></td><td>تراجع</td></tr>
 <tr><td><span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">Z</span></td><td>إعادة</td></tr>
@@ -2107,7 +2218,7 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td><span class="kbd">Delete</span></td><td>يحذف العنصر المحدد</td></tr>
 <tr><td><span class="kbd">Shift</span> (مضغوطة)</td><td>زاوية حرة من غير لزق</td></tr></table>
 
-<h3>١٢. حل المشاكل السريع</h3>
+<h3>١٣. حل المشاكل السريع</h3>
 <table><tr><th>العرض</th><th>الحل</th></tr>
 <tr><td>الاكتشاف مش لاقي غرف</td><td>دوس <b>تحويل لخطوط</b> الأول وبعدين اكتشف</td></tr>
 <tr><td>غرفتين بيتلزقوا في واحدة</td><td>فيه فتحة باب واصلاهم — ارسمهم بـ<b>مستطيل</b></td></tr>
@@ -2358,6 +2469,7 @@ document.getElementById("btnPdf").onclick=()=>{
     if(c)html+='<div class="sheet">'+head(t("prTitle"))+'<img class="plan" src="'+c.toDataURL("image/png")+'">'+
       '<div class="crit"><span><i style="background:#e02b2b"></i>'+t("sensor")+' ('+ar(tt.sensors)+')</span>'+
       '<span><i style="background:#1f63d6;border-radius:2px"></i>'+t("gateway")+' ('+ar(tt.gates)+')</span>'+
+      '<span><i style="background:#f5a300"></i>'+t("powerNote")+'</span>'+
       '<span>'+dev+'</span><span>'+t("cCov",ar(P.cfg.cov))+'</span>'+
       '<span>'+gwt+' · '+t("cRange",ar(P.cfg.gwRange))+'</span>'+
       '<span>'+gwModeLabel()+'</span></div></div>';}
