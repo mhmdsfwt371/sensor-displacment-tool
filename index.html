@@ -160,9 +160,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   box-shadow:0 6px 24px rgba(0,0,0,.45);max-width:calc(100% - 24px)}
 .updbar.on{display:flex}
 .updbar button{background:#07140d;color:var(--ok);border:none;padding:7px 12px;font-weight:700;font-size:12.5px}
-.updbar.rest{background:var(--zone);color:#08111d}
-.updbar.rest button{background:#08111d;color:var(--zone)}
-.updbar.rest .xb{background:transparent;color:#08111d}
 .updbar .xb{background:transparent;color:#07140d;padding:4px 8px;font-size:16px}
 .sheetview{position:fixed;inset:0;background:var(--ink);z-index:70;display:none;
   grid-template-rows:auto 1fr}
@@ -277,6 +274,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
         </div>
         <input type="file" id="fileLogo" accept="image/*" style="display:none">
         <p class="hint" data-i="hSave" data-html="1"></p>
+        <button id="btnRestore" class="btn-line" style="display:none;margin-top:9px"></button>
         <div id="cloudBox" style="display:none">
           <label data-i="s1Cloud">مشاريع السحابة</label>
           <div class="btns" style="margin-top:0">
@@ -474,12 +472,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   <button class="xb" id="updX">✕</button>
 </div>
 
-<div class="updbar rest" id="restBar">
-  <span id="restTxt"></span>
-  <button id="restGo" data-i="bRestore">رجّعه</button>
-  <button class="xb" id="restX">✕</button>
-</div>
-
 <div class="sheetview" id="manual">
   <div class="svhead">
     <button id="mnBack">←</button>
@@ -492,7 +484,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="1.7";
+const VERSION="1.8";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -557,7 +549,7 @@ fLogo:"شعار شركتك — اختياري، بيظهر على المخرجا
 bUpdate:"حدّث",bDownload:"تحميل",bManual:"الدليل",bInstall:"تثبيت",
 iosInstall:"للتثبيت على الآيفون:\n١) افتح الصفحة في سفاري\n٢) دوس زر المشاركة تحت\n٣) اختار «إضافة إلى الشاشة الرئيسية»",
 updMsg:"نسخة جديدة v{0} متاحة",manTitle:"دليل الاستخدام",manVer:"إصدار {0}",
-restMsg:"فيه شغل محفوظ",bRestore:"رجّعه",
+bRestore:"استرجاع آخر شغل",cRestore:"ترجع الشغل المحفوظ؟ اللي على الشاشة دلوقتي هيتمسح.",
 agoNow:"دلوقتي",agoMin:"من {0} دقيقة",agoHr:"من {0} ساعة",agoDay:"من {0} يوم",
 emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
 lgSensor:"حساس",lgGate:"جيت واي",lgPower:"كهرباء",
@@ -650,7 +642,7 @@ fLogo:"Your company logo — optional, appears on outputs",bLogo:"Choose logo",b
 bUpdate:"Update",bDownload:"Download",bManual:"Guide",bInstall:"Install",
 iosInstall:"To install on iPhone:\n1) Open the page in Safari\n2) Tap the Share button\n3) Choose “Add to Home Screen”",
 updMsg:"Version {0} is available",manTitle:"User Manual",manVer:"Version {0}",
-restMsg:"Unsaved work found",bRestore:"Restore",
+bRestore:"Restore last session",cRestore:"Restore the saved session? Current work on screen will be replaced.",
 agoNow:"just now",agoMin:"{0} min ago",agoHr:"{0} h ago",agoDay:"{0} d ago",
 emptyMsg:"Upload a plan image or write the description<br>Or draw from scratch: rectangle for rooms, wall and door for details<br>You can also drop a project file here",waiting:"Working…",
 lgSensor:"Sensor",lgGate:"Gateway",lgPower:"Power",
@@ -1839,9 +1831,9 @@ function offerRestore(){try{
   const q0=data.plans[0];
   if(!(q0&&(q0.zones.length||q0.imgData||q0.text)))return;
   AS_DATA=data;
-  const when=(o&&o.t)?" · "+agoTxt(o.t):"";
-  restTxt.textContent=t("restMsg")+when;
-  restBar.classList.add("on");}catch(e){}}
+  const when=(o&&o.t)?" ("+agoTxt(o.t)+")":"";
+  btnRestore.textContent=t("bRestore")+when;
+  btnRestore.style.display="block";}catch(e){}}
 function hasWork(){const q=pl();
   return !!(q.zones.length||q.sensors.length||q.imgData||(q.text&&q.text.trim()));}
 function readImage(f){
@@ -2062,9 +2054,10 @@ cleaner client-facing drawing.</td></tr></table>
 
 <h3>12. Saving and sharing</h3>
 <ul>
-<li><b>Autosave</b> — your work is saved in this browser on every change, but a
-<b>refresh starts clean</b>: if saved work exists, a blue bar offers <b>Restore</b> with how long
-ago it was saved. Per-device, not a backup.</li>
+<li><b>Silent autosave</b> — your work is saved in this browser on every change, with no banners
+interrupting you, and a <b>refresh starts clean</b>. To bring back the last session, use the
+<b>Restore last session</b> button inside <b>Project Details</b> — it shows how long ago it was
+saved and only appears when a session exists. Per-device, not a backup.</li>
 <li><b>Save / Open</b> — a <code>.json</code> file holding everything: plan, rooms, layout,
 standards, logo and language. Send it to a colleague and they continue exactly where you
 stopped. You can also drop the file onto the drawing to open it.</li>
@@ -2258,9 +2251,10 @@ Check the list for who edited last before you overwrite.</blockquote>
 
 <h3>١٢. الحفظ والمشاركة</h3>
 <ul>
-<li><b>حفظ تلقائي</b> — شغلك بيتحفظ في المتصفح ده مع كل تعديل. لكن <b>التحديث بيبدأ نضيف</b>:
-لو كان فيه شغل محفوظ بيظهر شريط أزرق تحت «فيه شغل محفوظ من ٥ دقايق» بزر <b>رجّعه</b>. ده لكل
-جهاز لوحده — مش نسخة احتياطية.</li>
+<li><b>حفظ تلقائي صامت</b> — شغلك بيتحفظ في المتصفح ده مع كل تعديل، من غير أي رسايل تقطع
+عليك. و<b>الريفريش بيبدأ نضيف</b> زي ما هو متوقع. لو احتجت ترجّع آخر شغل، هتلاقي زر
+<b>استرجاع آخر شغل</b> جوّه قسم <b>بيانات المشروع</b> ومكتوب جنبه من إمتى — بيظهر بس لو فيه
+فعلًا شغل محفوظ. ده لكل جهاز لوحده — مش نسخة احتياطية.</li>
 <li><b>حفظ / فتح</b> — ملف <code>.json</code> فيه كل حاجة: الرسمة والغرف والتوزيع والمعايير
 والشعار واللغة. ابعته لزميلك يكمّل من نفس النقطة بالظبط. وتقدر تسحب الملف على الرسمة عشان
 تفتحه.</li>
@@ -2465,10 +2459,11 @@ document.getElementById("btnTheme").onclick=()=>{TH=TH==="light"?"dark":"light";
 document.getElementById("mnX").onclick=closeManual;
 document.getElementById("mnBack").onclick=closeManual;
 document.getElementById("mnDl").onclick=dlManual;
-document.getElementById("restGo").onclick=()=>{
-  if(AS_DATA){try{applyProject(AS_DATA);toast(t("tRestored"));}catch(e){}}
-  restBar.classList.remove("on");};
-document.getElementById("restX").onclick=()=>{restBar.classList.remove("on");};
+document.getElementById("btnRestore").onclick=()=>{
+  if(!AS_DATA)return;
+  if(hasWork()&&!confirm(t("cRestore")))return;
+  try{applyProject(AS_DATA);toast(t("tRestored"));}catch(e){}
+  btnRestore.style.display="none";};
 document.getElementById("updX").onclick=()=>{
   updSeen=updBar.dataset.v||"";updBar.classList.remove("on");};
 document.getElementById("updGo").onclick=()=>{
