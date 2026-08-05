@@ -33,13 +33,31 @@ body{background:var(--ink);color:var(--text);-webkit-user-select:none;user-selec
 input,textarea{-webkit-user-select:text;user-select:text}
 .app{display:grid;grid-template-columns:425px 1fr;height:100%}
 @media (max-width:900px){
-  .app{grid-template-columns:1fr;grid-template-rows:44vh 1fr}
-  .side{order:2;border-inline-start:none;border-top:1px solid var(--line)}
+  .app{grid-template-columns:1fr;grid-template-rows:56vh 1fr}
+  .side{order:2;border-inline-start:none;border-top:1px solid var(--line);
+    padding-bottom:calc(70px + env(safe-area-inset-bottom))}
   .stage{order:1}
   input[type=text],input[type=number],select,textarea{font-size:16px}
-  button{min-height:38px}
-  .tools button{flex:0 0 auto;padding:10px 13px}
-  .tools .sep{flex:0 0 1px}
+  button{min-height:36px}
+
+  /* شريط الأدوات على الموبايل: أزرار أصغر، الصفين بيتزحلقوا مع بعض،
+     وتدرّج على الأطراف يوضّح إن فيه كمان أزرار برّه الشاشة */
+  .tools{padding-top:env(safe-area-inset-top)}
+  .trow{gap:4px;padding:5px 7px;-webkit-overflow-scrolling:touch;
+    -webkit-mask-image:linear-gradient(to left,transparent 0,#000 16px,#000 calc(100% - 16px),transparent 100%);
+    mask-image:linear-gradient(to left,transparent 0,#000 16px,#000 calc(100% - 16px),transparent 100%)}
+  .trow>button{flex:0 0 auto}
+  .tools button{padding:7px 9px;font-size:12px;min-height:33px}
+  .tools .sep{flex:0 0 1px;margin:5px 2px}
+  .kindsel{padding:2px;margin:0 2px}
+  .kindsel button{padding:6px 8px;font-size:11.5px;min-height:29px}
+
+  /* العناصر العايمة فوق الرسمة أصغر عشان متاكلش الشاشة الصغيرة */
+  .histbar{bottom:46px}
+  .histbar button{padding:7px 10px;font-size:14px;min-width:38px;min-height:34px}
+  .legend{font-size:11px;padding:6px 9px;gap:9px}
+  .badge{font-size:11px;padding:6px 9px}
+  .empty{font-size:12.5px;padding:0 20px;line-height:2}
 }
 .side{background:var(--panel);border-inline-start:1px solid var(--line);overflow-y:auto;padding:0 0 70px}
 .brand{padding:13px 15px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;
@@ -515,7 +533,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="3.1";
+const VERSION="3.2";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -2872,6 +2890,16 @@ document.getElementById("btnInstall").onclick=async()=>{
   if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;
     deferredPrompt=null;btnInstall.style.display="none";return;}
   alert(iOS?t("iosInstall"):isAndroid?t("insAndroid"):t("insDesktop"));};
+/* على الموبايل الصفين بيتزحلقوا سوا عشان الشريط يحس إنه قطعة واحدة */
+(()=>{const rows=[].slice.call(document.querySelectorAll(".trow"));
+  if(rows.length<2)return;let busy=false;
+  rows.forEach(r=>r.addEventListener("scroll",()=>{
+    if(busy)return;busy=true;
+    const m=r.scrollWidth-r.clientWidth,p=m>0?r.scrollLeft/m:0;
+    rows.forEach(o=>{if(o!==r){const n=o.scrollWidth-o.clientWidth;
+      if(n>0)o.scrollLeft=n*p;}});
+    requestAnimationFrame(()=>{busy=false;});},{passive:true}));})();
+
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkUpdate();});
 </script>
 </body>
