@@ -128,18 +128,17 @@ tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:none}
   background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .issue.err{border-color:rgba(255,107,107,.5)} .issue.ok{border-color:rgba(87,211,140,.5)}
 .issue b{flex:0 0 auto}
-.stage{position:relative;background:var(--stage);overflow:hidden}
-canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
-.tools{position:absolute;top:10px;inset-inline-start:10px;display:flex;flex-direction:column;
-  width:max-content;max-width:calc(100% - 20px);
-  background:var(--glass);border:1px solid var(--line);border-radius:13px;
-  backdrop-filter:blur(10px);overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.30)}
-.trow{display:flex;align-items:stretch;gap:4px;flex-wrap:nowrap;padding:5px 6px;
+.stage{position:relative;background:var(--stage);overflow:hidden;display:flex;flex-direction:column}
+canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cursor:crosshair}
+.tools{order:-1;flex:0 0 auto;position:relative;z-index:3;
+  display:flex;flex-direction:column;
+  background:var(--panel);border-bottom:1px solid var(--line)}
+.trow{display:flex;align-items:stretch;gap:5px;flex-wrap:nowrap;padding:6px 10px;
   overflow-x:auto;scrollbar-width:none}
 .trow::-webkit-scrollbar{display:none}
 .trow>button{flex:1 0 auto}
 .trow>.sep,.trow>.kindsel{flex:0 0 auto}
-.trow+.trow{border-top:1px solid var(--line);background:rgba(0,0,0,.14)}
+.trow+.trow{border-top:1px solid var(--line);background:rgba(0,0,0,.10)}
 .tools button{padding:8px 10px;font-size:12.5px;border:1px solid transparent;background:transparent;
   white-space:nowrap;border-radius:8px}
 .tools button.on{background:var(--panel-2);border-color:var(--line);font-weight:700}
@@ -515,7 +514,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="2.4";
+const VERSION="2.5";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -1033,7 +1032,7 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     q.gateways.forEach(gw=>{g.beginPath();g.arc(gw.x,gw.y,range,0,7);g.fill();g.stroke();});
     g.setLineDash([]);}
 
-  const symR=Math.max((P.cfg.sym||.6)*sc/2,(pr?2.5:4)/k);
+  const symR=symRad(q,k,pr);
   q.sensors.forEach(s=>{g.beginPath();g.arc(s.x,s.y,symR,0,7);
     g.fillStyle="#e02b2b";g.fill();
     g.strokeStyle="#ffffff";g.lineWidth=Math.max(symR*.2,.7/k);g.stroke();});
@@ -1694,7 +1693,7 @@ function selBBox(q,s){
   if(s.kind==="door"){A.push({x:s.d.x1,y:s.d.y1});A.push({x:s.d.x2,y:s.d.y2});}
   return A.length?bbox(A):null;}
 function hitTest(q,w){
-  const r=(COARSE?24:14)/V.k,sy=Math.max(r,(P.cfg.sym||.6)*Math.max(q.scale,0)*.8);
+  const r=(COARSE?24:14)/V.k,sy=Math.max(r,symRad(q,V.k,false)*1.6);
   for(let i=q.sensors.length-1;i>=0;i--)if(dist(q.sensors[i],w)<sy)return{kind:"sensor",s:q.sensors[i]};
   for(let i=q.gateways.length-1;i>=0;i--)if(dist(q.gateways[i],w)<sy*1.2)return{kind:"gate",g:q.gateways[i]};
   for(const z of q.zones)for(let i=0;i<z.pts.length;i++)
@@ -1789,6 +1788,11 @@ function evenPoints(poly,k,holes){
         for(const s of smp){let mm=1e18;for(const o of c)mm=Math.min(mm,dist(s,o));if(mm>fd){fd=mm;f=s;}}
         c[i]={x:f.x,y:f.y};}}}
   return c.map(p=>okp(p)?p:nearest(smp,p));}
+function symRad(q,k,pr){
+  const m=P.cfg.sym||.6;
+  /* بمقياس: الحجم بالمتر على الرسمة. من غير مقياس: حجم بالشاشة بيتغير مع الشريط
+     عشان الرمز يفضل باين والشريط يشتغل قبل ما تعاير. */
+  return q.scale>0?Math.max(m*q.scale/2,(pr?2.5:4)/k):(m*14+3)/k;}
 function oneCenter(list,poly){
   if(!list.length)return centroid(poly);
   let c={x:list[0].x,y:list[0].y};
@@ -2273,6 +2277,9 @@ in metres, and any room without a gateway inside it when the policy is one-per-r
 type and range, one-gateway-per-room, symbol size on the drawing, and accessories per unit
 (batteries, mounts, adapters) with a spare percentage. Change a value and every count, table
 and output updates immediately.</p>
+<p><b>Symbol size</b> is measured in metres on the drawing once a <b>scale</b> is set. Before
+calibration the slider still grows and shrinks the symbols on screen, so they stay visible while
+you draw — you do not have to calibrate first just to see your work.</p>
 
 <h3>11. Outputs — and who each one is for</h3>
 <p><b>The AFAQY brand is fixed.</b> There is no logo picker and no way to change or remove it.
@@ -2495,6 +2502,9 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p>قسم ٤ فيه كل قاعدة الأعداد بتعتمد عليها: تغطية الحساس، أقل عدد للغرفة، نوع الجيت واي ومداه،
 جيت واي مستقل لكل غرفة، حجم الرمز على الرسمة، والمستلزمات لكل وحدة (بطاريات، قواعد، محولات)
 مع نسبة احتياطي. غيّر أي قيمة وكل الأعداد والجداول والمخرجات تتحدث على طول.</p>
+<p><b>حجم الرمز</b> بيتقاس بالمتر على الرسمة لما يكون فيه <b>مقياس</b>. ولو الرسمة لسه مش
+معايرة، الشريط بيكبّر ويصغّر الرموز على الشاشة على طول عشان تفضل باينة وإنت بترسم — يعني
+مش مستني المعايرة عشان تشوف شغلك.</p>
 
 <h3>١١. المخرجات — وكل واحد لمين</h3>
 <p><b>هوية آفاقي ثابتة.</b> مفيش زر يختار الشعار ومحدش يقدر يغيّره أو يشيله. الشعار بيتحط
