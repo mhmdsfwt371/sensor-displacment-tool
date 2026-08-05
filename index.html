@@ -514,7 +514,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="2.7";
+const VERSION="2.8";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -552,7 +552,9 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",unitArea:"إجمالي المساحة م٢",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",unitArea:"إجمالي المساحة",unitSq:"م٢",
+kySensors:"الحساسات",kyGates:"الجيت واي",kyPower:"الكهرباء",
+shMeta:"{0} · تغطية {1} م٢ لكل حساس · جيت واي {2} بمدى {3} م · {4}",
 tRange:"مدى الجيت واي",
 hGwMode:"«مستقل لكل غرفة» معناها جيت واي لكل غرفة فيها حساسات — المدى مش معيار، عشان المطلوب فصل الشبكات. الثلاجة جوّه غرفة بتتبع جيت واي الغرفة. والجيت واي اللي بتحطه بإيدك بيتحسب للغرفة اللي هو جوّاها بس، وبيفضل ثابت مهما وزّعت تاني.",
 isOut:"{0}: {1} حساس خارج مدى أقرب جيت واي (أبعد {2} م)",
@@ -589,7 +591,7 @@ agoNow:"دلوقتي",agoMin:"من {0} دقيقة",agoHr:"من {0} ساعة",ago
 emptyMsg:"ارفع صورة رسمة أو اكتب وصف المخطط<br>أو ارسم من الصفر: مستطيل للغرف، وحائط وباب للتفاصيل<br>وتقدر تسحب ملف المشروع هنا لفتحه",waiting:"شغّال…",
 lgSensor:"حساس",lgGate:"جيت واي",lgPower:"كهرباء",
 kd_room:"غرفة",kd_corr:"ممر",kd_fridge:"ثلاجة",
-powerNote:"مكان الجيت واي محتاج مصدر كهرباء",
+powerNote:"كل جيت واي محتاج مصدر كهرباء في مكانه",
 pillNo:"لسه",pillCal:"محتاجة معايرة",pillReady:"جاهزة",
 thRoom:"الغرفة",thArea:"م٢",thSensors:"حساس",thGw:"جيت واي",thFar:"أبعد",thTotal:"الإجمالي",
 thSupply:"قائمة التوريد",thQty:"العدد",thCode:"الكود",thType:"النوع",thX:"بعد س من ركن الغرفة (م)",
@@ -650,7 +652,9 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",unitArea:"Total area m²",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",unitArea:"Total area",unitSq:"m²",
+kySensors:"Sensors",kyGates:"Gateways",kyPower:"Power",
+shMeta:"{0} · {1} m² coverage per sensor · {2} gateway, {3} m range · {4}",
 tRange:"Gateway range",
 hGwMode:"“One per room” means a gateway for every room that has sensors — range is not a criterion, because the requirement is network isolation. A fridge inside a room follows the room's gateway. A gateway you place yourself counts for the room it sits inside, and stays put through redistribution.",
 isOut:"{0}: {1} sensors beyond the nearest gateway ({2} m away)",
@@ -1200,7 +1204,7 @@ function exportSheet(q,W,clean){
     metaX=rtl?LX+bw+Math.round(W*.014):RX-bw-Math.round(W*.014);
     g.fillStyle="#555";}
   g.textAlign=A2;g.font=fnt(.017);
-  [P.ref?"AUX: "+P.ref:"",today()].filter(Boolean)
+  [P.ref?(/^\s*aux/i.test(P.ref)?P.ref:"AUX "+P.ref):"",today()].filter(Boolean)
     .forEach((x,i)=>g.fillText(x,metaX,side+Math.round(W*.030)+i*Math.round(W*.025)));
   g.strokeStyle="#111";g.lineWidth=Math.max(1,W*.0014);
   const hy=side+headH-Math.round(W*.014);
@@ -1214,9 +1218,9 @@ function exportSheet(q,W,clean){
   /* ===== مفتاح الرموز والأعداد — صفوف متراصّة، العدد في عمود ثابت ===== */
   const tt=planTot(q),fs=Math.round(W*.017),rowH=Math.round(fs*1.75);
   const dir=rtl?-1:1,ky=oy+dh+Math.round(W*.030),r=fs*.44;
-  const rows=[{c:"#e02b2b",sq:0,n:t("sensor"),v:ar(tt.sensors)},
-              {c:"#1f63d6",sq:1,n:t("gateway"),v:ar(tt.gates)},
-              {c:"#f5a300",sq:0,n:t("lgPower"),v:null,note:t("powerNote")}];
+  const rows=[{c:"#e02b2b",sq:0,n:t("kySensors"),v:ar(tt.sensors)},
+              {c:"#1f63d6",sq:1,n:t("kyGates"),v:ar(tt.gates)},
+              {c:"#f5a300",sq:0,n:t("kyPower"),v:null,note:t("powerNote")}];
   const FT='px "Segoe UI",Tahoma,Arial,sans-serif';
   g.textBaseline="middle";
   g.font=fs+FT;
@@ -1235,16 +1239,22 @@ function exportSheet(q,W,clean){
       g.fillText("— "+o.note,X1+dir*xVal,y);}});
   /* المساحة على الطرف التاني في أول صف */
   g.textAlign=A2;g.font="700 "+Math.round(fs*1.12)+FT;g.fillStyle="#111";
-  g.fillText(fmt(tt.area),X2,ky+rowH/2);
+  const aTxt=fmt(tt.area)+" "+t("unitSq");
+  g.fillText(aTxt,X2,ky+rowH/2);
+  const aW=g.measureText(aTxt).width;
   g.font=fs+FT;g.fillStyle="#111";
-  const uA=t("unitArea");
-  g.fillText(uA,X2-dir*(g.measureText(fmt(tt.area)).width+fs*.5),ky+rowH/2);
+  g.fillText(t("unitArea"),X2-dir*(aW+fs*.6),ky+rowH/2);
   /* سطر المعايير تحت خط رفيع */
   const my=ky+rows.length*rowH+Math.round(fs*.55);
   g.strokeStyle="#dfe6ee";g.lineWidth=Math.max(1,W*.0008);
   g.beginPath();g.moveTo(LX,my);g.lineTo(RX,my);g.stroke();
-  const mL=t("cCov",ar(P.cfg.cov))+" · "+gwModeLabel(),
-        mR=BRAND.mark+" "+BRAND.site+" · v"+VERSION;
+  const mL=t("shMeta",
+      P.cfg.sensor==="tg08"?"TZone TG08":t("optOther"),
+      ar(P.cfg.cov),
+      P.cfg.gw==="gsm"?t("optGsm"):t("optWifi"),
+      ar(P.cfg.gwRange),
+      gwModeLabel()),
+        mR=BRAND.mark+" · "+BRAND.site+" · v"+VERSION;
   let mf=Math.round(W*.0145);
   g.font=mf+FT;
   while(g.measureText(mL).width+g.measureText(mR).width>(RX-LX)-fs*2&&mf>W*.009){
@@ -2109,21 +2119,27 @@ function useLogo(u,safe){
   LOGOI.onload=()=>{showBrand();render();};
   if(safe)LOGOI.removeAttribute("crossorigin");else LOGOI.crossOrigin="anonymous";
   LOGOI.src=u;showBrand();}
-function tryLogo(list,lang){
-  if(!list.length){LOGO_URL="";LOGO_SAFE=false;showBrand();render();return;}
+function tryLogo(list,lang,alt){
+  if(!list.length){
+    /* مصدر اللغة دي فشل — الشعار واحد للشركة، فنستعمل نسخة اللغة التانية
+       بدل ما المخرَج يطلع من غير هوية. */
+    const c=logoCache(),o=lang==="en"?"ar":"en";
+    if(c[o]){useLogo(c[o],true);return;}
+    if(!alt){tryLogo(BRAND.src[o].slice(),o,true);return;}
+    LOGO_URL="";LOGO_SAFE=false;showBrand();render();return;}
   const u=list.shift(),im=new Image();im.crossOrigin="anonymous";
   im.onload=()=>{const d=bakeLogo(im);
     if(d){const c=logoCache();c[lang]=d;
       try{localStorage.setItem(BRAND.key,JSON.stringify(c));}catch(e){}
       useLogo(d,true);}
     else useLogo(u,false);};
-  im.onerror=()=>tryLogo(list,lang);
+  im.onerror=()=>tryLogo(list,lang,alt);
   im.src=u;}
 function loadBrand(){
   const lang=L==="en"?"en":"ar",c=logoCache();
   showBrand();
   if(c[lang]){useLogo(c[lang],true);return;}
-  tryLogo(BRAND.src[lang].slice(),lang);}
+  tryLogo(BRAND.src[lang].slice(),lang,false);}
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
   P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
