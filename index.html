@@ -273,7 +273,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
       <button id="btnNew" data-i="bNew">جديد</button>
       <button id="btnSave" data-i="save">حفظ</button>
       <button id="btnOpen" data-i="open">فتح</button>
-      <input type="file" id="fileProj" accept=".json,application/json" style="display:none">
+      <input type="file" id="fileProj" accept=".json,.png,.jpg,.jpeg,.pdf" style="display:none">
     </div>
 
     <details class="step" open>
@@ -420,21 +420,18 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
     <details class="step">
       <summary><span class="num">٧</span><span data-i="s7">المخرجات</span></summary>
       <div class="body">
-        <label data-i="fSheets">الأوراق اللي هتطلع</label>
-        <label class="chk"><input type="checkbox" id="opDraw" checked> <span data-i="opDraw">رسمة التوزيع</span></label>
-        <label class="chk"><input type="checkbox" id="opCount" checked> <span data-i="opCount">جدول الأعداد</span></label>
-        <label class="chk"><input type="checkbox" id="opInst" checked> <span data-i="opInst">جدول التركيب للفنيين</span></label>
-        <label class="chk"><input type="checkbox" id="opSup" checked> <span data-i="opSup">قائمة التوريد للمخزن</span></label>
         <label class="chk"><input type="checkbox" id="opCust"> <span data-i="opCust">نسخة العميل</span></label>
-        <div class="btns"><button class="btn-pdf" id="btnPdf" data-i="bPdf">حفظ ملف للطباعة</button></div>
-        <p class="hint" data-i="hPdf" data-html="1"></p>
-        <div class="btns">
-          <button id="btnCsvCount" data-i="bCsvCount">جدول الأعداد</button>
-          <button id="btnCsvInst" data-i="bCsvInst">جدول التركيب</button>
+        <label data-i="fImgOut">الرسمة — تتبعت مع عرض السعر</label>
+        <div class="btns" style="margin-top:0">
+          <button class="btn-line" id="btnPng" data-i="bPng">صورة</button>
+          <button class="btn-pdf" id="btnPdf" data-i="bPdf">PDF</button>
         </div>
-        <label data-i="fImgOut">صورة جاهزة للإرسال مع عرض السعر</label>
-        <div class="btns" style="margin-top:0"><button class="btn-line" id="btnPng" data-i="bPng">حفظ صورة الرسمة</button></div>
-        <p class="hint" data-i="hImgOut"></p>
+        <p class="hint" data-i="hOut" data-html="1"></p>
+        <div class="btns"><button id="btnReopen" data-i="bReopen">افتح مخرَج للتعديل</button></div>
+        <label data-i="fTable">جدول الأعداد</label>
+        <div class="btns" style="margin-top:0">
+          <button id="btnCsvCount" data-i="bCsvCount">تحميل الجدول</button>
+        </div>
       </div>
     </details>
   </aside>
@@ -505,7 +502,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="2.1";
+const VERSION="2.2";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -553,7 +550,11 @@ fPsu:"محول لكل جيت واي",fSpare:"احتياطي ٪",bRun:"وزّع �
 s5:"أعداد المشروع",kSensor:"حساس",kGate:"جيت واي",kArea:"متر مربع",bCopy:"نسخ ملخص للمبيعات",
 s6:"فحص قبل التسليم",s7:"المخرجات",fSheets:"الأوراق اللي هتطلع",
 opDraw:"رسمة التوزيع",opCount:"جدول الأعداد",opInst:"جدول التركيب للفنيين",opSup:"قائمة التوريد للمخزن",
-opCust:"نسخة العميل — من غير دوائر التغطية والوصلات",bPdf:"حفظ ملف للطباعة",
+opCust:"نسخة العميل — من غير دوائر التغطية والوصلات",bPdf:"PDF",
+bReopen:"افتح مخرَج للتعديل",fTable:"جدول الأعداد",
+hOut:"الصورة و<b>PDF</b> جوّاهم المشروع كله. نزّلهم وابعتهم عادي، ولما تحب تعدّل ارفع نفس الملف تاني من زر <b>افتح مخرَج للتعديل</b> — هيرجع مفتوح زي ما سبته.",
+aNoPrj:"الملف ده مفيهوش مشروع محفوظ — لازم يكون صورة أو PDF طالعين من الأداة",
+tPdfWait:"بيجهّز الملف…",
 hPdf:"من نافذة الطباعة اختار <b>حفظ كملف</b> بدل الطابعة.",
 bCsvCount:"جدول الأعداد",bCsvInst:"جدول التركيب",fImgOut:"صورة جاهزة للإرسال مع عرض السعر",
 bPng:"حفظ صورة الرسمة",
@@ -647,7 +648,11 @@ fPsu:"Adapters per gateway",fSpare:"Spare %",bRun:"Distribute Sensors",bClear:"C
 s5:"Project Totals",kSensor:"Sensors",kGate:"Gateways",kArea:"Square metres",bCopy:"Copy Sales Summary",
 s6:"Pre-Handover Check",s7:"Outputs",fSheets:"Sheets to include",
 opDraw:"Layout drawing",opCount:"Counts table",opInst:"Installation schedule",opSup:"Supply list",
-opCust:"Client version — no coverage circles or links",bPdf:"Save Print File",
+opCust:"Client version — no coverage circles or links",bPdf:"PDF",
+bReopen:"Open an output to edit",fTable:"Counts table",
+hOut:"The image and the <b>PDF</b> carry the whole project inside them. Download and send them as usual — to edit later, load the same file back with <b>Open an output to edit</b> and it reopens exactly as you left it.",
+aNoPrj:"This file has no project inside it — it must be an image or PDF produced by this tool",
+tPdfWait:"Building the file…",
 hPdf:"In the print dialog choose <b>Save as file</b> instead of a printer.",
 bCsvCount:"Counts sheet",bCsvInst:"Install sheet",fImgOut:"Image ready to email with the quote",
 bPng:"Save Drawing Image",
@@ -1201,9 +1206,141 @@ function exportSheet(q,W,clean){
     gwModeLabel()+" · "+BRAND.mark+" "+BRAND.site+" · v"+VERSION,X2,fy);
   g.textBaseline="alphabetic";return c;}
 
+/* ===== المخرَج بيشيل المشروع جوّاه ===== */
+const PRJ_KEY="afaqy-project",PRJ_TAG="AFAQYPRJ1:",PRJ_END=":AFAQYEND";
+function b64enc(u8){let s="";const C=0x8000;
+  for(let i=0;i<u8.length;i+=C)s+=String.fromCharCode.apply(null,u8.subarray(i,i+C));
+  return btoa(s);}
+function b64dec(b){const s=atob(b),u=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}
+function binStr(u8){let s="";const C=0x8000;
+  for(let i=0;i<u8.length;i+=C)s+=String.fromCharCode.apply(null,u8.subarray(i,i+C));return s;}
+function encLatin(s){const u=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i)&255;return u;}
+function prjB64(){syncCfg();P.lang=L;P.appV=VERSION;
+  return b64enc(new TextEncoder().encode(JSON.stringify(P)));}
+function openPrj(b64){applyProject(JSON.parse(new TextDecoder().decode(b64dec(b64))));}
+
+let CRCT=null;
+function crc32(u8){
+  if(!CRCT){CRCT=new Uint32Array(256);
+    for(let n=0;n<256;n++){let c=n;
+      for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);CRCT[n]=c>>>0;}}
+  let c=0xFFFFFFFF;
+  for(let i=0;i<u8.length;i++)c=CRCT[(c^u8[i])&255]^(c>>>8);
+  return (c^0xFFFFFFFF)>>>0;}
+
+/* PNG: مقطع نصي بعد IHDR */
+function pngPut(u8,txt){
+  const body=PRJ_KEY+"\u0000"+txt,type="tEXt";
+  const d=encLatin(type+body),len=body.length;
+  const ch=new Uint8Array(12+len);
+  ch[0]=(len>>>24)&255;ch[1]=(len>>>16)&255;ch[2]=(len>>>8)&255;ch[3]=len&255;
+  ch.set(d,4);
+  const c=crc32(d),o=8+len;
+  ch[o]=(c>>>24)&255;ch[o+1]=(c>>>16)&255;ch[o+2]=(c>>>8)&255;ch[o+3]=c&255;
+  const at=33,out=new Uint8Array(u8.length+ch.length);
+  out.set(u8.subarray(0,at),0);out.set(ch,at);out.set(u8.subarray(at),at+ch.length);
+  return out;}
+function pngGet(u8){
+  let i=8;
+  while(i+8<=u8.length){
+    const len=((u8[i]<<24)|(u8[i+1]<<16)|(u8[i+2]<<8)|u8[i+3])>>>0;
+    const ty=String.fromCharCode(u8[i+4],u8[i+5],u8[i+6],u8[i+7]);
+    if(ty==="IEND")break;
+    if(ty==="tEXt"){const d=u8.subarray(i+8,i+8+len);
+      let z=0;while(z<d.length&&d[z]!==0)z++;
+      if(binStr(d.subarray(0,z))===PRJ_KEY)return binStr(d.subarray(z+1));}
+    i+=12+len;}
+  return null;}
+
+/* JPEG: مقاطع تعليق بعد SOI */
+function jpgPut(u8,txt){
+  const MAX=62000,segs=[];let tot=0;
+  for(let i=0;i<txt.length;i+=MAX){
+    const body=PRJ_KEY+"\u0000"+txt.substr(i,MAX),n=body.length+2;
+    const sg=new Uint8Array(4+body.length);
+    sg[0]=0xFF;sg[1]=0xFE;sg[2]=(n>>8)&255;sg[3]=n&255;
+    sg.set(encLatin(body),4);segs.push(sg);tot+=sg.length;}
+  const out=new Uint8Array(u8.length+tot);
+  out.set(u8.subarray(0,2),0);let off=2;
+  segs.forEach(g=>{out.set(g,off);off+=g.length;});
+  out.set(u8.subarray(2),off);return out;}
+function jpgGet(u8){
+  let i=2,r="";
+  while(i+4<=u8.length&&u8[i]===0xFF){
+    const m=u8[i+1];
+    if(m===0x01||(m>=0xD0&&m<=0xD9)){i+=2;continue;}
+    const len=(u8[i+2]<<8)|u8[i+3];
+    if(m===0xFE){const d=u8.subarray(i+4,i+2+len);
+      let z=0;while(z<d.length&&d[z]!==0)z++;
+      if(binStr(d.subarray(0,z))===PRJ_KEY)r+=binStr(d.subarray(z+1));}
+    if(m===0xDA)break;
+    i+=2+len;}
+  return r||null;}
+
+/* PDF: صفحة واحدة فيها الرسمة + المشروع في كائن مستقل */
+function pdfGet(u8){
+  const m=binStr(u8).match(new RegExp(PRJ_TAG+"([A-Za-z0-9+/=]+)"+PRJ_END));
+  return m?m[1]:null;}
+function buildPdf(c,title,b64){
+  const jpg=b64dec(c.toDataURL("image/jpeg",.92).split(",")[1]);
+  const iw=c.width,ih=c.height,land=iw>=ih;
+  const PW=land?842:595,PH=land?595:842,M=16;
+  const k=Math.min((PW-M*2)/iw,(PH-M*2)/ih);
+  const dw=iw*k,dh=ih*k,dx=(PW-dw)/2,dy=(PH-dh)/2;
+  const f=x=>(Math.round(x*100)/100);
+  const hex=s2=>{let h="FEFF";
+    for(let i=0;i<s2.length;i++)h+=("000"+s2.charCodeAt(i).toString(16).toUpperCase()).slice(-4);
+    return h;};
+  const parts=[],off=[];let pos=0;
+  const put=u=>{parts.push(u);pos+=u.length;};
+  const obj=(n,b)=>{off[n]=pos;put(encLatin(n+" 0 obj\n"+b+"\nendobj\n"));};
+  put(encLatin("%PDF-1.4\n%\u00E2\u00E3\u00CF\u00D3\n"));
+  obj(1,"<</Type/Catalog/Pages 2 0 R/AfaqyProject 7 0 R>>");
+  obj(2,"<</Type/Pages/Kids[3 0 R]/Count 1>>");
+  obj(3,"<</Type/Page/Parent 2 0 R/MediaBox[0 0 "+PW+" "+PH+"]"+
+        "/Resources<</XObject<</I0 4 0 R>>>>/Contents 5 0 R>>");
+  off[4]=pos;
+  put(encLatin("4 0 obj\n<</Type/XObject/Subtype/Image/Width "+iw+"/Height "+ih+
+    "/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length "+jpg.length+">>\nstream\n"));
+  put(jpg);put(encLatin("\nendstream\nendobj\n"));
+  const cs="q "+f(dw)+" 0 0 "+f(dh)+" "+f(dx)+" "+f(dy)+" cm /I0 Do Q";
+  obj(5,"<</Length "+cs.length+">>\nstream\n"+cs+"\nendstream");
+  obj(6,"<</Producer(AFAQY Sensor Tool v"+VERSION+")/Title<"+hex(title||"AFAQY")+">>>");
+  const pj=PRJ_TAG+b64+PRJ_END;
+  obj(7,"<</Type/EmbeddedFile/Length "+pj.length+">>\nstream\n"+pj+"\nendstream");
+  const xr=pos;let x="xref\n0 8\n0000000000 65535 f \n";
+  for(let n=1;n<=7;n++)x+=("0000000000"+off[n]).slice(-10)+" 00000 n \n";
+  x+="trailer\n<</Size 8/Root 1 0 R/Info 6 0 R>>\nstartxref\n"+xr+"\n%%EOF\n";
+  put(encLatin(x));
+  let tot=0;parts.forEach(u=>tot+=u.length);
+  const out=new Uint8Array(tot);let o2=0;
+  parts.forEach(u=>{out.set(u,o2);o2+=u.length;});
+  return out;}
+
+function dlBlob(b,name){const a=document.createElement("a");
+  a.href=URL.createObjectURL(b);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),6000);}
 function dlCanvas(c,name,jpeg){
-  const a=document.createElement("a");a.download=name+(jpeg?".jpg":".png");
-  a.href=jpeg?c.toDataURL("image/jpeg",.9):c.toDataURL("image/png");a.click();}
+  const b64=prjB64();
+  const raw=b64dec(c.toDataURL(jpeg?"image/jpeg":"image/png",.92).split(",")[1]);
+  const out=jpeg?jpgPut(raw,b64):pngPut(raw,b64);
+  dlBlob(new Blob([out],{type:jpeg?"image/jpeg":"image/png"}),name+(jpeg?".jpg":".png"));}
+function readOutput(f){
+  const n=(f.name||"").toLowerCase();
+  if(/\.json$/.test(n))return readProject(f);
+  const rd=new FileReader();
+  rd.onload=()=>{try{
+    const u=new Uint8Array(rd.result);let b=null,isPdf=false;
+    if(u[0]===0x89&&u[1]===0x50)b=pngGet(u);
+    else if(u[0]===0xFF&&u[1]===0xD8)b=jpgGet(u);
+    else if(u[0]===0x25&&u[1]===0x50){isPdf=true;b=pdfGet(u);}
+    if(b){openPrj(b);toast(t("tOpened"));return;}
+    if(isPdf){alert(t("aNoPrj"));return;}
+    readImage(f);
+  }catch(e){alert(t("aFile"));}};
+  rd.readAsArrayBuffer(f);}
 
 function resize(){const r=cv.getBoundingClientRect();
   cv.width=Math.max(1,Math.round(r.width*dpr));cv.height=Math.max(1,Math.round(r.height*dpr));render();}
@@ -1604,8 +1741,7 @@ function askScale(){const px=dist(U.calib[0],U.calib[1]);
   if(v===null||!(+v>0)){U.calib=[];render();return;}
   snap();pl().scale=px/(+v);U.calib=[];refresh();}
 ["dragover","drop"].forEach(ev=>cv.addEventListener(ev,e=>e.preventDefault()));
-cv.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(!f)return;
-  if(/json$/i.test(f.name))readProject(f);else readImage(f);});
+cv.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(!f)return;readOutput(f);});
 
 /* ================= التوزيع ================= */
 function samplePoly(poly,k,holes){
@@ -2119,15 +2255,23 @@ keeps it in the browser, so it works offline afterwards. If it cannot be reached
 <table><tr><th>Output</th><th>For</th></tr>
 <tr><td><b>Drawing image</b></td><td>Sales — a full sheet with project, company, AUX number,
 date, logo, drawing, symbol key and counts. Attach it to the quote.</td></tr>
-<tr><td><b>Print file</b></td><td>A multi-sheet set: drawing, counts, installation schedule,
-supply list. In the print dialog choose <i>Save as file</i>.</td></tr>
-<tr><td><b>Installation schedule</b></td><td>Operations — every device with its X/Y distance in
-metres from the room corner, plus blank serial number and sign-off columns.</td></tr>
-<tr><td><b>Supply list</b></td><td>Stores — devices and accessories with the spare percentage
-applied.</td></tr>
+<tr><td><b>PDF file</b></td><td>The same sheet as a <code>.pdf</code>, ready to print or send.
+It downloads directly — no print dialog in the way.</td></tr>
+<tr><td><b>Counts table</b></td><td>A spreadsheet file: every room with its area, sensor count,
+gateway and farthest sensor, then the totals and the supply list with the spare percentage.</td></tr>
 <tr><td><b>Sales summary</b></td><td>Copies as text, ready to paste into an email.</td></tr>
-<tr><td><b>Client version</b></td><td>Tick it to hide coverage circles and link lines for a
-cleaner client-facing drawing.</td></tr></table>
+<tr><td><b>Client version</b></td><td>Tick it to hide coverage circles and links for a cleaner
+drawing to hand to the client.</td></tr></table>
+
+<p><b>An output reopens for editing.</b> The image and the <code>.pdf</code> carry the whole
+project inside them — drawing, rooms, layout, standards and language. Download and send them as
+usual; when you need to change something a month later, press <b>Open an output to edit</b> and
+load the same file: it reopens exactly as you left it, ready to edit and export again. You can
+also drop the file straight onto the drawing, and the <b>Open</b> button at the top accepts both
+plus <code>.json</code>.</p>
+<p><b>Note:</b> if the image passes through WhatsApp or anything that re-compresses images, the
+embedded data is stripped and it becomes an ordinary picture — send it as an <b>attachment</b>.
+The <code>.pdf</code> is not affected.</p>
 
 <h3>12. Saving and sharing</h3>
 <ul>
@@ -2325,14 +2469,21 @@ Check the list for who edited last before you overwrite.</blockquote>
 <table><tr><th>المخرَج</th><th>لمين</th></tr>
 <tr><td><b>صورة الرسمة</b></td><td>المبيعات — ورقة كاملة باسم المشروع والشركة ورقم AUX
 والتاريخ والشعار والرسمة ومفتاح الرموز والأعداد. تتبعت مع عرض السعر.</td></tr>
-<tr><td><b>ملف الطباعة</b></td><td>مجموعة أوراق: الرسمة، الأعداد، جدول التركيب، قائمة التوريد.
-من نافذة الطباعة اختار <i>حفظ كملف</i>.</td></tr>
-<tr><td><b>جدول التركيب</b></td><td>الأوبريشن — كل جهاز وبعده س/ص بالمتر من ركن الغرفة، وخانات
-فاضية للرقم التسلسلي والتوقيع.</td></tr>
-<tr><td><b>قائمة التوريد</b></td><td>المخزن — الأجهزة والمستلزمات بنسبة الاحتياطي محسوبة.</td></tr>
+<tr><td><b>ملف PDF</b></td><td>نفس الورقة بالظبط في ملف <code>.pdf</code> جاهز للطباعة أو
+الإرسال، وبينزل على طول من غير ما تعدّي على نافذة الطباعة.</td></tr>
+<tr><td><b>جدول الأعداد</b></td><td>ملف جدول: كل غرفة بمساحتها وعدد حساساتها وجيت واي
+وأبعد حساس، وتحته الإجمالي وقائمة التوريد بنسبة الاحتياطي.</td></tr>
 <tr><td><b>ملخص المبيعات</b></td><td>بيتنسخ نص جاهز تلزقه في رسالة.</td></tr>
 <tr><td><b>نسخة العميل</b></td><td>علّم عليها عشان تخفي دوائر التغطية وخطوط الوصل ويطلع رسم
 أنضف للعميل.</td></tr></table>
+
+<p><b>المخرَج بيرجع يتفتح ويتعدّل.</b> الصورة وملف <code>.pdf</code> جوّاهم المشروع كله متخزّن —
+الرسمة والغرف والتوزيع والمعايير واللغة. نزّل الملف وابعته عادي، ولما تحب تعدّل بعد شهر دوس
+<b>افتح مخرَج للتعديل</b> وارفع نفس الملف: بيرجع مفتوح زي ما سبته بالظبط، تعدّل وتنزّله تاني.
+وتقدر تسحب الملف على الرسمة على طول. وزر <b>فتح</b> فوق بيقبل الاتنين وملف
+<code>.json</code> كمان.</p>
+<p><b>خد بالك:</b> لو الصورة عدّت على واتساب أو أي حاجة بتعيد ضغط الصور، البيانات اللي جوّاها
+بتضيع وتفضل صورة عادية. ابعتها <b>كمرفق</b>. وملف <code>.pdf</code> مبيتأثرش بده.</p>
 
 <h3>١٢. الحفظ والمشاركة</h3>
 <ul>
@@ -2495,7 +2646,8 @@ document.querySelectorAll("#segMode button").forEach(b=>{b.onclick=()=>{
 document.getElementById("btnChoose").onclick=()=>fileImg.click();
 document.getElementById("fileImg").onchange=e=>{if(e.target.files[0])readImage(e.target.files[0]);};
 document.getElementById("btnOpen").onclick=()=>fileProj.click();
-document.getElementById("fileProj").onchange=e=>{if(e.target.files[0])readProject(e.target.files[0]);};
+document.getElementById("fileProj").onchange=e=>{if(e.target.files[0])readOutput(e.target.files[0]);e.target.value="";};
+document.getElementById("btnReopen").onclick=()=>fileProj.click();
 document.getElementById("btnSave").onclick=saveProject;
 document.getElementById("btnNew").onclick=()=>{
   if(!confirm(t("cNew")))return;
@@ -2572,10 +2724,6 @@ document.getElementById("btnCsvCount").onclick=()=>{
   r.push([t("thTotal"),m1(tt.area),tt.sensors,tt.gates,""]);r.push([]);
   supply().forEach(i=>r.push([i.n,i.q]));
   csv(r,(P.name||t("fileProj"))+"-"+t("fileCounts")+".csv");};
-document.getElementById("btnCsvInst").onclick=()=>{
-  const r=[[t("thRoom"),t("thCode"),t("thType"),t("thX"),t("thY"),t("thSerial"),t("thDone")]];
-  instRows().forEach(o=>r.push([o.zone,o.code,o.kind,m1(o.x),m1(o.y),"",""]));
-  csv(r,(P.name||t("fileProj"))+"-"+t("fileInst")+".csv");};
 document.getElementById("btnCopy").onclick=()=>{
   syncCfg();const tt=projTot();
   let s=t("sumProj")+": "+(P.name||"—")+"\n";
@@ -2592,51 +2740,13 @@ document.getElementById("btnCopy").onclick=()=>{
     try{document.execCommand("copy");done();}catch(e){alert(s);}document.body.removeChild(ta);};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(done,fb);else fb();};
 document.getElementById("btnPdf").onclick=()=>{
-  syncCfg();
-  const q=pl(),tt=projTot();
-  const dev=P.cfg.sensor==="tg08"?"TZone TG08":t("optOther");
-  const gwt=P.cfg.gw==="gsm"?t("optGsm"):t("optWifi");
-  const lg=LOGO_URL?'<img src="'+LOGO_URL+'" style="height:30px">'
-    :'<b style="font-size:19px;letter-spacing:.6px">'+BRAND.mark+'</b>';
-  const head=(sub)=>'<div class="ttl"><div style="display:flex;align-items:center;gap:10px">'+lg+
-    '<h2>'+esc(P.name||t("prTitle"))+'</h2></div>'+
-    '<div class="rt">'+esc(sub)+'<br>'+esc(P.client||"")+
-    (P.ref?" · AUX "+esc(P.ref):"")+'<br>'+today()+' · v'+VERSION+'</div></div>';
-  let html="";
-  if(opDraw.checked){const c=exportCanvas(q,2400,{clean:opCust.checked});
-    if(c)html+='<div class="sheet">'+head(t("prTitle"))+'<img class="plan" src="'+c.toDataURL("image/png")+'">'+
-      '<div class="crit"><span><i style="background:#e02b2b"></i>'+t("sensor")+' ('+ar(tt.sensors)+')</span>'+
-      '<span><i style="background:#1f63d6;border-radius:2px"></i>'+t("gateway")+' ('+ar(tt.gates)+')</span>'+
-      '<span><i style="background:#f5a300"></i>'+t("powerNote")+'</span>'+
-      '<span>'+dev+'</span><span>'+t("cCov",ar(P.cfg.cov))+'</span>'+
-      '<span>'+gwt+' · '+t("cRange",ar(P.cfg.gwRange))+'</span>'+
-      '<span>'+gwModeLabel()+'</span></div></div>';}
-  if(opCount.checked){
-    let rows="";
-    q.zones.forEach(z=>{const st=zoneStat(q,z);
-      rows+='<tr><td>'+esc(z.name)+'</td><td>'+ar(m1(st.a))+'</td><td>'+ar(st.n)+
-        '</td><td>'+ar(st.g)+'</td><td>'+ar(m1(st.far))+'</td></tr>';});
-    html+='<div class="sheet">'+head(t("prCounts"))+
-      '<table><thead><tr><th>'+t("thRoom")+'</th><th>'+t("thArea")+'</th><th>'+t("thSensors")+
-      '</th><th>'+t("thGw")+'</th><th>'+t("thFar")+'</th></tr></thead><tbody>'+rows+
-      '</tbody><tfoot><tr><th>'+t("thTotal")+'</th><th>'+ar(m1(tt.area))+'</th><th>'+ar(tt.sensors)+
-      '</th><th>'+ar(tt.gates)+'</th><th>—</th></tr></tfoot></table></div>';}
-  if(opInst.checked){
-    const rows=instRows().map(o=>'<tr><td>'+esc(o.zone)+'</td><td>'+o.code+'</td><td>'+o.kind+
-      '</td><td>'+ar(m1(o.x))+'</td><td>'+ar(m1(o.y))+'</td><td></td><td></td></tr>').join("");
-    html+='<div class="sheet">'+head(t("prInst"))+
-      '<table><thead><tr><th>'+t("thRoom")+'</th><th>'+t("thCode")+'</th><th>'+t("thType")+'</th><th>'+
-      t("thX")+'</th><th>'+t("thY")+'</th><th>'+t("thSerial")+'</th><th>'+t("thDone")+'</th></tr></thead>'+
-      '<tbody>'+rows+'</tbody></table>'+
-      '<div class="sign"><div>'+t("prTech")+'</div><div>'+t("prEng")+'</div><div>'+t("prDate")+'</div></div></div>';}
-  if(opSup.checked){
-    html+='<div class="sheet">'+head(t("prSup"))+
-      '<table><thead><tr><th>'+t("thItem")+'</th><th>'+t("thQty")+'</th><th>'+t("thRecv")+'</th></tr></thead><tbody>'+
-      supply().map(i=>'<tr><td>'+i.n+'</td><td>'+ar(i.q)+'</td><td></td></tr>').join("")+
-      '</tbody></table><div class="sign"><div>'+t("prStore")+'</div><div>'+t("prRecv")+'</div><div>'+t("prDate")+'</div></div></div>';}
-  if(!html){alert(t("aSheet"));return;}
-  document.getElementById("print").innerHTML=html;
-  setTimeout(()=>window.print(),150);};
+  const q=pl(),c=exportSheet(q,2400,opCust.checked);
+  if(!c){alert(t("aNoPlan"));return;}
+  toast(t("tPdfWait"));
+  setTimeout(()=>{try{
+    const nm=(P.name||t("filePlan"))+(P.ref?" - "+P.ref:"");
+    dlBlob(new Blob([buildPdf(c,nm,prjB64())],{type:"application/pdf"}),nm+".pdf");
+  }catch(e){alert(t("aFile"));}},40);};
 
 applyTheme();applyLang();loadCfg();resize();refresh();offerRestore();
 cv.style.cursor="default";
