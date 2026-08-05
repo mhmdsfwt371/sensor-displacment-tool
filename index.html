@@ -38,24 +38,24 @@ input,textarea{-webkit-user-select:text;user-select:text}
   .stage{order:1}
   input[type=text],input[type=number],select,textarea{font-size:16px}
   button{min-height:38px}
-  .tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
-  .tools::-webkit-scrollbar{display:none}
   .tools button{flex:0 0 auto;padding:10px 13px}
   .tools .sep{flex:0 0 1px}
 }
 .side{background:var(--panel);border-inline-start:1px solid var(--line);overflow-y:auto;padding:0 0 70px}
-.brand{padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5;
-  display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
-.brand::-webkit-scrollbar{display:none}
-.brand>*{flex:0 0 auto}
-.brand h1{margin:0;font-size:14.5px;flex:1 1 auto;min-width:44px;
+.brand{padding:13px 15px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;
+  background:var(--panel);z-index:5;display:flex;flex-direction:column;gap:9px}
+.brand .r1{display:flex;align-items:center;gap:7px;min-width:0}
+.brand .r1>*{flex:0 0 auto}
+.brand .r2{display:flex;gap:7px}
+.brand .r2 button{flex:1 1 0;padding:8px 6px;font-size:12.5px}
+.brand h1{margin:0;font-size:16px;flex:1 1 auto;min-width:52px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.brand button{padding:5px 8px;font-size:11.5px;white-space:nowrap}
-#btnManual,#btnTheme{border-radius:50%;width:25px;height:25px;padding:0;font-weight:700;
+.brand button{padding:6px 10px;font-size:12.5px;white-space:nowrap}
+#btnManual,#btnTheme{border-radius:50%;width:28px;height:28px;padding:0;font-weight:700;
   border-color:var(--line);color:var(--muted)}
 #btnManual:hover,#btnTheme:hover{color:var(--zone);border-color:var(--zone)}
 #btnInstall{border-color:var(--ok);color:var(--ok)}
-#btnLang{border-color:var(--zone);color:var(--zone);font-weight:700;letter-spacing:.4px}
+#btnLang{border-color:var(--zone);color:var(--zone)}
 .step{border-bottom:1px solid var(--line)}
 .step > summary{list-style:none;cursor:pointer;padding:13px 18px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:14.5px}
 .step > summary::-webkit-details-marker{display:none}
@@ -130,18 +130,21 @@ tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:none}
 .issue b{flex:0 0 auto}
 .stage{position:relative;background:var(--stage);overflow:hidden}
 canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
-.tools{position:absolute;top:10px;inset-inline-start:10px;display:flex;gap:3px;flex-wrap:nowrap;
-  background:var(--glass);border:1px solid var(--line);border-radius:11px;padding:5px;
-  backdrop-filter:blur(6px);max-width:calc(100% - 20px);overflow-x:auto;scrollbar-width:none}
-.tools::-webkit-scrollbar{display:none}
-.tools>*{flex:0 0 auto}
-.tools button{padding:7px 8px;font-size:12.5px;border-color:transparent;background:transparent;
+.tools{position:absolute;top:10px;inset-inline-start:10px;display:flex;flex-direction:column;
+  background:var(--glass);border:1px solid var(--line);border-radius:12px;
+  backdrop-filter:blur(6px);max-width:calc(100% - 20px);overflow:hidden}
+.trow{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;padding:6px 8px;
+  overflow-x:auto;scrollbar-width:none}
+.trow::-webkit-scrollbar{display:none}
+.trow>*{flex:0 0 auto}
+.trow+.trow{border-top:1px solid var(--line)}
+.tools button{padding:8px 11px;font-size:13px;border-color:transparent;background:transparent;
   white-space:nowrap}
 .tools button.on{background:var(--panel-2);border-color:var(--line);font-weight:700}
-.tools .sep{width:1px;background:var(--line);margin:4px 1px}
-.kindsel{display:flex;gap:2px;align-items:center;background:var(--field);
-  border:1px solid var(--line);border-radius:9px;padding:2px;margin:0 2px;flex:0 0 auto}
-.kindsel button{padding:5px 8px;font-size:12px;border:1px solid transparent;
+.tools .sep{width:1px;background:var(--line);margin:3px 2px;align-self:stretch}
+.kindsel{display:flex;gap:3px;align-items:center;background:var(--field);
+  border:1px solid var(--line);border-radius:9px;padding:3px;margin:0 3px;flex:0 0 auto}
+.kindsel button{padding:6px 10px;font-size:12.5px;border:1px solid transparent;
   border-radius:7px;background:transparent;color:var(--muted)}
 .kindsel button.on{font-weight:700;color:#fff}
 .kindsel button[data-k="room"].on{background:#3b6fd4;border-color:#3b6fd4}
@@ -262,17 +265,21 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 <div class="app">
   <aside class="side">
     <div class="brand">
-      <h1 data-i="appTitle">ملف المشروع</h1>
-      <span id="verChip"></span>
-      <span id="userChip"></span>
-      <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
-      <button id="btnLang">English</button>
-      <button id="btnTheme" title="الثيم">◐</button>
-      <button id="btnInstall" data-i="bInstall" style="display:none">تثبيت</button>
-      <button id="btnManual" title="دليل">؟</button>
-      <button id="btnNew" data-i="bNew">جديد</button>
-      <button id="btnSave" data-i="save">حفظ</button>
-      <button id="btnOpen" data-i="open">فتح</button>
+      <div class="r1">
+        <h1 data-i="appTitle">ملف المشروع</h1>
+        <span id="verChip"></span>
+        <span id="userChip"></span>
+        <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
+        <button id="btnInstall" data-i="bInstall" style="display:none">تثبيت</button>
+        <button id="btnLang">English</button>
+        <button id="btnTheme" title="الثيم">◐</button>
+        <button id="btnManual" title="دليل">؟</button>
+      </div>
+      <div class="r2">
+        <button id="btnNew" data-i="bNew">جديد</button>
+        <button id="btnSave" data-i="save">حفظ</button>
+        <button id="btnOpen" data-i="open">فتح</button>
+      </div>
       <input type="file" id="fileProj" accept=".json,.png,.jpg,.jpeg,.pdf" style="display:none">
     </div>
 
@@ -439,29 +446,33 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
   <main class="stage">
     <canvas id="cv"></canvas>
     <div class="tools">
-      <button data-t="pan" data-i="tPan">تحريك</button>
-      <button data-t="edit" class="on" data-i="tEdit">تعديل</button>
-      <button data-t="cal" data-i="tCal">معايرة</button>
-      <span class="sep"></span>
-      <button data-t="poly" data-i="tPoly">مضلع</button>
-      <button data-t="rect" data-i="tRect">مستطيل</button>
-      <button data-t="wand" data-i="tWand">غرفة بضغطة</button>
-      <span class="kindsel" id="segKind">
-        <button data-k="room" class="on" data-i="kd_room">غرفة</button>
-        <button data-k="corr" data-i="kd_corr">ممر</button>
-        <button data-k="fridge" data-i="kd_fridge">ثلاجة</button>
-      </span>
-      <button data-t="wall" data-i="tWall">حائط</button>
-      <button data-t="door" data-i="tDoor">باب</button>
-      <span class="sep"></span>
-      <button data-t="sensor" data-i="tSensor">حساس</button>
-      <button data-t="gate" data-i="tGate">جيت واي</button>
-      <span class="sep"></span>
-      <button id="btnUndo" data-i="tUndo">تراجع</button>
-      <button id="btnCover" class="on" data-i="tCover">التغطية</button>
-      <button id="btnRange" class="on" data-i="tRange">مدى الجيت واي</button>
-      <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
-      <button id="btnFit" data-i="tFit">ضبط</button>
+      <div class="trow">
+        <button data-t="pan" data-i="tPan">تحريك</button>
+        <button data-t="edit" class="on" data-i="tEdit">تعديل</button>
+        <button data-t="cal" data-i="tCal">معايرة</button>
+        <span class="sep"></span>
+        <button data-t="poly" data-i="tPoly">مضلع</button>
+        <button data-t="rect" data-i="tRect">مستطيل</button>
+        <button data-t="wand" data-i="tWand">غرفة بضغطة</button>
+        <span class="kindsel" id="segKind">
+          <button data-k="room" class="on" data-i="kd_room">غرفة</button>
+          <button data-k="corr" data-i="kd_corr">ممر</button>
+          <button data-k="fridge" data-i="kd_fridge">ثلاجة</button>
+        </span>
+      </div>
+      <div class="trow">
+        <button data-t="wall" data-i="tWall">حائط</button>
+        <button data-t="door" data-i="tDoor">باب</button>
+        <span class="sep"></span>
+        <button data-t="sensor" data-i="tSensor">حساس</button>
+        <button data-t="gate" data-i="tGate">جيت واي</button>
+        <span class="sep"></span>
+        <button id="btnUndo" data-i="tUndo">تراجع</button>
+        <button id="btnCover" class="on" data-i="tCover">التغطية</button>
+        <button id="btnRange" class="on" data-i="tRange">مدى الجيت واي</button>
+        <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
+        <button id="btnFit" data-i="tFit">ضبط</button>
+      </div>
     </div>
     <div class="histbar">
       <button id="fbUndo" title="تراجع">↶</button>
@@ -502,7 +513,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
 
 <script>
 "use strict";
-const VERSION="2.2";
+const VERSION="2.3";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -521,7 +532,7 @@ const ALLOW_OFFLINE=true;   // خلّيها false لو عايز الدخول إ�
 let L="ar";
 const DICT={
 ar:{
-appTitle:"ملف المشروع",save:"حفظ",open:"فتح",langBtn:"EN",langTip:"English",
+appTitle:"ملف المشروع",save:"حفظ",open:"فتح",langBtn:"English",langTip:"English",
 s1:"بيانات المشروع",fName:"اسم المشروع",phName:"مخازن النور",fAux:"رقم AUX",phAux:"AUX-1024",
 fClient:"اسم الشركة (العميل / الجهة)",phClient:"شركة النور للأدوية",
 hSave:"زر <b>حفظ</b> فوق بينزّل ملف المشروع كامل بالرسمة والتوزيع — تفتحه تاني أو تبعته لزميلك ويكمّل عليه.",
@@ -552,7 +563,7 @@ s6:"فحص قبل التسليم",s7:"المخرجات",fSheets:"الأوراق 
 opDraw:"رسمة التوزيع",opCount:"جدول الأعداد",opInst:"جدول التركيب للفنيين",opSup:"قائمة التوريد للمخزن",
 opCust:"نسخة العميل — من غير دوائر التغطية والوصلات",bPdf:"PDF",
 bReopen:"افتح مخرَج للتعديل",fTable:"جدول الأعداد",
-hOut:"الصورة و<b>PDF</b> جوّاهم المشروع كله. نزّلهم وابعتهم عادي، ولما تحب تعدّل ارفع نفس الملف تاني من زر <b>افتح مخرَج للتعديل</b> — هيرجع مفتوح زي ما سبته.",
+hOut:"الصورة و<b>PDF</b> جوّاهم المشروع كله. نزّلهم وابعتهم عادي، ولما تحب تعدّل ارفع <b>نفس الملف</b> من زر «افتح مخرَج للتعديل» — بيقبل <code>png</code> و<code>jpg</code> و<code>pdf</code> وملف المشروع <code>json</code>.",
 aNoPrj:"الملف ده مفيهوش مشروع محفوظ — لازم يكون صورة أو PDF طالعين من الأداة",
 tPdfWait:"بيجهّز الملف…",
 hPdf:"من نافذة الطباعة اختار <b>حفظ كملف</b> بدل الطابعة.",
@@ -619,7 +630,7 @@ aTooBig:"الملف كبير على السحابة — استعمل «تحويل
 aNoCloud:"السحابة مش متظبطة"
 },
 en:{
-appTitle:"Project File",save:"Save",open:"Open",langBtn:"AR",langTip:"العربية",
+appTitle:"Project File",save:"Save",open:"Open",langBtn:"العربية",langTip:"العربية",
 s1:"Project Details",fName:"Project Name",phName:"Al Nour Stores",fAux:"AUX Number",phAux:"AUX-1024",
 fClient:"Company (Client / Entity)",phClient:"Al Nour Pharma",
 hSave:"<b>Save</b> downloads the whole project — drawing, rooms and layout. Reopen it later or send it to a colleague to continue.",
@@ -650,7 +661,7 @@ s6:"Pre-Handover Check",s7:"Outputs",fSheets:"Sheets to include",
 opDraw:"Layout drawing",opCount:"Counts table",opInst:"Installation schedule",opSup:"Supply list",
 opCust:"Client version — no coverage circles or links",bPdf:"PDF",
 bReopen:"Open an output to edit",fTable:"Counts table",
-hOut:"The image and the <b>PDF</b> carry the whole project inside them. Download and send them as usual — to edit later, load the same file back with <b>Open an output to edit</b> and it reopens exactly as you left it.",
+hOut:"The image and the <b>PDF</b> carry the whole project inside them. Download and send them as usual — to edit later, load <b>the same file</b> back with “Open an output to edit”: it accepts <code>png</code>, <code>jpg</code>, <code>pdf</code> and the <code>json</code> project file.",
 aNoPrj:"This file has no project inside it — it must be an image or PDF produced by this tool",
 tPdfWait:"Building the file…",
 hPdf:"In the print dialog choose <b>Save as file</b> instead of a printer.",
