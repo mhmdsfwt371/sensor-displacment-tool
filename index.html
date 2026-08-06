@@ -32,11 +32,33 @@ body{background:var(--ink);color:var(--text);-webkit-user-select:none;user-selec
   font-family:"Segoe UI","Noto Sans Arabic","Dubai",Tahoma,Arial,sans-serif;font-size:15px;overflow:hidden}
 input,textarea{-webkit-user-select:text;user-select:text}
 .app{display:grid;grid-template-columns:425px 1fr;height:100%}
+.mapbar,.mapfab{display:none}
 @media (max-width:900px){
-  .app{grid-template-columns:1fr;grid-template-rows:56vh 1fr}
-  .side{order:2;border-inline-start:none;border-top:1px solid var(--line);
-    padding-bottom:calc(70px + env(safe-area-inset-bottom))}
-  .stage{order:1}
+  /* الموبايل: القايمة بتاخد الشاشة كلها، والرسمة بتفتح فوقها كصفحة كاملة */
+  .app{grid-template-columns:1fr;grid-template-rows:1fr}
+  .side{order:1;border-inline-start:none;height:100%;
+    padding-bottom:calc(104px + env(safe-area-inset-bottom))}
+  .stage{position:fixed;inset:0;z-index:60;transform:translateY(101%);
+    transition:transform .30s cubic-bezier(.32,.72,0,1);
+    box-shadow:0 -12px 40px rgba(0,0,0,.55);border:none}
+  .stage.on{transform:translateY(0)}
+
+  .mapbar{display:flex;align-items:center;gap:10px;order:-2;flex:0 0 auto;
+    padding:calc(8px + env(safe-area-inset-top)) 14px 8px;
+    background:var(--panel);border-bottom:1px solid var(--line)}
+  .mapbar b{flex:1 1 auto;font-size:14px;font-weight:700}
+  .mapbar #mapMeta{font-size:11.5px;color:var(--muted)}
+  .mapbar #mapClose{width:34px;height:34px;min-height:34px;padding:0;border-radius:50%;
+    font-size:17px;line-height:1;border-color:var(--line);color:var(--muted)}
+
+  .mapfab{display:inline-flex;align-items:center;gap:9px;position:fixed;z-index:55;
+    bottom:calc(16px + env(safe-area-inset-bottom));inset-inline-start:50%;
+    transform:translateX(50%);min-height:0;
+    background:var(--zone);color:#fff;border:none;border-radius:999px;
+    padding:13px 26px;font-size:14.5px;font-weight:700;white-space:nowrap;
+    box-shadow:0 10px 28px rgba(0,0,0,.5)}
+  .mapfab em{font-style:normal;font-weight:600;opacity:.85;font-size:12.5px}
+  body.mapopen .mapfab{opacity:0;pointer-events:none}
   input[type=text],input[type=number],select,textarea{font-size:16px}
   button{min-height:36px}
 
@@ -53,7 +75,8 @@ input,textarea{-webkit-user-select:text;user-select:text}
   .kindsel button{padding:6px 8px;font-size:11.5px;min-height:29px}
 
   /* العناصر العايمة فوق الرسمة أصغر عشان متاكلش الشاشة الصغيرة */
-  .histbar{bottom:46px}
+  .histbar{bottom:calc(46px + env(safe-area-inset-bottom))}
+  .legend,.badge{bottom:calc(10px + env(safe-area-inset-bottom))}
   .histbar button{padding:7px 10px;font-size:14px;min-width:38px;min-height:34px}
   .legend{font-size:11px;padding:6px 9px;gap:9px}
   .badge{font-size:11px;padding:6px 9px}
@@ -485,6 +508,11 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   </aside>
 
   <main class="stage">
+    <div class="mapbar">
+      <button id="mapClose" aria-label="close">▾</button>
+      <b data-i="s2">الرسمة</b>
+      <span id="mapMeta"></span>
+    </div>
     <canvas id="cv"></canvas>
     <div class="tools">
       <div class="trow">
@@ -533,6 +561,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
       <span><i style="background:#f5a300"></i><span data-i="lgPower">كهرباء</span></span>
     </div>
   </main>
+  <button class="mapfab" id="mapFab"><span data-i="bOpenMap">افتح الرسمة</span><em id="fabMeta"></em></button>
 </div>
 <div id="print"></div>
 
@@ -554,7 +583,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="3.3";
+const VERSION="3.4";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -592,7 +621,7 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sLog:"سجل النشاط",thTime:"الوقت",thAction:"الحدث",thDetail:"التفاصيل",cfmLogClr:"هتفضّي السجل كله. تمام؟",bLogCsv:"تحميل السجل",bLogClr:"تفريغ السجل",logEmpty:"مفيش نشاط لسه",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sLog:"سجل النشاط",bOpenMap:"افتح الرسمة",fabEmpty:"لسه فاضية",thTime:"الوقت",thAction:"الحدث",thDetail:"التفاصيل",cfmLogClr:"هتفضّي السجل كله. تمام؟",bLogCsv:"تحميل السجل",bLogClr:"تفريغ السجل",logEmpty:"مفيش نشاط لسه",
 hLog:"كل حاجة بتعملها بتتسجّل هنا بوقتها. السجل بيتحفظ جوّه المشروع نفسه — يعني بيمشي مع ملف الحفظ ومع الصورة و<b>PDF</b>، وأي حد يفتح المخرَج يشوف اتعمل فيه إيه وإمتى.",
 evNew:"مشروع جديد",evOpen:"فتح مشروع",evSave:"حفظ مشروع",evRestore:"استرجاع شغل",
 evRun:"توزيع تلقائي",evCount:"تعديل عدد غرفة",evKind:"تغيير نوع منطقة",evAuto:"رجوع للتلقائي",
@@ -700,7 +729,7 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sLog:"Activity log",thTime:"Time",thAction:"Event",thDetail:"Details",cfmLogClr:"This clears the whole log. Continue?",bLogCsv:"Download log",bLogClr:"Clear log",logEmpty:"No activity yet",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sLog:"Activity log",bOpenMap:"Open drawing",fabEmpty:"still empty",thTime:"Time",thAction:"Event",thDetail:"Details",cfmLogClr:"This clears the whole log. Continue?",bLogCsv:"Download log",bLogClr:"Clear log",logEmpty:"No activity yet",
 hLog:"Everything you do is recorded here with its timestamp. The log is stored inside the project itself — it travels with the save file, the image and the <b>PDF</b>, so anyone opening an output can see what was done and when.",
 evNew:"New project",evOpen:"Open project",evSave:"Save project",evRestore:"Restore work",
 evRun:"Auto distribution",evCount:"Room count changed",evKind:"Zone type changed",evAuto:"Back to auto",
@@ -1648,7 +1677,8 @@ function autoAll(){
   const q=pl();
   if(!IMG[q.id]&&!q.zones.length){alert(t("aStart"));return;}
   const finish=()=>{syncCfg();snap();
-    if(runPlan(q,true)){refresh();toast(t("tDone",ar(q.sensors.length),ar(q.gateways.length)));}
+    if(runPlan(q,true)){refresh();openMap(true);
+      toast(t("tDone",ar(q.sensors.length),ar(q.gateways.length)));}
     else{refresh();toast(t("tNeedZones"));}};
   const go=()=>{if(!q.zones.length&&IMG[q.id])autoRooms(finish);else finish();};
   if(q.scale>0)go();else askScaleQuick(go);}
@@ -2064,7 +2094,7 @@ function issues(){
 /* ================= الواجهة ================= */
 function refresh(){renumber();renderZones();renderResults();renderIssues();render();
   fbUndo.disabled=!U.undo.length;fbRedo.disabled=!U.redo.length;
-  btnUndo.disabled=!U.undo.length;}
+  btnUndo.disabled=!U.undo.length;syncMap();}
 function renderZones(){
   const q=pl();
   pillZones.textContent=ar(q.zones.length);
@@ -2809,6 +2839,25 @@ document.getElementById("gOffline").onclick=()=>gate.classList.remove("on");
 document.getElementById("btnLogout").onclick=async()=>{if(FBX)await FBX.b.signOut(FBX.auth);};
 document.getElementById("btnCloudSave").onclick=cloudSave;
 document.getElementById("btnCloudList").onclick=cloudList;
+/* ===== وضع الرسمة على الموبايل: صفحة كاملة بتفتح وتتقفل ===== */
+const STAGE=document.querySelector(".stage");
+const isPhone=()=>window.matchMedia("(max-width:900px)").matches;
+function openMap(v){
+  if(!isPhone())return;
+  STAGE.classList.toggle("on",v);
+  document.body.classList.toggle("mapopen",v);
+  if(v)setTimeout(()=>{resize();refresh();},70);}
+function mapMetaTxt(){
+  const q=pl();if(!q)return t("fabEmpty");
+  const tt=planTot(q);
+  if(!q.zones.length&&!q.sensors.length)return t("fabEmpty");
+  return ar(q.zones.length)+" · "+t("kySensors")+" "+ar(tt.sensors)+" · "+t("kyGates")+" "+ar(tt.gates);}
+function syncMap(){const x=mapMetaTxt();fabMeta.textContent=x;mapMeta.textContent=x;}
+mapFab.onclick=()=>openMap(true);
+mapClose.onclick=()=>openMap(false);
+window.addEventListener("keydown",e=>{if(e.key==="Escape")openMap(false);});
+window.addEventListener("resize",()=>{if(!isPhone())openMap(false);});
+
 document.getElementById("btnLang").onclick=()=>{syncCfg();LOG("evLang",L==="ar"?"EN":"AR");L=L==="ar"?"en":"ar";P.lang=L;applyLang();};
 document.querySelectorAll(".tools [data-t]").forEach(b=>{b.onclick=()=>{
   document.querySelectorAll(".tools [data-t]").forEach(x=>x.classList.remove("on"));
@@ -2835,7 +2884,7 @@ document.getElementById("btnNew").onclick=()=>{
   try{localStorage.removeItem(AS_KEY);}catch(e){}
   txtPlan.value="";descSum.style.display="none";
   applyProject(newProject());};
-document.getElementById("btnAll").onclick=autoAll;
+document.getElementById("btnAll").onclick=()=>{LOG("evRun",t("runAll"));autoAll();};
 document.getElementById("btnAuto").onclick=()=>autoRooms();
 document.getElementById("btnTo2D").onclick=()=>{wait.classList.add("on");
   setTimeout(()=>{try{to2D(+rngStr.value||8);}catch(e){alert(t("aBig"));}
@@ -2859,7 +2908,7 @@ document.getElementById("btnAddRoom").onclick=()=>{
 document.getElementById("btnRun").onclick=()=>{syncCfg();logNext("evRun","");snap();
   if(runPlan(pl())){const q=pl(),tt=planTot(q);
     LOG("evRun",t("kySensors")+" "+ar(tt.sensors)+" · "+t("kyGates")+" "+ar(tt.gates)+" · "+ar(q.zones.length)+" "+t("s3"));
-    refresh();}};
+    refresh();openMap(true);}};
 document.getElementById("btnClear").onclick=()=>{snap();pl().sensors=[];pl().gateways=[];refresh();};
 document.getElementById("btnUndo").onclick=undo;
 document.getElementById("fbUndo").onclick=undo;
