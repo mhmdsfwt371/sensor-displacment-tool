@@ -32,7 +32,7 @@ body{background:var(--ink);color:var(--text);-webkit-user-select:none;user-selec
   font-family:"Segoe UI","Noto Sans Arabic","Dubai",Tahoma,Arial,sans-serif;font-size:15px;overflow:hidden}
 input,textarea{-webkit-user-select:text;user-select:text}
 .app{display:grid;grid-template-columns:425px 1fr;height:100%}
-.mapbar,.mapfab{display:none}
+.mapbar,.mapfab,.only-phone{display:none}
 @media (max-width:900px){
   /* الموبايل: القايمة بتاخد الشاشة كلها، والرسمة بتفتح فوقها كصفحة كاملة */
   .app{grid-template-columns:1fr;grid-template-rows:1fr}
@@ -51,12 +51,13 @@ input,textarea{-webkit-user-select:text;user-select:text}
   .mapbar #mapClose{width:34px;height:34px;min-height:34px;padding:0;border-radius:50%;
     font-size:17px;line-height:1;border-color:var(--line);color:var(--muted)}
 
-  .mapfab{display:inline-flex;align-items:center;gap:9px;position:fixed;z-index:55;
-    bottom:calc(16px + env(safe-area-inset-bottom));inset-inline-start:50%;
-    transform:translateX(50%);min-height:0;
+  .mapfab{display:inline-flex;align-items:center;justify-content:center;gap:9px;
+    position:fixed;z-index:80;bottom:calc(14px + env(safe-area-inset-bottom));
+    left:0;right:0;margin-inline:auto;width:max-content;max-width:90vw;min-height:0;
     background:var(--zone);color:#fff;border:none;border-radius:999px;
     padding:13px 26px;font-size:14.5px;font-weight:700;white-space:nowrap;
     box-shadow:0 10px 28px rgba(0,0,0,.5)}
+  .only-phone{display:flex}
   .mapfab em{font-style:normal;font-weight:600;opacity:.85;font-size:12.5px}
   body.mapopen .mapfab{opacity:0;pointer-events:none}
   input[type=text],input[type=number],select,textarea{font-size:16px}
@@ -227,7 +228,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .histbar button{background:var(--glass);border:1px solid var(--line);color:var(--text);
   border-radius:10px;padding:9px 13px;font-size:15px;line-height:1;min-width:44px}
 .histbar button:disabled{opacity:.3;cursor:default}
-.updbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:60;
+.updbar{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:75;
   display:none;align-items:center;gap:10px;background:var(--ok);color:#07140d;
   border-radius:11px;padding:9px 12px;font-size:13px;font-weight:600;
   box-shadow:0 6px 24px rgba(0,0,0,.45);max-width:calc(100% - 24px)}
@@ -257,7 +258,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   padding:1px 7px;font-size:12px}
 .svbody blockquote{margin:10px 0;padding:9px 13px;border-inline-start:3px solid var(--warn);
   background:var(--field);border-radius:0 8px 8px 0;font-size:13px;color:#c8d6e3}
-.gate{position:fixed;inset:0;background:var(--ink);display:none;place-items:center;z-index:50;padding:20px}
+.gate{position:fixed;inset:0;background:var(--ink);display:none;place-items:center;z-index:90;padding:20px}
 .gate.on{display:grid}
 .gate .card{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--line);
   border-radius:14px;padding:22px}
@@ -364,6 +365,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
       <summary><span class="num">٢</span><span data-i="s2">الرسمة</span> <span class="pill" id="pillPlan"></span></summary>
       <div class="body">
         <div class="btns" style="margin-top:4px"><button class="btn-pdf" id="btnAll" data-i="runAll">شغّل كل حاجة</button></div>
+        <div class="btns only-phone" style="margin-top:6px"><button class="btn-line" id="btnMap2" data-i="bOpenMap">افتح الرسمة</button></div>
         <p class="hint" data-i="hRunAll"></p>
         <div class="seg" id="segMode">
           <button data-m="image" class="on" data-i="mImg">صورة</button>
@@ -583,7 +585,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="3.4";
+const VERSION="3.5";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -1503,7 +1505,7 @@ function readOutput(f){
     if(u[0]===0x89&&u[1]===0x50)b=pngGet(u);
     else if(u[0]===0xFF&&u[1]===0xD8)b=jpgGet(u);
     else if(u[0]===0x25&&u[1]===0x50){isPdf=true;b=pdfGet(u);}
-    if(b){openPrj(b);toast(t("tOpened"));return;}
+    if(b){openPrj(b);toast(t("tOpened"));openMap(true);return;}
     if(isPdf){alert(t("aNoPrj"));return;}
     readImage(f);
   }catch(e){alert(t("aFile"));}};
@@ -2197,7 +2199,7 @@ function readImage(f){
     im.onload=()=>{const q=pl();snap();
       q.imgW=im.naturalWidth;q.imgH=im.naturalHeight;q.drawn=false;q.walls=[];q.doors=[];q.clean=null;
       q.imgData=shrink(im,1600);ORIG[q.id]=im;IMG[q.id]=im;delete MASK[q.id];
-      paneClean.style.display="block";fitView();refresh();};
+      paneClean.style.display="block";fitView();refresh();openMap(true);};
     im.src=rd.result;};
   rd.readAsDataURL(f);}
 
@@ -2855,6 +2857,7 @@ function mapMetaTxt(){
 function syncMap(){const x=mapMetaTxt();fabMeta.textContent=x;mapMeta.textContent=x;}
 mapFab.onclick=()=>openMap(true);
 mapClose.onclick=()=>openMap(false);
+document.getElementById("btnMap2").onclick=()=>openMap(true);
 window.addEventListener("keydown",e=>{if(e.key==="Escape")openMap(false);});
 window.addEventListener("resize",()=>{if(!isPhone())openMap(false);});
 
@@ -2988,6 +2991,11 @@ document.getElementById("btnPdf").onclick=()=>{LOG("evExport","PDF");
     dlBlob(new Blob([buildPdf(c,nm,prjB64())],{type:"application/pdf"}),nm+".pdf");
   }catch(e){alert(t("aFile"));}},40);};
 
+["btnDraw","btnSample","btnAddRoom","btnTo2D","btnAuto"].forEach(id=>{
+  const el=document.getElementById(id);if(!el)return;
+  const f=el.onclick;
+  el.onclick=e=>{f&&f(e);
+    const q=pl();if(q.zones.length||q.sensors.length||IMG[q.id])openMap(true);};});
 applyTheme();applyLang();loadCfg();renderLog();resize();refresh();offerRestore();
 cv.style.cursor="default";
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
