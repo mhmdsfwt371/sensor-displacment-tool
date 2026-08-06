@@ -106,6 +106,14 @@ button:active{transform:translateY(1px)}
 .brandlock img{height:30px;max-width:132px;object-fit:contain;background:#fff;border-radius:6px;padding:3px 7px;display:none}
 .brandlock b{display:block;font-size:12.5px;font-weight:600}
 .brandlock em{display:block;font-size:11px;color:var(--muted);font-style:normal;margin-top:2px}
+.loglist{max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;
+  background:var(--field);padding:6px 8px;margin-top:9px;font-size:12px}
+.loglist .row{display:flex;gap:8px;padding:5px 2px;border-bottom:1px dashed var(--line)}
+.loglist .row:last-child{border-bottom:none}
+.loglist time{color:var(--muted);flex:0 0 auto;font-size:11px;min-width:88px}
+.loglist b{font-weight:600;flex:0 0 auto}
+.loglist span{color:var(--muted);flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loglist .none{color:var(--muted);padding:8px 2px}
 .hint{font-size:12px;color:var(--muted);line-height:1.75;margin:9px 0 0;background:var(--field);
   border:1px dashed var(--line);border-radius:8px;padding:9px 11px}
 .hint b{color:var(--text)} .hint code{color:var(--warn);font-family:inherit}
@@ -461,6 +469,19 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
         </div>
       </div>
     </details>
+
+    <details class="step">
+      <summary><span class="num">٨</span><span data-i="sLog">سجل النشاط</span>
+        <span class="pill" id="pillLog">٠</span></summary>
+      <div class="body">
+        <p class="hint" data-i="hLog"></p>
+        <div id="logList" class="loglist"></div>
+        <div class="btns">
+          <button id="btnLogCsv" data-i="bLogCsv">تحميل السجل</button>
+          <button id="btnLogClr" data-i="bLogClr">تفريغ السجل</button>
+        </div>
+      </div>
+    </details>
   </aside>
 
   <main class="stage">
@@ -533,7 +554,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="3.2";
+const VERSION="3.3";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -571,7 +592,13 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",unitM:"متر",unitArea:"إجمالي المساحة",unitSq:"م٢",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sLog:"سجل النشاط",thTime:"الوقت",thAction:"الحدث",thDetail:"التفاصيل",cfmLogClr:"هتفضّي السجل كله. تمام؟",bLogCsv:"تحميل السجل",bLogClr:"تفريغ السجل",logEmpty:"مفيش نشاط لسه",
+hLog:"كل حاجة بتعملها بتتسجّل هنا بوقتها. السجل بيتحفظ جوّه المشروع نفسه — يعني بيمشي مع ملف الحفظ ومع الصورة و<b>PDF</b>، وأي حد يفتح المخرَج يشوف اتعمل فيه إيه وإمتى.",
+evNew:"مشروع جديد",evOpen:"فتح مشروع",evSave:"حفظ مشروع",evRestore:"استرجاع شغل",
+evRun:"توزيع تلقائي",evCount:"تعديل عدد غرفة",evKind:"تغيير نوع منطقة",evAuto:"رجوع للتلقائي",
+evScale:"ضبط المقياس",evExport:"تصدير مخرَج",evCfg:"تعديل المعايير",evPlan:"إدخال رسمة",
+evClear:"مسح التوزيع",evLang:"تبديل اللغة",
+unitM:"متر",unitArea:"إجمالي المساحة",unitSq:"م٢",
 kySensors:"الحساسات",kyGates:"الجيت واي",kyPower:"الكهرباء",
 shMeta:"{0} · تغطية {1} م٢ لكل حساس · جيت واي {2} بمدى {3} م · {4}",
 tRange:"مدى الجيت واي",
@@ -673,7 +700,13 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",unitM:"m",unitArea:"Total area",unitSq:"m²",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sLog:"Activity log",thTime:"Time",thAction:"Event",thDetail:"Details",cfmLogClr:"This clears the whole log. Continue?",bLogCsv:"Download log",bLogClr:"Clear log",logEmpty:"No activity yet",
+hLog:"Everything you do is recorded here with its timestamp. The log is stored inside the project itself — it travels with the save file, the image and the <b>PDF</b>, so anyone opening an output can see what was done and when.",
+evNew:"New project",evOpen:"Open project",evSave:"Save project",evRestore:"Restore work",
+evRun:"Auto distribution",evCount:"Room count changed",evKind:"Zone type changed",evAuto:"Back to auto",
+evScale:"Scale set",evExport:"Output exported",evCfg:"Standards changed",evPlan:"Plan loaded",
+evClear:"Layout cleared",evLang:"Language switched",
+unitM:"m",unitArea:"Total area",unitSq:"m²",
 kySensors:"Sensors",kyGates:"Gateways",kyPower:"Power",
 shMeta:"{0} · {1} m² coverage per sensor · {2} gateway, {3} m range · {4}",
 tRange:"Gateway range",
@@ -801,7 +834,7 @@ let SEQ=1;
 const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
   scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
-function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",
+function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",log:[],
   cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,gwMode:"room",bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
 let P=newProject();
@@ -849,8 +882,32 @@ function stateNow(){const q=pl();
   return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,sc:q.scale});}
 function applyState(s){const o=JSON.parse(s),q=pl();
   q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.scale=o.sc;}
+const LOG_MAX=600;
+let LOG_NEXT=null;
+function LOG(a,d){
+  if(!P.log)P.log=[];
+  const last=P.log[P.log.length-1];
+  /* نفس الحدث المتكرر في أقل من ثانيتين بيتدمج بدل ما يزحم السجل */
+  if(last&&last.a===a&&last.d===(d||"")&&Date.now()-last.t<2000){last.t=Date.now();}
+  else P.log.push({t:Date.now(),a:a,d:d||""});
+  if(P.log.length>LOG_MAX)P.log.splice(0,P.log.length-LOG_MAX);
+  renderLog();}
+function logLabel(a){const v=t(a);return v===a?a:v;}
+function logTime(ms){const d=new Date(ms);
+  const p=n=>ar(String(n).padStart(2,"0"));
+  return ar(d.getFullYear())+"/"+p(d.getMonth()+1)+"/"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());}
+function renderLog(){
+  const L2=(P.log||[]);pillLog.textContent=ar(L2.length);
+  if(!L2.length){logList.innerHTML='<div class="none">'+t("logEmpty")+'</div>';return;}
+  logList.innerHTML=L2.slice().reverse().slice(0,200).map(o=>
+    '<div class="row"><time>'+logTime(o.t)+'</time><b>'+esc(logLabel(o.a))+'</b>'+
+    '<span>'+esc(o.d||"")+'</span></div>').join("");}
 function snap(){U.undo.push(stateNow());if(U.undo.length>40)U.undo.shift();
-  U.redo=[];schedAS();}
+  U.redo=[];schedAS();
+  LOG(LOG_NEXT||("t"+U.tool.charAt(0).toUpperCase()+U.tool.slice(1)),LOG_NEXT?LOG_ARG:"");
+  LOG_NEXT=null;LOG_ARG="";}
+let LOG_ARG="";
+function logNext(a,d){LOG_NEXT=a;LOG_ARG=d||"";}
 function undo(){if(!U.undo.length)return;
   U.redo.push(stateNow());applyState(U.undo.pop());
   U.sel=null;U.drag=null;refresh();schedAS();}
@@ -1870,6 +1927,7 @@ function oneCenter(list,poly){
     const tw=1/(i+2);c={x:c.x+(f.x-c.x)*tw,y:c.y+(f.y-c.y)*tw};}
   return inPoly(c,poly)?c:nearest(samplePoly(poly,4),c);}
 function runPlan(q,silent){
+  const _lg=1;
   if(q.scale<=0){if(!silent)alert(t("aScale"));return false;}
   if(!q.zones.length){if(!silent)alert(t("aZone"));return false;}
   q.sensors=[];
@@ -1921,17 +1979,17 @@ function gwPlan(q){
       un=un.filter(s=>!grp.includes(s));}}}
 function setZoneCount(z,n){
   const q=pl();n=Math.max(0,Math.min(400,n));
-  snap();z.fixed=n;
+  logNext("evCount",z.name+" → "+ar(n));snap();z.fixed=n;
   q.sensors=q.sensors.filter(s=>s.zoneId!==z.id);
   if(n>0)evenPoints(z.pts,n,kidsOf(q,z).map(x=>x.pts))
     .forEach(p=>q.sensors.push({id:SEQ++,x:p.x,y:p.y,zoneId:z.id}));
   gwPlan(q);refresh();}
 function zoneAuto(z){
-  const q=pl();delete z.fixed;
+  const q=pl();LOG("evAuto",z.name);delete z.fixed;
   if(q.scale>0){const st=zoneStat(q,z);
     setZoneCount(z,st.std);delete z.fixed;refresh();}}
 function setKind(z,k){
-  const q=pl();snap();z.kind=k;
+  const q=pl();logNext("evKind",z.name+" → "+t("kd_"+k));snap();z.kind=k;
   z.color=k==="corr"?"#7d8ea0":k==="fridge"?"#00b3c8":ZC[q.zones.indexOf(z)%ZC.length];
   delete z.fixed;
   const st=zoneStat(q,z);
@@ -2057,14 +2115,14 @@ function renderIssues(){
     :'<div class="issue ok"><b>✓</b><span>'+t("okAll")+'</span></div>';}
 
 /* ================= حفظ وفتح ================= */
-function saveProject(){
+function saveProject(){LOG("evSave",P.name||"");
   syncCfg();P.lang=L;P.appV=VERSION;
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(P)],{type:"application/json"}));
   a.download=(P.name||t("fileProj"))+".json";a.click();toast(t("tSaved"));}
 function applyProject(o){
   if(!o||!o.plans)throw 0;
-  P=o;P.cur=0;delete P.brand;
+  P=o;P.cur=0;delete P.brand;P.log=P.log||[];LOG("evOpen",P.name||"");
   for(const k in IMG)delete IMG[k];for(const k in ORIG)delete ORIG[k];for(const k in MASK)delete MASK[k];
   SEQ=1;P.plans.forEach(q=>{SEQ=Math.max(SEQ,q.id+1);
     q.zones.forEach(z=>SEQ=Math.max(SEQ,z.id+1));
@@ -2751,7 +2809,7 @@ document.getElementById("gOffline").onclick=()=>gate.classList.remove("on");
 document.getElementById("btnLogout").onclick=async()=>{if(FBX)await FBX.b.signOut(FBX.auth);};
 document.getElementById("btnCloudSave").onclick=cloudSave;
 document.getElementById("btnCloudList").onclick=cloudList;
-document.getElementById("btnLang").onclick=()=>{syncCfg();L=L==="ar"?"en":"ar";P.lang=L;applyLang();};
+document.getElementById("btnLang").onclick=()=>{syncCfg();LOG("evLang",L==="ar"?"EN":"AR");L=L==="ar"?"en":"ar";P.lang=L;applyLang();};
 document.querySelectorAll(".tools [data-t]").forEach(b=>{b.onclick=()=>{
   document.querySelectorAll(".tools [data-t]").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");U.tool=b.dataset.t;U.draft=[];U.calib=[];U.rectStart=null;
@@ -2798,7 +2856,10 @@ document.getElementById("btnAddRoom").onclick=()=>{
   q.zones.push({id:SEQ++,name:rmName.value.trim()||(t("room")+" "+ar(q.zones.length+1)),
     pts:[{x,y},{x:x+w,y},{x:x+w,y:y+h},{x,y:y+h}],color:ZC[q.zones.length%ZC.length]});
   rmName.value="";fitView();refresh();};
-document.getElementById("btnRun").onclick=()=>{syncCfg();snap();if(runPlan(pl()))refresh();};
+document.getElementById("btnRun").onclick=()=>{syncCfg();logNext("evRun","");snap();
+  if(runPlan(pl())){const q=pl(),tt=planTot(q);
+    LOG("evRun",t("kySensors")+" "+ar(tt.sensors)+" · "+t("kyGates")+" "+ar(tt.gates)+" · "+ar(q.zones.length)+" "+t("s3"));
+    refresh();}};
 document.getElementById("btnClear").onclick=()=>{snap();pl().sensors=[];pl().gateways=[];refresh();};
 document.getElementById("btnUndo").onclick=undo;
 document.getElementById("fbUndo").onclick=undo;
@@ -2832,7 +2893,7 @@ document.getElementById("btnRange").onclick=e=>{U.showRange=!U.showRange;
   e.currentTarget.classList.toggle("on",U.showRange);render();};
 document.getElementById("btnNums").onclick=e=>{U.showNums=!U.showNums;
   e.currentTarget.classList.toggle("on",U.showNums);render();};
-document.getElementById("btnPng").onclick=()=>{const q=pl();
+document.getElementById("btnPng").onclick=()=>{LOG("evExport",t("bPng"));const q=pl();
   const c=exportSheet(q,2000,opCust.checked);
   if(!c){alert(t("aNoPlan"));return;}
   dlCanvas(c,(P.name||t("filePlan"))+(P.ref?" - "+P.ref:""),!!q.imgData);};
@@ -2840,7 +2901,14 @@ function csv(rows,name){
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob(["\uFEFF"+rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));
   a.download=name;a.click();}
-document.getElementById("btnCsvCount").onclick=()=>{
+document.getElementById("btnLogCsv").onclick=()=>{
+  const r=[[t("thTime"),t("thAction"),t("thDetail")]];
+  (P.log||[]).forEach(o=>r.push([logTime(o.t),logLabel(o.a),o.d||""]));
+  csv(r,(P.name||t("fileProj"))+"-"+t("sLog")+".csv");};
+document.getElementById("btnLogClr").onclick=()=>{
+  if(!confirm(t("cfmLogClr")))return;
+  P.log=[];LOG("evNew",t("bLogClr"));};
+document.getElementById("btnCsvCount").onclick=()=>{LOG("evExport",t("fTable"));
   const q=pl(),tt=projTot();
   const r=[[t("thRoom"),t("thArea"),t("thSensors"),t("thGw"),t("thFar")]];
   q.zones.forEach(z=>{const st=zoneStat(q,z);r.push([z.name,m1(st.a),st.n,st.g,m1(st.far)]);});
@@ -2862,7 +2930,7 @@ document.getElementById("btnCopy").onclick=()=>{
     ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();
     try{document.execCommand("copy");done();}catch(e){alert(s);}document.body.removeChild(ta);};
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(done,fb);else fb();};
-document.getElementById("btnPdf").onclick=()=>{
+document.getElementById("btnPdf").onclick=()=>{LOG("evExport","PDF");
   const q=pl(),c=exportSheet(q,2400,opCust.checked);
   if(!c){alert(t("aNoPlan"));return;}
   toast(t("tPdfWait"));
@@ -2871,7 +2939,7 @@ document.getElementById("btnPdf").onclick=()=>{
     dlBlob(new Blob([buildPdf(c,nm,prjB64())],{type:"application/pdf"}),nm+".pdf");
   }catch(e){alert(t("aFile"));}},40);};
 
-applyTheme();applyLang();loadCfg();resize();refresh();offerRestore();
+applyTheme();applyLang();loadCfg();renderLog();resize();refresh();offerRestore();
 cv.style.cursor="default";
 document.getElementById("gOffline").style.display=ALLOW_OFFLINE?"block":"none";
 initFB();
