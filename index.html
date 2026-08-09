@@ -81,6 +81,12 @@ button:active{transform:translateY(1px)}
 .brandlock img{height:30px;max-width:132px;object-fit:contain;background:#fff;border-radius:6px;padding:3px 7px;display:none}
 .brandlock b{display:block;font-size:12.5px;font-weight:600}
 .brandlock em{display:block;font-size:11px;color:var(--muted);font-style:normal;margin-top:2px}
+.v3only{display:none;align-items:center;gap:10px}
+body.view3 .v3only{display:inline-flex}
+body.view3 .trow .sep~*:not(.v3only){opacity:.32;pointer-events:none}
+.v3lab{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin:0}
+.v3lab input[type=range]{width:104px;padding:0}
+.v3lab input[type=number]{width:58px;padding:5px 6px;font-size:12px;text-align:center}
 .hmzones{margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .hmz{border:1px solid var(--line);border-radius:10px;background:var(--field);padding:8px 10px}
 .hmz .top{display:flex;align-items:center;gap:8px}
@@ -554,6 +560,17 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
     <canvas id="cv"></canvas>
     <div class="tools">
       <div class="trow">
+        <span class="kindsel" id="segView">
+          <button data-v="2" class="on">2D</button>
+          <button data-v="3">3D</button>
+        </span>
+        <span class="v3only" id="v3ctl">
+          <label class="v3lab"><span data-i="fRot">دوران</span>
+            <input type="range" id="rngRot" min="0" max="360" value="35"></label>
+          <label class="v3lab"><span data-i="fHgt">الارتفاع</span>
+            <input type="number" id="inH3" min="2" max="20" step="0.5" value="6"> <span data-i="unitM">متر</span></label>
+        </span>
+        <span class="sep"></span>
         <button data-t="pan" data-i="tPan">تحريك</button>
         <button data-t="edit" class="on" data-i="tEdit">تعديل</button>
         <button data-t="cal" data-i="tCal">معايرة</button>
@@ -621,7 +638,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.1";
+const VERSION="4.2";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -659,7 +676,8 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fHgt:"ارتفاع المستودع",
+v3Need:"ارسم الغرف الأول عشان تشوف العرض ثلاثي الأبعاد",evView:"تبديل العرض",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
 bHmHide:"رجّع الألوان العادية",bHmClr:"مسح البيانات",bHmDoc:"تقرير الخريطة الحرارية (Word)",
 hHm:"بعد التركيب، صدّر تقرير القراءات لكل غرفة من المنصة كملف <b>CSV</b> وارفعه هنا. الأداة بتربط كل ملف بالغرفة اللي بنفس الاسم — زي ما إجراءات التركيب عندكم بتسمّي الجهاز على النظام بنفس اسم الملصق. عدّل المدى المسموح لكل غرفة لو مختلف عن الافتراضي.",
 hHmDoc:"التقرير بيطلع بنفس هيكل تقرير آفاقي الرسمي: الغلاف والمراجع والرسمة وجدول النقاط، وصفحة لكل غرفة فيها الملخص وجدول القراءات والرسم البياني، والنتيجة النهائية. بيتفتح في وورد وتكمّل عليه التوقيعات.",
@@ -781,7 +799,8 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fHgt:"Warehouse height",
+v3Need:"Draw the rooms first to see the 3D view",evView:"View switched",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
 bHmHide:"Back to normal colours",bHmClr:"Clear data",bHmDoc:"Heat-map report (Word)",
 hHm:"After installation, export each room's readings report from the platform as <b>CSV</b> and upload it here. The tool links every file to the room with the same name — matching your installation SOP where the device is registered under the label name. Adjust each room's allowed range if it differs from the default.",
 hHmDoc:"The report follows AFAQY's official structure: cover, references, the layout drawing and points table, then a page per room with the summary, full readings table and chart, and the final result. Opens in Word for signatures.",
@@ -930,7 +949,7 @@ const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
   scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
 function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",log:[],
-  cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,gwMode:"room",bat:1,brk:1,psu:1,spare:5,sym:.6},
+  cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,gwMode:"room",h3:6,bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
 let P=newProject();
 const IMG={},ORIG={},MASK={};
@@ -1405,11 +1424,116 @@ function powerIcon(g,x,y,r,k){
   g.lineTo(x+r*.34,y-r*.10);
   g.lineTo(x+r*.02,y-r*.10);
   g.closePath();g.fillStyle="#3d2500";g.fill();}
+/* ================================================================
+   العرض ثلاثي الأبعاد — إسقاط محوري متساوي القياس على نفس الكانفاس
+   مطلوب في اشتراطات الهيئة: مخطط يوضح الطول والعرض والارتفاع
+   ومواقع الحساسات على ارتفاعاتها
+   ================================================================ */
+const V3={on:false,rot:35,tilt:.55,z:1};
+function h3Of(z){const kd=zKind(z);
+  if(z.h3>0)return z.h3;
+  return kd==="fridge"?2.2:kd==="corr"?(P.cfg.h3||6):(P.cfg.h3||6);}
+/* إسقاط نقطة (بالمتر) لشاشة */
+function pr3(x,y,zz,o){
+  const a=V3.rot*Math.PI/180,c=Math.cos(a),si=Math.sin(a);
+  const X=x*c-y*si, Y=(x*si+y*c)*V3.tilt-zz;
+  return {x:o.cx+X*o.s, y:o.cy+Y*o.s};}
+function face(g,pts,fill,stroke,lw){
+  g.beginPath();g.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);
+  g.closePath();
+  if(fill){g.fillStyle=fill;g.fill();}
+  if(stroke){g.strokeStyle=stroke;g.lineWidth=lw||1.2;g.stroke();}}
+
+function paint3D(g,q,o){
+  const sc=q.scale>0?q.scale:30;                 /* بكسل لكل متر في العالم */
+  const m=p=>({x:(p.x-o.ox)/sc, y:(p.y-o.oy)/sc}); /* عالم → متر */
+  const hm=(P.hm&&P.hm.on);
+  /* أرضية شبكية */
+  const b=contentBox(q);
+  if(b){const x0=(b.minX-o.ox)/sc-2,x1=(b.maxX-o.ox)/sc+2,y0=(b.minY-o.oy)/sc-2,y1=(b.maxY-o.oy)/sc+2;
+    g.strokeStyle="rgba(120,150,180,.16)";g.lineWidth=1;
+    for(let x=Math.floor(x0);x<=x1;x+=2){const a=pr3(x,y0,0,o),c=pr3(x,y1,0,o);
+      g.beginPath();g.moveTo(a.x,a.y);g.lineTo(c.x,c.y);g.stroke();}
+    for(let y=Math.floor(y0);y<=y1;y+=2){const a=pr3(x0,y,0,o),c=pr3(x1,y,0,o);
+      g.beginPath();g.moveTo(a.x,a.y);g.lineTo(c.x,c.y);g.stroke();}}
+  /* الغرف من الأبعد للأقرب */
+  const zs=q.zones.map(z=>{const pts=z.pts.map(m);
+      const cy=pts.reduce((a,p)=>a+p.x*Math.sin(V3.rot*Math.PI/180)+p.y*Math.cos(V3.rot*Math.PI/180),0)/pts.length;
+      return {z:z,pts:pts,d:cy};}).sort((a,b)=>a.d-b.d);
+  zs.forEach(it=>{
+    const z=it.z,pts=it.pts,H=h3Of(z),kd=zKind(z);
+    const hx=hm?hmState(z):null;
+    const col=hx?(hx.status==="ok"?"#22a55f":hx.status==="warn"?"#e2a500":"#d92d20")
+      :kd==="fridge"?"#00b3c8":kd==="corr"?"#7d8ea0":(z.color||"#5b93ff");
+    /* أرضية */
+    face(g,pts.map(p=>pr3(p.x,p.y,0,o)),col+"33",col+"88",1.4);
+    /* جدران */
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i],c=pts[(i+1)%pts.length];
+      const mid={x:(a.x+c.x)/2,y:(a.y+c.y)/2};
+      const dep=mid.x*Math.sin(V3.rot*Math.PI/180)+mid.y*Math.cos(V3.rot*Math.PI/180);
+      const front=dep>it.d;
+      face(g,[pr3(a.x,a.y,0,o),pr3(c.x,c.y,0,o),pr3(c.x,c.y,H,o),pr3(a.x,a.y,H,o)],
+        col+(front?"1e":"2e"), col+"66",1);}
+    /* حافة السقف */
+    face(g,pts.map(p=>pr3(p.x,p.y,H,o)),null,col+"aa",1.6);
+    /* الاسم والارتفاع */
+    const cen={x:pts.reduce((a,p)=>a+p.x,0)/pts.length,y:pts.reduce((a,p)=>a+p.y,0)/pts.length};
+    const lp=pr3(cen.x,cen.y,H+.6,o);
+    g.textAlign="center";g.direction=L==="ar"?"rtl":"ltr";
+    g.fillStyle="#dfe9f2";g.font='700 12px "Segoe UI",Tahoma,sans-serif';
+    g.fillText(z.name,lp.x,lp.y);
+    g.fillStyle="#93a7b9";g.font='10.5px "Segoe UI",Tahoma,sans-serif';
+    g.fillText(nice(H)+" "+t("unitM")+(hx?"  ·  "+fmt1(hx.tMin)+"/"+fmt1(hx.tMax)+"°":""),lp.x,lp.y+13);
+    /* الحساسات على ٣ ارتفاعات */
+    q.sensors.filter(sn=>sn.zoneId===z.id).forEach(sn=>{
+      const pmt=m(sn),lv=[[.85,"UP"],[.5,"MID"],[.15,"DOWN"]];
+      const a0=pr3(pmt.x,pmt.y,0,o),a1=pr3(pmt.x,pmt.y,H*.85,o);
+      g.strokeStyle="rgba(224,43,43,.42)";g.lineWidth=1;g.setLineDash([3,3]);
+      g.beginPath();g.moveTo(a0.x,a0.y);g.lineTo(a1.x,a1.y);g.stroke();g.setLineDash([]);
+      lv.forEach(([f,nm])=>{const pp=pr3(pmt.x,pmt.y,H*f,o);
+        g.beginPath();g.arc(pp.x,pp.y,4.2,0,7);g.fillStyle="#e02b2b";g.fill();
+        g.strokeStyle="#fff";g.lineWidth=.9;g.stroke();});
+      g.fillStyle="#f0b6b0";g.font='9px "Segoe UI",Tahoma,sans-serif';g.textAlign="left";
+      g.fillText(sn.code,pr3(pmt.x,pmt.y,H*.85,o).x+7,pr3(pmt.x,pmt.y,H*.85,o).y-4);
+      g.textAlign="center";});
+    /* الجيت واي على الحائط */
+    q.gateways.filter(gw=>gw.zoneId===z.id).forEach(gw=>{
+      const pmt=m(gw),pp=pr3(pmt.x,pmt.y,H*.9,o);
+      g.fillStyle="#1f63d6";g.fillRect(pp.x-5,pp.y-5,10,10);
+      g.strokeStyle="#cfe0ff";g.lineWidth=1;g.strokeRect(pp.x-5,pp.y-5,10,10);});
+  });
+  /* مقياس */
+  const s0=pr3(0,0,0,o),s1=pr3(5,0,0,o);
+  g.strokeStyle="#8ea1b4";g.lineWidth=2;
+  g.beginPath();g.moveTo(s0.x,s0.y+28);g.lineTo(s1.x,s1.y+28);g.stroke();
+  g.fillStyle="#8ea1b4";g.font='10px "Segoe UI",Tahoma,sans-serif';g.textAlign="center";
+  g.fillText("5 "+t("unitM"),(s0.x+s1.x)/2,s0.y+42);}
+
+/* حساب مركز ومقياس العرض ثلاثي الأبعاد */
+function opt3(q,w,h){
+  const b=contentBox(q),sc=q.scale>0?q.scale:30;
+  if(!b)return {cx:w/2,cy:h/2,s:18,ox:0,oy:0};
+  const ox=b.minX,oy=b.minY;
+  const W=(b.maxX-b.minX)/sc,Hh=(b.maxY-b.minY)/sc,Z=(P.cfg.h3||6);
+  const pts=[];
+  [[0,0,0],[W,0,0],[0,Hh,0],[W,Hh,0],[0,0,Z],[W,0,Z],[0,Hh,Z],[W,Hh,Z]]
+    .forEach(([x,y,z])=>pts.push(pr3(x,y,z,{cx:0,cy:0,s:1})));
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const sw=Math.max(...xs)-Math.min(...xs),sh=Math.max(...ys)-Math.min(...ys);
+  const s=Math.min((w-90)/Math.max(sw,.1),(h-110)/Math.max(sh,.1));
+  return {s:s, cx:w/2-((Math.max(...xs)+Math.min(...xs))/2)*s,
+          cy:h/2-((Math.max(...ys)+Math.min(...ys))/2)*s, ox:ox, oy:oy};}
+
 function render(){
   const r=cv.getBoundingClientRect(),k=V.k,q=pl();
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--stage").trim()||"#0a1017";
   ctx.fillRect(0,0,r.width,r.height);
+  if(V3.on){ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
+    paint3D(ctx,q,opt3(q,r.width,r.height));ctx.restore();
+    badge.textContent=q.scale>0?(t("scaleOn")+" · 3D"):t("scaleOff");return;}
   ctx.save();ctx.setTransform(k*dpr,0,0,k*dpr,V.x*dpr,V.y*dpr);
   paintWorld(ctx,k,false,q);
   if(U.draft.length){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;
@@ -1894,6 +2018,7 @@ function autoAll(){
 function pos(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
 const pts=new Map();
 cv.addEventListener("pointerdown",e=>{
+  if(V3.on){V3._d={x:e.clientX,r:V3.rot};cv.setPointerCapture(e.pointerId);return;}
   cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,pos(e));
   if(pts.size===2){const a=[...pts.values()];U.pinch={d:dist(a[0],a[1])};return;}
   const p=pos(e),w=toWorld(p.x,p.y),q=pl();
@@ -1952,6 +2077,7 @@ cv.addEventListener("pointerdown",e=>{
       q.gateways.push({id:SEQ++,x:w.x,y:w.y,manual:true,zoneId:z?z.id:null});}
     refresh();return;}});
 cv.addEventListener("pointermove",e=>{
+  if(V3.on){if(V3._d){V3.rot=(V3._d.r+(e.clientX-V3._d.x)*.45+360)%360;rngRot.value=Math.round(V3.rot);render();}return;}
   if(!pts.has(e.pointerId)){
     const p0=pos(e);
     if(U.tool==="edit"&&pts.size===0){
@@ -1976,7 +2102,7 @@ function endP(e){pts.delete(e.pointerId);if(pts.size<2)U.pinch=null;
     if(Math.abs(a.x-b.x)>6/V.k&&Math.abs(a.y-b.y)>6/V.k)
       addZone([{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}]);
     U.rectStart=U.rectNow=null;render();}}
-cv.addEventListener("pointerup",endP);cv.addEventListener("pointercancel",endP);
+cv.addEventListener("pointerup",e=>{if(V3.on){V3._d=null;return;}endP(e);});cv.addEventListener("pointercancel",endP);
 cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoomAt(p.x,p.y,e.deltaY<0?1.12:1/1.12);},{passive:false});
 cv.addEventListener("dblclick",()=>{if(U.tool==="poly")closePoly();
   if(U.tool==="wall"){U.wlast=U.wnow=null;render();}});
@@ -2461,7 +2587,7 @@ function loadBrand(){
   tryLogo(BRAND.src[lang].slice(),lang);}
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
-  P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
+  P.cfg.h3=Math.max(2,+inH3.value||6);P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
   P.cfg.gw=selGw.value;P.cfg.gwRange=+inGwRange.value||50;P.cfg.gwMode=selGwMode.value;
   P.cfg.bat=+inBat.value||0;P.cfg.brk=+inBrk.value||0;P.cfg.psu=+inPsu.value||0;P.cfg.spare=+inSpare.value||0;
   P.cfg.sym=(+rngSym.value||6)/10;
@@ -3198,6 +3324,14 @@ function hmDoc(){
   if(!rooms.length){alert(t("hmNeedData"));return;}
   const wasOn=hmStore().on;hmStore().on=true;
   const plan=exportSheet(q,false).toDataURL("image/png");
+  /* لقطة ثلاثية الأبعاد — مطلوبة في اشتراطات الهيئة */
+  const c3=document.createElement("canvas");c3.width=1500;c3.height=880;
+  const g3=c3.getContext("2d");
+  g3.fillStyle="#ffffff";g3.fillRect(0,0,c3.width,c3.height);
+  const keep=V3.on;V3.on=true;
+  try{paint3D(g3,q,opt3(q,c3.width,c3.height));}catch(e){}
+  V3.on=keep;
+  const iso=c3.toDataURL("image/png");
   hmStore().on=wasOn;render();
   const esc2=x=>esc(x);
   const th='background:#2f6f8f;color:#fff;padding:6px 10px;border:1px solid #9fb3c8;text-align:left;font-size:11pt';
@@ -3226,6 +3360,8 @@ function hmDoc(){
   body+='<h2 style="'+h2+'">1. Overview of Storage Locations</h2>'+
     '<p>All sensors and gateways are distributed as shown \u2014 gateways as blue squares, sensors as red circles. Rooms are coloured by the mapping result: green within range, red out of range.</p>'+
     '<img src="'+plan+'" style="width:100%">'+
+    '<p style="margin-top:14pt"><b>Three-dimensional view</b> \u2014 showing the height of each area and the sensor positions at three levels (UP / MID / DOWN), as required by SFDA PE-F-220-002-V4.</p>'+
+    '<img src="'+iso+'" style="width:100%">'+
     '<h2 style="'+h2+'">2. Study Methodology</h2>'+
     '<p>This study was executed in accordance with <b>SFDA PE-F-220-002-V4</b> \u2014 Temperature Mapping of Storage &amp; Transport.</p>'+
     '<table style="border-collapse:collapse;width:100%"><tr><th style="'+th+'">Item</th><th style="'+th+'">Detail</th></tr>'+
@@ -3311,6 +3447,18 @@ function hmDoc(){
   a.click();
   LOG("evExport","Word");}
 btnHmDoc.onclick=hmDoc;
+
+/* تبديل العرض */
+document.querySelectorAll("#segView button").forEach(b=>b.onclick=()=>{
+  const on=b.dataset.v==="3";
+  if(on&&!pl().zones.length){alert(t("v3Need"));return;}
+  V3.on=on;
+  document.querySelectorAll("#segView button").forEach(x=>x.classList.toggle("on",x===b));
+  document.body.classList.toggle("view3",on);
+  if(on)LOG("evView","3D");
+  render();});
+rngRot.oninput=()=>{V3.rot=+rngRot.value;render();};
+inH3.onchange=()=>{P.cfg.h3=Math.max(2,+inH3.value||6);render();schedAS();};
 
 btnHmUp.onclick=()=>fileHm.click();
 fileHm.onchange=async e=>{
