@@ -621,7 +621,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.0";
+const VERSION="4.1";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -666,6 +666,9 @@ hHmDoc:"التقرير بيطلع بنفس هيكل تقرير آفاقي الر
 hmNoData:"مفيش بيانات",hmLinked:"{0} قراءة",hmPick:"— اربطها بغرفة —",
 hmT:"حرارة",hmH:"رطوبة",hmMin:"أدنى",hmMax:"أقصى",hmMed:"وسيط",hmAvg:"متوسط",
 hmViol:"{0} قراءة خارج المدى ({1}٪)",hmOk:"كله جوّه المدى",
+hmShort:"المدة {0} ساعة والمطلوب {1}",hmGap:"فاصل تسجيل وصل لـ{0} دقيقة (الحد ١٥)",
+hmCmpOk:"المدة والفاصل مطابقين",
+hmAmb:"مساحة تخزين",hmFrg:"ثلاجة",hmFrz:"مجمد",
 hmNeedZones:"ارسم الغرف الأول قبل ما ترفع القراءات",
 hmNeedData:"مفيش غرفة عليها بيانات — ارفع ملفات القراءات الأول",
 hmBadFile:"{0}: مش شكل ملف قراءات معروف",
@@ -785,6 +788,9 @@ hHmDoc:"The report follows AFAQY's official structure: cover, references, the la
 hmNoData:"no data",hmLinked:"{0} readings",hmPick:"— link to a room —",
 hmT:"Temp",hmH:"Humidity",hmMin:"Min",hmMax:"Max",hmMed:"Median",hmAvg:"Avg",
 hmViol:"{0} readings out of range ({1}%)",hmOk:"all within range",
+hmShort:"duration {0}h, required {1}h",hmGap:"recording gap reached {0} min (limit 15)",
+hmCmpOk:"duration and interval compliant",
+hmAmb:"storage area",hmFrg:"refrigerator",hmFrz:"freezer",
 hmNeedZones:"Draw the rooms first, then upload readings",
 hmNeedData:"No room has data yet — upload readings files first",
 hmBadFile:"{0}: not a recognised readings file",
@@ -1029,9 +1035,28 @@ function hmStats(list,tr){
     hMin:hs[0],hMax:hs.length?hs[hs.length-1]:null,hMed:med(hs),hAvg:avg(hs),
     viol:viol,pct:Math.round(viol/list.length*100)};}
 
+/* ===== مطابقة اشتراطات الهيئة PE-F-220-002-V4 ===== */
+/* المدة اللازمة حسب نوع المنطقة: تخزين ١٥-٢٥ = ٧ أيام · ثلاجات ومجمدات ومركبات = ٢٤ ساعة */
+function hmReq(z){const tr=trOf(z);
+  if(tr.t1<=0)return {h:24,kind:"frz"};
+  if(tr.t1<=10)return {h:24,kind:"frg"};
+  return {h:168,kind:"amb"};}
+const HM_GAP=15*60*1000; /* أقصى فترة تسجيل ١٥ دقيقة */
+
+function hmComply(z){
+  const d=hmOf(z);if(!d||d.length<2)return null;
+  const rq=hmReq(z),span=(d[d.length-1].t-d[0].t)/3600000;
+  let gap=0;for(let i=1;i<d.length;i++)gap=Math.max(gap,d[i].t-d[i-1].t);
+  return {reqH:rq.h,kind:rq.kind,spanH:span,
+    okSpan:span>=rq.h*0.98,
+    gapMin:Math.round(gap/60000),okGap:gap<=HM_GAP*1.05};}
+
 function hmState(z){const d=hmOf(z);if(!d)return null;
   const st=hmStats(d,trOf(z));if(!st)return null;
-  st.status=st.viol===0?"ok":(st.pct<=2?"warn":"bad");return st;}
+  st.cmp=hmComply(z);
+  st.status=st.viol===0?"ok":(st.pct<=2?"warn":"bad");
+  if(st.status==="ok"&&st.cmp&&(!st.cmp.okSpan||!st.cmp.okGap))st.status="warn";
+  return st;}
 
 const fmt1=x=>x==null?"—":ar((Math.round(x*10)/10).toFixed(1));
 function hmDate(ms){const d=new Date(ms),p=n=>String(n).padStart(2,"0");
@@ -1060,7 +1085,11 @@ function renderHm(){
       '</div>'+
       (sx?'<div class="res">'+t("hmT")+': <b>'+fmt1(sx.tMin)+'</b> / <b>'+fmt1(sx.tMed)+'</b> / <b>'+fmt1(sx.tMax)+'</b>'+
         (sx.hMed!=null?' · '+t("hmH")+': <b>'+fmt1(sx.hMin)+'</b> / <b>'+fmt1(sx.hMed)+'</b> / <b>'+fmt1(sx.hMax)+'</b>':'')+
-        '<br>'+(sx.viol?t("hmViol",ar(sx.viol),ar(sx.pct)):t("hmOk"))+'</div>':"")+
+        '<br>'+(sx.viol?t("hmViol",ar(sx.viol),ar(sx.pct)):t("hmOk"))+
+        (sx.cmp?'<br>'+(sx.cmp.okSpan?"":'<span style="color:var(--warn)">⚠ '+t("hmShort",ar(Math.round(sx.cmp.spanH)),ar(sx.cmp.reqH))+'</span> ')+
+          (sx.cmp.okGap?"":'<span style="color:var(--warn)">⚠ '+t("hmGap",ar(sx.cmp.gapMin))+'</span>')+
+          (sx.cmp.okSpan&&sx.cmp.okGap?'<span style="color:var(--ok)">✓ '+t("hmCmpOk")+'</span>':""):"")+
+        '</div>':"")+
       '</div>';});
   orph.forEach(nm=>{
     h+='<div class="hmz" data-orph="'+esc(nm)+'"><div class="top">'+
@@ -3175,7 +3204,7 @@ function hmDoc(){
   const td='padding:5px 10px;border:1px solid #c9d6e2;font-size:10.5pt';
   const h2='color:#1f4e79;font-size:15pt;margin:26pt 0 8pt';
   const h3='color:#2f6f8f;font-size:12.5pt;margin:16pt 0 6pt';
-  let pass=true;
+  let pass=true,obs=false;
   let body="";
   /* الغلاف */
   body+='<div style="text-align:center;margin-top:120pt">'+
@@ -3197,7 +3226,18 @@ function hmDoc(){
   body+='<h2 style="'+h2+'">1. Overview of Storage Locations</h2>'+
     '<p>All sensors and gateways are distributed as shown \u2014 gateways as blue squares, sensors as red circles. Rooms are coloured by the mapping result: green within range, red out of range.</p>'+
     '<img src="'+plan+'" style="width:100%">'+
-    '<h2 style="'+h2+'">2. Sensor Points for Temperature and Humidity Monitoring</h2>'+
+    '<h2 style="'+h2+'">2. Study Methodology</h2>'+
+    '<p>This study was executed in accordance with <b>SFDA PE-F-220-002-V4</b> \u2014 Temperature Mapping of Storage &amp; Transport.</p>'+
+    '<table style="border-collapse:collapse;width:100%"><tr><th style="'+th+'">Item</th><th style="'+th+'">Detail</th></tr>'+
+    [["Required study duration","Storage areas (15\u201325 \u00B0C): 7 consecutive days \u00B7 Refrigerators (2\u20138 \u00B0C), freezers and vehicles: 24 hours"],
+     ["Maximum recording interval","15 minutes"],
+     ["Sensor calibration","3-point calibration (below minimum, within range, above maximum); accuracy \u00B10.5 \u00B0C or better. Calibration certificates are attached separately."],
+     ["Sensor placement","Distributed across the mapped rooms at the heights defined in the layout, and kept in place for the full study period."],
+     ["Data integrity","Readings are recorded continuously by the monitoring platform and exported without modification; raw data available on request."],
+     ["Study team","Executed and reviewed by AFAQY technical team (see Final Approvals)."]]
+    .map(r=>'<tr><td style="'+td+';font-weight:700;width:32%">'+r[0]+'</td><td style="'+td+'">'+r[1]+'</td></tr>').join("")+
+    '</table>'+
+    '<h2 style="'+h2+'">3. Sensor Points for Temperature and Humidity Monitoring</h2>'+
     '<table style="border-collapse:collapse;width:100%"><tr>'+
     '<th style="'+th+'">Area</th><th style="'+th+'">Zone Type</th><th style="'+th+'">Allowed Range</th>'+
     '<th style="'+th+'">Gateways</th><th style="'+th+'">Sensors</th></tr>';
@@ -3208,10 +3248,12 @@ function hmDoc(){
       '<td style="'+td+'">'+st2.g+'</td><td style="'+td+'">'+st2.n+'</td></tr>';});
   body+='</table><br style="page-break-after:always">';
   /* صفحة لكل غرفة */
-  body+='<h2 style="'+h2+'">3. Temperature and Humidity Results by Room</h2>';
+  body+='<h2 style="'+h2+'">4. Temperature and Humidity Results by Room</h2>';
   rooms.forEach(z=>{
     const d=hmOf(z),tr=trOf(z),sx=hmStats(d,tr);
-    if(sx.status!=="ok"&&sx.viol>0&&sx.pct>2)pass=false;
+    if(sx.viol>0&&sx.pct>2)pass=false;
+    else if(sx.viol>0)obs=true;
+    if(sx.cmp&&(!sx.cmp.okSpan||!sx.cmp.okGap))obs=true;
     const chart=hmChart(d,tr,760,300).toDataURL("image/png");
     body+='<h3 style="'+h3+'">'+esc2(z.name)+'</h3>'+
       '<table style="border-collapse:collapse"><tr><th style="'+th+'">Field</th><th style="'+th+'">Value</th></tr>'+
@@ -3221,7 +3263,9 @@ function hmDoc(){
        ["Allowed Range",tr.t0+" to "+tr.t1+" \u00B0C"],
        ["Temp (Max)",fmt1(sx.tMax)],["Temp (Min)",fmt1(sx.tMin)],["Temp (Median)",fmt1(sx.tMed)],
        ["Humidity (Max)",fmt1(sx.hMax)],["Humidity (Min)",fmt1(sx.hMin)],["Humidity (Median)",fmt1(sx.hMed)],
-       ["Out-of-range readings",ar(sx.viol)+" ("+ar(sx.pct)+"%)"]]
+       ["Out-of-range readings",ar(sx.viol)+" ("+ar(sx.pct)+"%)"],
+       ["Study Duration",ar(Math.round(sx.cmp?sx.cmp.spanH:0))+" h (required "+ar(sx.cmp?sx.cmp.reqH:0)+" h)"+(sx.cmp&&!sx.cmp.okSpan?"  \u26A0":"")],
+       ["Max Recording Interval",ar(sx.cmp?sx.cmp.gapMin:0)+" min (limit 15)"+(sx.cmp&&!sx.cmp.okGap?"  \u26A0":"")]]
       .map(r=>'<tr><td style="'+td+';font-weight:700">'+r[0]+'</td><td style="'+td+'">'+esc2(String(r[1]))+'</td></tr>').join("")+
       '</table>'+
       '<h3 style="'+h3+'">Chart Visualization</h3>'+
@@ -3236,17 +3280,21 @@ function hmDoc(){
         '<td style="'+td+'">'+(o.h!=null?fmt1(o.h):"\u2014")+'</td></tr>';}).join("")+
       '</table><br style="page-break-after:always">';});
   /* الخاتمة والتوقيعات */
-  body+='<h2 style="'+h2+'">4. Corrective &amp; Preventive Actions (CAPA)</h2>'+
+  body+='<h2 style="'+h2+'">5. Corrective &amp; Preventive Actions (CAPA)</h2>'+
     '<p><b>Corrective:</b> Relocate sensors, seal insulation leaks, adjust cooling system.<br>'+
     '<b>Preventive:</b> Update SOPs, increase monitoring frequency, conduct retraining.<br>'+
     '<b>Revalidation:</b> Repeat mapping if corrective action significantly alters storage conditions.</p>'+
-    '<h2 style="'+h2+'">5. Limitations</h2>'+
+    '<h2 style="'+h2+'">6. Limitations</h2>'+
     '<p><b>This study is limited to the installation and performance verification of temperature and humidity sensors provided by AFAQY Technology Co. Ltd. AFAQY does not assume responsibility for refrigeration unit behavior or thermal insulation within warehouses.</b></p>'+
-    '<h2 style="'+h2+'">6. Conclusion &amp; Result</h2>'+
-    '<p>'+(pass?'All monitored rooms maintained readings within their allowed ranges during the study period.'
-      :'One or more rooms recorded readings outside the allowed range \u2014 see the highlighted rows above and the CAPA section.')+'</p>'+
-    '<p style="font-size:13pt"><b>Result: <span style="color:'+(pass?'#137a44">PASS':'#a11a12">FAIL')+'</span></b></p>'+
-    '<h2 style="'+h2+'">7. Final Approvals</h2>'+
+    '<h2 style="'+h2+'">7. Conclusion &amp; Result</h2>'+
+    '<p>'+(!pass?'One or more rooms recorded readings outside the allowed range \u2014 see the highlighted rows above and the CAPA section. The study must be repeated after corrective actions are implemented.'
+      :obs?'All rooms remained within their allowed ranges overall; however observations were recorded (out-of-range readings within tolerance, study duration, or recording interval) \u2014 see the room tables above.'
+      :'All monitored rooms maintained readings within their allowed ranges for the full required duration, with recording intervals within the 15-minute limit.')+'</p>'+
+    '<p style="font-size:13pt"><b>Result: <span style="color:'+
+      (!pass?'#a11a12">STUDY FAILED':obs?'#8a6400">PASS WITH OBSERVATIONS':'#137a44">PASS')+'</span></b></p>'+
+    '<h2 style="'+h2+'">8. Study Repetition</h2>'+
+    '<p>The study shall be repeated if any structural modification is made to the storage areas, refrigerators or freezers, or if the air-conditioning units are changed. In all cases the study shall be repeated at least every <b>5 years</b>, even when routine readings remain within the recommended limits.</p>'+
+    '<h2 style="'+h2+'">9. Final Approvals</h2>'+
     ['Prepared By','Reviewed By','Approved By'].map(rl=>
       '<p style="margin:14pt 0 4pt"><b>'+rl+'</b></p>'+
       '<table style="border-collapse:collapse;width:100%"><tr>'+
