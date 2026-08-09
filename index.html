@@ -83,7 +83,7 @@ button:active{transform:translateY(1px)}
 .brandlock em{display:block;font-size:11px;color:var(--muted);font-style:normal;margin-top:2px}
 .v3only{display:none;align-items:center;gap:10px}
 body.view3 .v3only{display:inline-flex}
-body.view3 .trow .sep~*:not(.v3only){opacity:.32;pointer-events:none}
+body.view3 .trow>*:not(#segView):not(#v3ctl){opacity:.32;pointer-events:none}
 .v3lab{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin:0}
 .v3lab input[type=range]{width:104px;padding:0}
 .v3lab input[type=number]{width:58px;padding:5px 6px;font-size:12px;text-align:center}
@@ -313,6 +313,12 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   .legend{font-size:11px;padding:6px 9px;gap:9px}
   .badge{font-size:11px;padding:6px 9px}
   .empty{font-size:12.5px;padding:0 20px;line-height:2}
+}
+@media (max-width:900px){
+  .v3lab{font-size:10.5px;gap:4px}
+  .v3lab input[type=range]{width:70px}
+  .v3lab input[type=number]{width:50px}
+  #segView button{min-width:44px}
 }
 </style>
 </head>
@@ -1445,14 +1451,14 @@ function face(g,pts,fill,stroke,lw){
   if(fill){g.fillStyle=fill;g.fill();}
   if(stroke){g.strokeStyle=stroke;g.lineWidth=lw||1.2;g.stroke();}}
 
-function paint3D(g,q,o){
+function paint3D(g,q,o){const PR=!!o.pr;
   const sc=q.scale>0?q.scale:30;                 /* بكسل لكل متر في العالم */
   const m=p=>({x:(p.x-o.ox)/sc, y:(p.y-o.oy)/sc}); /* عالم → متر */
   const hm=(P.hm&&P.hm.on);
   /* أرضية شبكية */
   const b=contentBox(q);
   if(b){const x0=(b.minX-o.ox)/sc-2,x1=(b.maxX-o.ox)/sc+2,y0=(b.minY-o.oy)/sc-2,y1=(b.maxY-o.oy)/sc+2;
-    g.strokeStyle="rgba(120,150,180,.16)";g.lineWidth=1;
+    g.strokeStyle=PR?"rgba(60,90,120,.20)":"rgba(120,150,180,.16)";g.lineWidth=1;
     for(let x=Math.floor(x0);x<=x1;x+=2){const a=pr3(x,y0,0,o),c=pr3(x,y1,0,o);
       g.beginPath();g.moveTo(a.x,a.y);g.lineTo(c.x,c.y);g.stroke();}
     for(let y=Math.floor(y0);y<=y1;y+=2){const a=pr3(x0,y,0,o),c=pr3(x1,y,0,o);
@@ -1482,9 +1488,9 @@ function paint3D(g,q,o){
     const cen={x:pts.reduce((a,p)=>a+p.x,0)/pts.length,y:pts.reduce((a,p)=>a+p.y,0)/pts.length};
     const lp=pr3(cen.x,cen.y,H+.6,o);
     g.textAlign="center";g.direction=L==="ar"?"rtl":"ltr";
-    g.fillStyle="#dfe9f2";g.font='700 12px "Segoe UI",Tahoma,sans-serif';
+    g.fillStyle=PR?"#1a2733":"#dfe9f2";g.font='700 12px "Segoe UI",Tahoma,sans-serif';
     g.fillText(z.name,lp.x,lp.y);
-    g.fillStyle="#93a7b9";g.font='10.5px "Segoe UI",Tahoma,sans-serif';
+    g.fillStyle=PR?"#5d7688":"#93a7b9";g.font='10.5px "Segoe UI",Tahoma,sans-serif';
     g.fillText(nice(H)+" "+t("unitM")+(hx?"  ·  "+fmt1(hx.tMin)+"/"+fmt1(hx.tMax)+"°":""),lp.x,lp.y+13);
     /* الحساسات على ٣ ارتفاعات */
     q.sensors.filter(sn=>sn.zoneId===z.id).forEach(sn=>{
@@ -1495,7 +1501,7 @@ function paint3D(g,q,o){
       lv.forEach(([f,nm])=>{const pp=pr3(pmt.x,pmt.y,H*f,o);
         g.beginPath();g.arc(pp.x,pp.y,4.2,0,7);g.fillStyle="#e02b2b";g.fill();
         g.strokeStyle="#fff";g.lineWidth=.9;g.stroke();});
-      g.fillStyle="#f0b6b0";g.font='9px "Segoe UI",Tahoma,sans-serif';g.textAlign="left";
+      g.fillStyle=PR?"#8a1c14":"#f0b6b0";g.font='9px "Segoe UI",Tahoma,sans-serif';g.textAlign="left";
       g.fillText(sn.code,pr3(pmt.x,pmt.y,H*.85,o).x+7,pr3(pmt.x,pmt.y,H*.85,o).y-4);
       g.textAlign="center";});
     /* الجيت واي على الحائط */
@@ -1506,9 +1512,9 @@ function paint3D(g,q,o){
   });
   /* مقياس */
   const s0=pr3(0,0,0,o),s1=pr3(5,0,0,o);
-  g.strokeStyle="#8ea1b4";g.lineWidth=2;
+  g.strokeStyle=PR?"#5d7688":"#8ea1b4";g.lineWidth=2;
   g.beginPath();g.moveTo(s0.x,s0.y+28);g.lineTo(s1.x,s1.y+28);g.stroke();
-  g.fillStyle="#8ea1b4";g.font='10px "Segoe UI",Tahoma,sans-serif';g.textAlign="center";
+  g.fillStyle=PR?"#5d7688":"#8ea1b4";g.font='10px "Segoe UI",Tahoma,sans-serif';g.textAlign="center";
   g.fillText("5 "+t("unitM"),(s0.x+s1.x)/2,s0.y+42);}
 
 /* حساب مركز ومقياس العرض ثلاثي الأبعاد */
@@ -1533,7 +1539,7 @@ function render(){
   ctx.fillRect(0,0,r.width,r.height);
   if(V3.on){ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
     paint3D(ctx,q,opt3(q,r.width,r.height));ctx.restore();
-    badge.textContent=q.scale>0?(t("scaleOn")+" · 3D"):t("scaleOff");return;}
+    badge.textContent="3D · "+nice(P.cfg.h3||6)+" "+t("unitM");return;}
   ctx.save();ctx.setTransform(k*dpr,0,0,k*dpr,V.x*dpr,V.y*dpr);
   paintWorld(ctx,k,false,q);
   if(U.draft.length){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;
@@ -2102,7 +2108,7 @@ function endP(e){pts.delete(e.pointerId);if(pts.size<2)U.pinch=null;
     if(Math.abs(a.x-b.x)>6/V.k&&Math.abs(a.y-b.y)>6/V.k)
       addZone([{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}]);
     U.rectStart=U.rectNow=null;render();}}
-cv.addEventListener("pointerup",e=>{if(V3.on){V3._d=null;return;}endP(e);});cv.addEventListener("pointercancel",endP);
+cv.addEventListener("pointerup",e=>{if(V3.on){V3._d=null;return;}endP(e);});cv.addEventListener("pointercancel",e=>{if(V3.on){V3._d=null;return;}endP(e);});
 cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoomAt(p.x,p.y,e.deltaY<0?1.12:1/1.12);},{passive:false});
 cv.addEventListener("dblclick",()=>{if(U.tool==="poly")closePoly();
   if(U.tool==="wall"){U.wlast=U.wnow=null;render();}});
@@ -3323,14 +3329,13 @@ function hmDoc(){
   const rooms=q.zones.filter(z=>hmOf(z));
   if(!rooms.length){alert(t("hmNeedData"));return;}
   const wasOn=hmStore().on;hmStore().on=true;
-  const plan=exportSheet(q,false).toDataURL("image/png");
+  const _ps=exportSheet(q,1800,true);
+  const plan=_ps?_ps.toDataURL("image/png"):"";
   /* لقطة ثلاثية الأبعاد — مطلوبة في اشتراطات الهيئة */
   const c3=document.createElement("canvas");c3.width=1500;c3.height=880;
   const g3=c3.getContext("2d");
   g3.fillStyle="#ffffff";g3.fillRect(0,0,c3.width,c3.height);
-  const keep=V3.on;V3.on=true;
-  try{paint3D(g3,q,opt3(q,c3.width,c3.height));}catch(e){}
-  V3.on=keep;
+  try{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}catch(e){}
   const iso=c3.toDataURL("image/png");
   hmStore().on=wasOn;render();
   const esc2=x=>esc(x);
