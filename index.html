@@ -81,6 +81,18 @@ button:active{transform:translateY(1px)}
 .brandlock img{height:30px;max-width:132px;object-fit:contain;background:#fff;border-radius:6px;padding:3px 7px;display:none}
 .brandlock b{display:block;font-size:12.5px;font-weight:600}
 .brandlock em{display:block;font-size:11px;color:var(--muted);font-style:normal;margin-top:2px}
+.hmzones{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.hmz{border:1px solid var(--line);border-radius:10px;background:var(--field);padding:8px 10px}
+.hmz .top{display:flex;align-items:center;gap:8px}
+.hmz .nm{font-weight:700;font-size:12.5px;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hmz .st{font-size:11px;color:var(--muted);flex:0 0 auto}
+.hmz .st.ok{color:var(--ok)}.hmz .st.bad{color:var(--bad)}.hmz .st.warn{color:var(--warn)}
+.hmz .rng{display:flex;align-items:center;gap:5px;margin-top:7px;flex-wrap:wrap}
+.hmz .rng label{font-size:10.5px;color:var(--muted);margin:0}
+.hmz .rng input{width:52px;padding:5px 6px;font-size:12px;text-align:center}
+.hmz .res{margin-top:7px;font-size:11.5px;color:var(--muted);line-height:1.7}
+.hmz .res b{color:var(--text)}
+.hmz select{width:100%;margin-top:7px;padding:6px;font-size:12px}
 .loglist{max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;
   background:var(--field);padding:6px 8px;margin-top:9px;font-size:12px}
 .loglist .row{display:flex;gap:8px;padding:5px 2px;border-bottom:1px dashed var(--line)}
@@ -498,8 +510,29 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
       </div>
     </details>
 
+    <details class="step" id="stepHm">
+      <summary><span class="num">٩</span><span data-i="sHm">الخريطة الحرارية</span>
+        <span class="pill" id="pillHm">٠</span></summary>
+      <div class="body">
+        <p class="hint" data-i="hHm" data-html="1"></p>
+        <div class="btns">
+          <button class="btn-main" id="btnHmUp" data-i="bHmUp">ارفع ملفات القراءات</button>
+          <input type="file" id="fileHm" accept=".csv,.txt" multiple hidden>
+        </div>
+        <div id="hmZones" class="hmzones"></div>
+        <div class="btns">
+          <button id="btnHmShow" data-i="bHmShow">لوّن الرسمة بالحرارة</button>
+          <button id="btnHmClr" data-i="bHmClr">مسح البيانات</button>
+        </div>
+        <div class="btns">
+          <button class="btn-pdf" id="btnHmDoc" data-i="bHmDoc">تقرير الخريطة الحرارية (Word)</button>
+        </div>
+        <p class="hint" data-i="hHmDoc" data-html="1"></p>
+      </div>
+    </details>
+
     <details class="step">
-      <summary><span class="num">٨</span><span data-i="sLog">سجل النشاط</span>
+      <summary><span class="num">١٠</span><span data-i="sLog">سجل النشاط</span>
         <span class="pill" id="pillLog">٠</span></summary>
       <div class="body">
         <p class="hint" data-i="hLog"></p>
@@ -588,7 +621,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="3.6";
+const VERSION="4.0";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -626,12 +659,23 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sLog:"سجل النشاط",bOpenMap:"افتح الرسمة",fabEmpty:"لسه فاضية",thTime:"الوقت",thAction:"الحدث",thDetail:"التفاصيل",cfmLogClr:"هتفضّي السجل كله. تمام؟",bLogCsv:"تحميل السجل",bLogClr:"تفريغ السجل",logEmpty:"مفيش نشاط لسه",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
+bHmHide:"رجّع الألوان العادية",bHmClr:"مسح البيانات",bHmDoc:"تقرير الخريطة الحرارية (Word)",
+hHm:"بعد التركيب، صدّر تقرير القراءات لكل غرفة من المنصة كملف <b>CSV</b> وارفعه هنا. الأداة بتربط كل ملف بالغرفة اللي بنفس الاسم — زي ما إجراءات التركيب عندكم بتسمّي الجهاز على النظام بنفس اسم الملصق. عدّل المدى المسموح لكل غرفة لو مختلف عن الافتراضي.",
+hHmDoc:"التقرير بيطلع بنفس هيكل تقرير آفاقي الرسمي: الغلاف والمراجع والرسمة وجدول النقاط، وصفحة لكل غرفة فيها الملخص وجدول القراءات والرسم البياني، والنتيجة النهائية. بيتفتح في وورد وتكمّل عليه التوقيعات.",
+hmNoData:"مفيش بيانات",hmLinked:"{0} قراءة",hmPick:"— اربطها بغرفة —",
+hmT:"حرارة",hmH:"رطوبة",hmMin:"أدنى",hmMax:"أقصى",hmMed:"وسيط",hmAvg:"متوسط",
+hmViol:"{0} قراءة خارج المدى ({1}٪)",hmOk:"كله جوّه المدى",
+hmNeedZones:"ارسم الغرف الأول قبل ما ترفع القراءات",
+hmNeedData:"مفيش غرفة عليها بيانات — ارفع ملفات القراءات الأول",
+hmBadFile:"{0}: مش شكل ملف قراءات معروف",
+tHmDone:"اتربطت {0} غرفة بالقراءات",
+sLog:"سجل النشاط",bOpenMap:"افتح الرسمة",fabEmpty:"لسه فاضية",thTime:"الوقت",thAction:"الحدث",thDetail:"التفاصيل",cfmLogClr:"هتفضّي السجل كله. تمام؟",bLogCsv:"تحميل السجل",bLogClr:"تفريغ السجل",logEmpty:"مفيش نشاط لسه",
 hLog:"كل حاجة بتعملها بتتسجّل هنا بوقتها. السجل بيتحفظ جوّه المشروع نفسه — يعني بيمشي مع ملف الحفظ ومع الصورة و<b>PDF</b>، وأي حد يفتح المخرَج يشوف اتعمل فيه إيه وإمتى.",
 evNew:"مشروع جديد",evOpen:"فتح مشروع",evSave:"حفظ مشروع",evRestore:"استرجاع شغل",
 evRun:"توزيع تلقائي",evCount:"تعديل عدد غرفة",evKind:"تغيير نوع منطقة",evAuto:"رجوع للتلقائي",
 evScale:"ضبط المقياس",evExport:"تصدير مخرَج",evCfg:"تعديل المعايير",evPlan:"إدخال رسمة",
-evClear:"مسح التوزيع",evLang:"تبديل اللغة",
+evClear:"مسح التوزيع",evHm:"قراءات حرارة",evLang:"تبديل اللغة",
 unitM:"متر",unitArea:"إجمالي المساحة",unitSq:"م٢",
 kySensors:"الحساسات",kyGates:"الجيت واي",kyPower:"الكهرباء",
 shMeta:"{0} · تغطية {1} م٢ لكل حساس · جيت واي {2} بمدى {3} م · {4}",
@@ -734,12 +778,23 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sLog:"Activity log",bOpenMap:"Open drawing",fabEmpty:"still empty",thTime:"Time",thAction:"Event",thDetail:"Details",cfmLogClr:"This clears the whole log. Continue?",bLogCsv:"Download log",bLogClr:"Clear log",logEmpty:"No activity yet",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
+bHmHide:"Back to normal colours",bHmClr:"Clear data",bHmDoc:"Heat-map report (Word)",
+hHm:"After installation, export each room's readings report from the platform as <b>CSV</b> and upload it here. The tool links every file to the room with the same name — matching your installation SOP where the device is registered under the label name. Adjust each room's allowed range if it differs from the default.",
+hHmDoc:"The report follows AFAQY's official structure: cover, references, the layout drawing and points table, then a page per room with the summary, full readings table and chart, and the final result. Opens in Word for signatures.",
+hmNoData:"no data",hmLinked:"{0} readings",hmPick:"— link to a room —",
+hmT:"Temp",hmH:"Humidity",hmMin:"Min",hmMax:"Max",hmMed:"Median",hmAvg:"Avg",
+hmViol:"{0} readings out of range ({1}%)",hmOk:"all within range",
+hmNeedZones:"Draw the rooms first, then upload readings",
+hmNeedData:"No room has data yet — upload readings files first",
+hmBadFile:"{0}: not a recognised readings file",
+tHmDone:"{0} room(s) linked to readings",
+sLog:"Activity log",bOpenMap:"Open drawing",fabEmpty:"still empty",thTime:"Time",thAction:"Event",thDetail:"Details",cfmLogClr:"This clears the whole log. Continue?",bLogCsv:"Download log",bLogClr:"Clear log",logEmpty:"No activity yet",
 hLog:"Everything you do is recorded here with its timestamp. The log is stored inside the project itself — it travels with the save file, the image and the <b>PDF</b>, so anyone opening an output can see what was done and when.",
 evNew:"New project",evOpen:"Open project",evSave:"Save project",evRestore:"Restore work",
 evRun:"Auto distribution",evCount:"Room count changed",evKind:"Zone type changed",evAuto:"Back to auto",
 evScale:"Scale set",evExport:"Output exported",evCfg:"Standards changed",evPlan:"Plan loaded",
-evClear:"Layout cleared",evLang:"Language switched",
+evClear:"Layout cleared",evHm:"Heat readings",evLang:"Language switched",
 unitM:"m",unitArea:"Total area",unitSq:"m²",
 kySensors:"Sensors",kyGates:"Gateways",kyPower:"Power",
 shMeta:"{0} · {1} m² coverage per sensor · {2} gateway, {3} m range · {4}",
@@ -916,6 +971,115 @@ function stateNow(){const q=pl();
   return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,sc:q.scale});}
 function applyState(s){const o=JSON.parse(s),q=pl();
   q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.scale=o.sc;}
+/* ================================================================
+   الخريطة الحرارية — القراءات والمدى والإحصاءات
+   P.hm = { data:{zoneName:[{t:ms,c:temp,h:hum}]}, on:false }
+   z.tr = {t0,t1,h0,h1} المدى المسموح لكل غرفة
+   ================================================================ */
+function trDef(z){const kd=zKind(z);
+  return kd==="fridge"?{t0:2,t1:8,h0:null,h1:null}
+        :kd==="corr"?{t0:15,t1:35,h0:null,h1:null}
+        :{t0:15,t1:25,h0:null,h1:60};}
+function trOf(z){if(!z.tr)z.tr=trDef(z);return z.tr;}
+function hmNorm(x){return String(x||"").toLowerCase().replace(/[\s_\-]+/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه");}
+function hmStore(){if(!P.hm)P.hm={data:{},on:false};return P.hm;}
+function hmOf(z){const st=hmStore();return st.data[z.name]||null;}
+
+/* قراءة ملف CSV بمرونة: بيلاقي اسم الجهاز وصف العناوين والبيانات */
+function hmParse(text){
+  const rows=text.split(/\r?\n/).map(l=>{
+    const out=[];let cur="",q=false;
+    for(let i=0;i<l.length;i++){const c=l[i];
+      if(c==='"'){q=!q;continue;}
+      if(c===','&&!q){out.push(cur);cur="";}else cur+=c;}
+    out.push(cur);return out.map(x=>x.trim());});
+  let dev="";
+  rows.forEach(r=>{const i=r.findIndex(c=>/^device\s*name$/i.test(c));
+    if(i>=0&&r[i+1])dev=r[i+1];});
+  let hi=-1,ci={d:-1,t:-1,h:-1};
+  for(let i=0;i<rows.length;i++){const r=rows[i].map(c=>c.toLowerCase());
+    const d=r.findIndex(c=>/date|time|التاريخ|الوقت/.test(c));
+    const t=r.findIndex(c=>/temp|حرار/.test(c)&&!/max|min|median|أقصى|أدنى/.test(c));
+    if(d>=0&&t>=0){hi=i;ci={d:d,t:t,h:r.findIndex(c=>/hum|رطوب/.test(c)&&!/max|min|median/.test(c))};break;}}
+  if(hi<0)return null;
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){const r=rows[i];
+    const ts=Date.parse((r[ci.d]||"").replace(" ","T"));
+    const c=parseFloat(r[ci.t]);
+    if(!isFinite(ts)||!isFinite(c))continue;
+    const o={t:ts,c:c};
+    if(ci.h>=0){const h=parseFloat(r[ci.h]);if(isFinite(h))o.h=h;}
+    out.push(o);}
+  out.sort((a,b)=>a.t-b.t);
+  if(out.length>5000){const k=Math.ceil(out.length/5000);
+    return {dev:dev,rows:out.filter((_,i)=>i%k===0)};}
+  return out.length?{dev:dev,rows:out}:null;}
+
+function hmStats(list,tr){
+  if(!list||!list.length)return null;
+  const cs=list.map(o=>o.c).slice().sort((a,b)=>a-b);
+  const hs=list.filter(o=>o.h!=null).map(o=>o.h).slice().sort((a,b)=>a-b);
+  const med=a=>a.length?a[Math.floor(a.length/2)]:null;
+  const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+  let viol=0;
+  list.forEach(o=>{if(o.c<tr.t0||o.c>tr.t1||
+    (tr.h0!=null&&o.h!=null&&o.h<tr.h0)||(tr.h1!=null&&o.h!=null&&o.h>tr.h1))viol++;});
+  return {n:list.length,from:list[0].t,to:list[list.length-1].t,
+    tMin:cs[0],tMax:cs[cs.length-1],tMed:med(cs),tAvg:avg(cs),
+    hMin:hs[0],hMax:hs.length?hs[hs.length-1]:null,hMed:med(hs),hAvg:avg(hs),
+    viol:viol,pct:Math.round(viol/list.length*100)};}
+
+function hmState(z){const d=hmOf(z);if(!d)return null;
+  const st=hmStats(d,trOf(z));if(!st)return null;
+  st.status=st.viol===0?"ok":(st.pct<=2?"warn":"bad");return st;}
+
+const fmt1=x=>x==null?"—":ar((Math.round(x*10)/10).toFixed(1));
+function hmDate(ms){const d=new Date(ms),p=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());}
+
+function renderHm(){
+  const q=pl(),st=hmStore(),box=document.getElementById("hmZones");
+  const linked=q.zones.filter(z=>hmOf(z)).length;
+  pillHm.textContent=ar(linked);
+  pillHm.className="pill"+(linked?" on":"");
+  btnHmShow.textContent=t(st.on?"bHmHide":"bHmShow");
+  const orph=Object.keys(st.data).filter(nm=>!q.zones.some(z=>z.name===nm));
+  let h="";
+  q.zones.forEach(z=>{const tr=trOf(z),d=hmOf(z),sx=hmState(z);
+    h+='<div class="hmz" data-z="'+z.id+'"><div class="top">'+
+      '<span class="nm">'+esc(z.name)+'</span>'+
+      '<span class="st '+(sx?sx.status:"")+'">'+
+      (d?t("hmLinked",ar(d.length)):t("hmNoData"))+'</span></div>'+
+      '<div class="rng">'+
+      '<label>'+t("hmT")+'</label>'+
+      '<input type="number" step="0.5" data-k="t0" value="'+tr.t0+'">–'+
+      '<input type="number" step="0.5" data-k="t1" value="'+tr.t1+'">°'+
+      '<label style="margin-inline-start:8px">'+t("hmH")+'</label>'+
+      '<input type="number" step="1" data-k="h0" value="'+(tr.h0==null?"":tr.h0)+'" placeholder="—">–'+
+      '<input type="number" step="1" data-k="h1" value="'+(tr.h1==null?"":tr.h1)+'" placeholder="—">٪'+
+      '</div>'+
+      (sx?'<div class="res">'+t("hmT")+': <b>'+fmt1(sx.tMin)+'</b> / <b>'+fmt1(sx.tMed)+'</b> / <b>'+fmt1(sx.tMax)+'</b>'+
+        (sx.hMed!=null?' · '+t("hmH")+': <b>'+fmt1(sx.hMin)+'</b> / <b>'+fmt1(sx.hMed)+'</b> / <b>'+fmt1(sx.hMax)+'</b>':'')+
+        '<br>'+(sx.viol?t("hmViol",ar(sx.viol),ar(sx.pct)):t("hmOk"))+'</div>':"")+
+      '</div>';});
+  orph.forEach(nm=>{
+    h+='<div class="hmz" data-orph="'+esc(nm)+'"><div class="top">'+
+      '<span class="nm">'+esc(nm)+'</span>'+
+      '<span class="st">'+t("hmLinked",ar(st.data[nm].length))+'</span></div>'+
+      '<select><option value="">'+t("hmPick")+'</option>'+
+      q.zones.map(z=>'<option>'+esc(z.name)+'</option>').join("")+'</select></div>';});
+  box.innerHTML=h;
+  box.querySelectorAll(".hmz[data-z] input").forEach(inp=>{
+    inp.onchange=()=>{const z=q.zones.find(x=>x.id==inp.closest(".hmz").dataset.z);
+      if(!z)return;const v=inp.value===""?null:parseFloat(inp.value);
+      trOf(z)[inp.dataset.k]=isFinite(v)?v:null;
+      renderHm();render();schedAS();};});
+  box.querySelectorAll(".hmz[data-orph] select").forEach(sel=>{
+    sel.onchange=()=>{const nm=sel.closest(".hmz").dataset.orph;
+      if(!sel.value)return;
+      st.data[sel.value]=st.data[nm];delete st.data[nm];
+      renderHm();render();schedAS();};});}
+
 const LOG_MAX=600;
 let LOG_NEXT=null;
 function LOG(a,d){
@@ -1090,9 +1254,13 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.beginPath();g.moveTo(z.pts[0].x,z.pts[0].y);
     for(let i=1;i<z.pts.length;i++)g.lineTo(z.pts[i].x,z.pts[i].y);
     g.closePath();
-    g.fillStyle=kd==="corr"?(pr?"#f0f2f4":"#7d8ea022")
+    const hmx=(P.hm&&P.hm.on)?hmState(z):null;
+    g.fillStyle=hmx?(hmx.status==="ok"?"#22a55f":hmx.status==="warn"?"#e2a500":"#d92d20")+(pr?"2e":"3d")
+      :kd==="corr"?(pr?"#f0f2f4":"#7d8ea022")
       :kd==="fridge"?(pr?"#dff4f8":"#00b3c82e"):z.color+(pr?"12":"1c");
     g.fill();
+    if(hmx){g.strokeStyle=hmx.status==="ok"?"#22a55f":hmx.status==="warn"?"#e2a500":"#d92d20";
+      g.lineWidth=2.4/k;g.stroke();}
     if(kd==="corr"){g.setLineDash([9/k,6/k]);g.strokeStyle=pr?"#9aa7b4":"#7d8ea0";
       g.lineWidth=1.6/k;g.stroke();g.setLineDash([]);}
     else if(kd==="fridge"&&!q.drawn){g.strokeStyle="#00b3c8";g.lineWidth=2.4/k;g.stroke();}
@@ -1144,7 +1312,12 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.fillStyle="#1a2733";
     g.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
     g.fillText(z.name,c.x,c.y);
-    if(sc>0){const d=q.drawn?null:rectDims(z,sc);
+    const hz=(P.hm&&P.hm.on)?hmState(z):null;
+    if(hz){g.fillStyle=hz.status==="ok"?"#137a44":hz.status==="warn"?"#8a6400":"#a11a12";
+      g.font="700 "+(11.5/k)+'px "Segoe UI",Tahoma,sans-serif';
+      g.fillText(fmt1(hz.tMin)+" / "+fmt1(hz.tMed)+" / "+fmt1(hz.tMax)+" °",c.x,c.y+15/k);
+      if(hz.viol)g.fillText("⚠ "+ar(hz.viol),c.x,c.y+29/k);}
+    else if(sc>0){const d=q.drawn?null:rectDims(z,sc);
       g.fillStyle="#5d6f80";
       g.font=(11/k)+'px "Segoe UI",Tahoma,sans-serif';
       g.fillText(d?(nice(d.w)+" × "+nice(d.h)+" "+t("unitM")):(fmt(polyArea(z.pts)/(sc*sc))+" "+t("unitM2")),c.x,c.y+15/k);
@@ -2099,7 +2272,7 @@ function issues(){
 /* ================= الواجهة ================= */
 function refresh(){renumber();renderZones();renderResults();renderIssues();render();
   fbUndo.disabled=!U.undo.length;fbRedo.disabled=!U.redo.length;
-  btnUndo.disabled=!U.undo.length;syncMap();}
+  btnUndo.disabled=!U.undo.length;syncMap();renderHm();}
 function renderZones(){
   const q=pl();
   pillZones.textContent=ar(q.zones.length);
@@ -2956,6 +3129,166 @@ function csv(rows,name){
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob(["\uFEFF"+rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));
   a.download=name;a.click();}
+/* ===== شارت زمني لغرفة → صورة ===== */
+function hmChart(list,tr,w,h){
+  const c=document.createElement("canvas");c.width=w;c.height=h;
+  const g=c.getContext("2d");
+  g.fillStyle="#fff";g.fillRect(0,0,w,h);
+  if(!list.length)return c;
+  const padL=46,padR=14,padT=16,padB=34,W=w-padL-padR,H=h-padT-padB;
+  const t0=list[0].t,t1=list[list.length-1].t||t0+1;
+  const cs=list.map(o=>o.c),hs=list.filter(o=>o.h!=null).map(o=>o.h);
+  let lo=Math.min.apply(null,cs.concat([tr.t0])),hi=Math.max.apply(null,cs.concat([tr.t1]));
+  if(hs.length){lo=Math.min(lo,0);hi=Math.max(hi,100);}
+  lo=Math.floor(lo-2);hi=Math.ceil(hi+2);
+  const X=t=>padL+W*(t-t0)/Math.max(1,t1-t0),Y=v=>padT+H*(1-(v-lo)/(hi-lo));
+  g.strokeStyle="#e3e8ee";g.lineWidth=1;g.fillStyle="#7b8794";
+  g.font='10px "Segoe UI",Tahoma,sans-serif';g.textAlign="right";
+  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,y=Y(v);
+    g.beginPath();g.moveTo(padL,y);g.lineTo(w-padR,y);g.stroke();
+    g.fillText(Math.round(v),padL-6,y+3);}
+  /* نطاق المدى المسموح */
+  g.fillStyle="rgba(34,165,95,.10)";
+  g.fillRect(padL,Y(tr.t1),W,Y(tr.t0)-Y(tr.t1));
+  g.strokeStyle="#22a55f";g.setLineDash([5,4]);
+  [tr.t0,tr.t1].forEach(v=>{g.beginPath();g.moveTo(padL,Y(v));g.lineTo(w-padR,Y(v));g.stroke();});
+  g.setLineDash([]);
+  const line=(pick,col)=>{g.strokeStyle=col;g.lineWidth=1.6;g.beginPath();let s0=false;
+    list.forEach(o=>{const v=pick(o);if(v==null)return;
+      const x=X(o.t),y=Y(v);if(!s0){g.moveTo(x,y);s0=true;}else g.lineTo(x,y);});g.stroke();};
+  if(hs.length)line(o=>o.h,"#3b82f6");
+  line(o=>o.c,"#f97316");
+  g.textAlign="center";g.fillStyle="#7b8794";
+  [t0,(t0+t1)/2,t1].forEach(tt=>{g.fillText(hmDate(tt),X(tt),h-10);});
+  return c;}
+
+/* ===== تقرير وورد بهيكل تقرير آفاقي الرسمي ===== */
+function hmDoc(){
+  const q=pl();
+  const rooms=q.zones.filter(z=>hmOf(z));
+  if(!rooms.length){alert(t("hmNeedData"));return;}
+  const wasOn=hmStore().on;hmStore().on=true;
+  const plan=exportSheet(q,false).toDataURL("image/png");
+  hmStore().on=wasOn;render();
+  const esc2=x=>esc(x);
+  const th='background:#2f6f8f;color:#fff;padding:6px 10px;border:1px solid #9fb3c8;text-align:left;font-size:11pt';
+  const td='padding:5px 10px;border:1px solid #c9d6e2;font-size:10.5pt';
+  const h2='color:#1f4e79;font-size:15pt;margin:26pt 0 8pt';
+  const h3='color:#2f6f8f;font-size:12.5pt;margin:16pt 0 6pt';
+  let pass=true;
+  let body="";
+  /* الغلاف */
+  body+='<div style="text-align:center;margin-top:120pt">'+
+    '<img src="'+(LOGO_URL&&LOGO_SAFE?LOGOI.src:"")+'" style="height:70px"><br><br><br>'+
+    '<span style="font-size:24pt;color:#1f4e79;font-weight:700">Temperature Mapping Report</span><br><br>'+
+    '<span style="font-size:12pt"><b style="color:#2f6f8f">Warehouse Name:</b> '+esc2(q.name||P.name||"")+'</span><br>'+
+    '<span style="font-size:12pt"><b style="color:#2f6f8f">Client:</b> '+esc2(P.client||"")+'</span><br>'+
+    '<span style="font-size:12pt"><b style="color:#2f6f8f">Date:</b> '+hmDate(Date.now()).slice(0,10)+'</span></div>'+
+    '<br style="page-break-after:always">';
+  /* السرية والمراجع */
+  body+='<h2 style="'+h2+'">Confidentiality Note</h2>'+
+    '<p>This report is prepared by AFAQY Technology Co. Ltd. for the purpose of validating temperature and humidity conditions inside warehouses through a structured Temperature Mapping Study (TMS). The study is conducted in accordance with the guidelines of SFDA, WHO, GDP, and PDA Technical Reports.</p>'+
+    '<p>AFAQY\u2019s scope is limited to sensor installation, calibration verification, data collection, analysis, and reporting. The evaluation of refrigeration system performance and thermal insulation remains the responsibility of the client.</p>'+
+    '<h2 style="'+h2+'">Acronyms &amp; References</h2>'+
+    '<p>SFDA \u2013 Saudi Food and Drug Authority<br>GSDP \u2013 Good Storage and Distribution Practices<br>MKT \u2013 Mean Kinetic Temperature<br>IQ \u2013 Installation Qualification<br>PQ \u2013 Performance Qualification</p>'+
+    '<p>SFDA Document PE-F-220-002-V4 \u2013 Temperature Mapping of Storage &amp; Transport<br>SFDA GSDP Guideline, Version 1.1 (2016)<br>WHO TRS 961, Annex 9 (2011)<br>PDA Technical Report No. 39 (2007)<br>EU GDP Guidelines (2013/C 343/01)</p>'+
+    '<br style="page-break-after:always">';
+  /* الرسمة وجدول النقاط */
+  body+='<h2 style="'+h2+'">1. Overview of Storage Locations</h2>'+
+    '<p>All sensors and gateways are distributed as shown \u2014 gateways as blue squares, sensors as red circles. Rooms are coloured by the mapping result: green within range, red out of range.</p>'+
+    '<img src="'+plan+'" style="width:100%">'+
+    '<h2 style="'+h2+'">2. Sensor Points for Temperature and Humidity Monitoring</h2>'+
+    '<table style="border-collapse:collapse;width:100%"><tr>'+
+    '<th style="'+th+'">Area</th><th style="'+th+'">Zone Type</th><th style="'+th+'">Allowed Range</th>'+
+    '<th style="'+th+'">Gateways</th><th style="'+th+'">Sensors</th></tr>';
+  q.zones.forEach(z=>{const st2=zoneStat(q,z),tr=trOf(z),kd=zKind(z);
+    body+='<tr><td style="'+td+'">'+esc2(z.name)+'</td>'+
+      '<td style="'+td+'">'+(kd==="fridge"?"COLD AREA":kd==="corr"?"CORRIDOR":"AREA")+'</td>'+
+      '<td style="'+td+'">'+tr.t0+' to '+tr.t1+' \u00B0C'+(tr.h1!=null?' \u00B7 RH \u2264 '+tr.h1+'%':'')+'</td>'+
+      '<td style="'+td+'">'+st2.g+'</td><td style="'+td+'">'+st2.n+'</td></tr>';});
+  body+='</table><br style="page-break-after:always">';
+  /* صفحة لكل غرفة */
+  body+='<h2 style="'+h2+'">3. Temperature and Humidity Results by Room</h2>';
+  rooms.forEach(z=>{
+    const d=hmOf(z),tr=trOf(z),sx=hmStats(d,tr);
+    if(sx.status!=="ok"&&sx.viol>0&&sx.pct>2)pass=false;
+    const chart=hmChart(d,tr,760,300).toDataURL("image/png");
+    body+='<h3 style="'+h3+'">'+esc2(z.name)+'</h3>'+
+      '<table style="border-collapse:collapse"><tr><th style="'+th+'">Field</th><th style="'+th+'">Value</th></tr>'+
+      [["Device Name",z.name],["Warehouse Name",q.name||P.name||""],
+       ["Begin Time",hmDate(sx.from)],["End Time",hmDate(sx.to)],
+       ["Number Of Records",ar(sx.n)],
+       ["Allowed Range",tr.t0+" to "+tr.t1+" \u00B0C"],
+       ["Temp (Max)",fmt1(sx.tMax)],["Temp (Min)",fmt1(sx.tMin)],["Temp (Median)",fmt1(sx.tMed)],
+       ["Humidity (Max)",fmt1(sx.hMax)],["Humidity (Min)",fmt1(sx.hMin)],["Humidity (Median)",fmt1(sx.hMed)],
+       ["Out-of-range readings",ar(sx.viol)+" ("+ar(sx.pct)+"%)"]]
+      .map(r=>'<tr><td style="'+td+';font-weight:700">'+r[0]+'</td><td style="'+td+'">'+esc2(String(r[1]))+'</td></tr>').join("")+
+      '</table>'+
+      '<h3 style="'+h3+'">Chart Visualization</h3>'+
+      '<img src="'+chart+'" style="width:100%">'+
+      '<h3 style="'+h3+'">Readings</h3>'+
+      '<table style="border-collapse:collapse;width:100%"><tr>'+
+      '<th style="'+th+'">#</th><th style="'+th+'">Date Time</th>'+
+      '<th style="'+th+'">Temp \u00B0C</th><th style="'+th+'">Humidity %</th></tr>'+
+      d.map((o,i)=>{const bad=o.c<tr.t0||o.c>tr.t1;
+        return '<tr><td style="'+td+'">'+(i+1)+'</td><td style="'+td+'">'+hmDate(o.t)+'</td>'+
+        '<td style="'+td+(bad?';background:#fde2e0;font-weight:700':'')+'">'+fmt1(o.c)+'</td>'+
+        '<td style="'+td+'">'+(o.h!=null?fmt1(o.h):"\u2014")+'</td></tr>';}).join("")+
+      '</table><br style="page-break-after:always">';});
+  /* الخاتمة والتوقيعات */
+  body+='<h2 style="'+h2+'">4. Corrective &amp; Preventive Actions (CAPA)</h2>'+
+    '<p><b>Corrective:</b> Relocate sensors, seal insulation leaks, adjust cooling system.<br>'+
+    '<b>Preventive:</b> Update SOPs, increase monitoring frequency, conduct retraining.<br>'+
+    '<b>Revalidation:</b> Repeat mapping if corrective action significantly alters storage conditions.</p>'+
+    '<h2 style="'+h2+'">5. Limitations</h2>'+
+    '<p><b>This study is limited to the installation and performance verification of temperature and humidity sensors provided by AFAQY Technology Co. Ltd. AFAQY does not assume responsibility for refrigeration unit behavior or thermal insulation within warehouses.</b></p>'+
+    '<h2 style="'+h2+'">6. Conclusion &amp; Result</h2>'+
+    '<p>'+(pass?'All monitored rooms maintained readings within their allowed ranges during the study period.'
+      :'One or more rooms recorded readings outside the allowed range \u2014 see the highlighted rows above and the CAPA section.')+'</p>'+
+    '<p style="font-size:13pt"><b>Result: <span style="color:'+(pass?'#137a44">PASS':'#a11a12">FAIL')+'</span></b></p>'+
+    '<h2 style="'+h2+'">7. Final Approvals</h2>'+
+    ['Prepared By','Reviewed By','Approved By'].map(rl=>
+      '<p style="margin:14pt 0 4pt"><b>'+rl+'</b></p>'+
+      '<table style="border-collapse:collapse;width:100%"><tr>'+
+      '<td style="'+td+';width:28%;height:42pt"></td><td style="'+td+';width:28%"></td>'+
+      '<td style="'+td+';width:22%">Date:</td><td style="'+td+';width:22%">Signature:</td></tr></table>').join("");
+  const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">'+
+    '<head><meta charset="utf-8"><title>Temperature Mapping Report</title>'+
+    '<style>body{font-family:Calibri,"Segoe UI",sans-serif;font-size:11pt;color:#222;margin:40pt}</style></head>'+
+    '<body>'+body+'</body></html>';
+  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=(q.name||P.name||"heatmap")+" - Temperature Mapping Report.doc";
+  a.click();
+  LOG("evExport","Word");}
+btnHmDoc.onclick=hmDoc;
+
+btnHmUp.onclick=()=>fileHm.click();
+fileHm.onchange=async e=>{
+  const q=pl();
+  if(!q.zones.length){alert(t("hmNeedZones"));fileHm.value="";return;}
+  const st=hmStore();let linked=0,bad=[];
+  for(const f of e.target.files){
+    const txt=await f.text();
+    const r=hmParse(txt);
+    if(!r){bad.push(f.name);continue;}
+    let nm=r.dev||f.name.replace(/\.[^.]+$/,"");
+    const z=q.zones.find(x=>hmNorm(x.name)===hmNorm(nm));
+    if(z)nm=z.name;
+    st.data[nm]=r.rows;
+    if(z)linked++;}
+  fileHm.value="";
+  if(bad.length)alert(bad.map(n=>t("hmBadFile",n)).join("\n"));
+  LOG("evHm",t("tHmDone",ar(linked)));
+  if(linked&&!st.on)st.on=true;
+  renderHm();render();schedAS();
+  if(linked)toast(t("tHmDone",ar(linked)));};
+btnHmShow.onclick=()=>{const st=hmStore();
+  if(!st.on&&!pl().zones.some(z=>hmOf(z))){alert(t("hmNeedData"));return;}
+  st.on=!st.on;renderHm();render();openMap(true);schedAS();};
+btnHmClr.onclick=()=>{if(!confirm(t("cfmLogClr")))return;
+  P.hm={data:{},on:false};renderHm();render();schedAS();};
 document.getElementById("btnLogCsv").onclick=()=>{
   const r=[[t("thTime"),t("thAction"),t("thDetail")]];
   (P.log||[]).forEach(o=>r.push([logTime(o.t),logLabel(o.a),o.d||""]));
