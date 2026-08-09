@@ -659,7 +659,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.4";
+const VERSION="4.5";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -1622,6 +1622,33 @@ function t3render(){if(T3.ok)T3.ren.render(T3.scene,T3.cam);}
 function v3draw(){
   if(V3.on&&T3.ok){if(T3.dims)T3.dims.visible=V3.dims;t3fit();t3render();}
   else render();}
+/* صورة المجسم على أبيض — من المحرك ولو غايب من الرسم اليدوي */
+function snap3img(q,w,h){
+  const c=document.createElement("canvas");c.width=w;c.height=h;
+  const g=c.getContext("2d");
+  g.fillStyle="#ffffff";g.fillRect(0,0,w,h);
+  try{
+    if(window.THREE){t3ensure();t3build(q);
+      const u=t3snapshot(w,h);
+      if(u){g.drawImage(T3.shot.domElement,0,0,w,h);return c;}}
+  }catch(e){}
+  try{const o=opt3(q,w,h);o.pr=true;paint3D(g,q,o);}catch(e){}
+  return c;}
+/* ورقة العميل للمجسم: ترويسة + إطار */
+function sheet3D(q,w,h){
+  const c=document.createElement("canvas");c.width=w;c.height=h;
+  const g=c.getContext("2d");
+  g.fillStyle="#ffffff";g.fillRect(0,0,w,h);
+  const m=Math.round(w*.02),hh=Math.round(w*.055);
+  g.textAlign=L==="ar"?"right":"left";g.direction=L==="ar"?"rtl":"ltr";
+  g.fillStyle="#111";g.font="700 "+Math.round(w*.016)+'px "Segoe UI",Tahoma,Arial,sans-serif';
+  g.fillText((P.name||t("prTitle")),L==="ar"?w-m:m,m+Math.round(w*.014));
+  g.fillStyle="#555";g.font=Math.round(w*.011)+'px "Segoe UI",Tahoma,Arial,sans-serif';
+  g.fillText((P.client?P.client+"   ·   ":"")+"3D",L==="ar"?w-m:m,m+Math.round(w*.032));
+  g.drawImage(snap3img(q,w-m*2,h-hh-m),m,hh);
+  g.strokeStyle="#d5dde5";g.lineWidth=2;g.strokeRect(1,1,w-2,h-2);
+  return c;}
+
 function t3snapshot(w,h){
   if(!T3.ok)return null;
   if(!T3.shot)T3.shot=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
@@ -2056,12 +2083,9 @@ function jpgGet(u8){
 function pdfGet(u8){
   const m=binStr(u8).match(new RegExp(PRJ_TAG+"([A-Za-z0-9+/=]+)"+PRJ_END));
   return m?m[1]:null;}
-function buildPdf(c,title,b64){
-  const jpg=b64dec(c.toDataURL("image/jpeg",.92).split(",")[1]);
-  const iw=c.width,ih=c.height,land=iw>=ih;
-  const PW=land?842:595,PH=land?595:842,M=16;
-  const k=Math.min((PW-M*2)/iw,(PH-M*2)/ih);
-  const dw=iw*k,dh=ih*k,dx=(PW-dw)/2,dy=(PH-dh)/2;
+function buildPdf(cs,title,b64){
+  const list=Array.isArray(cs)?cs:[cs];
+  const N=list.length;
   const f=x=>(Math.round(x*100)/100);
   const hex=s2=>{let h="FEFF";
     for(let i=0;i<s2.length;i++)h+=("000"+s2.charCodeAt(i).toString(16).toUpperCase()).slice(-4);
@@ -2070,22 +2094,31 @@ function buildPdf(c,title,b64){
   const put=u=>{parts.push(u);pos+=u.length;};
   const obj=(n,b)=>{off[n]=pos;put(encLatin(n+" 0 obj\n"+b+"\nendobj\n"));};
   put(encLatin("%PDF-1.4\n%\u00E2\u00E3\u00CF\u00D3\n"));
-  obj(1,"<</Type/Catalog/Pages 2 0 R/AfaqyProject 7 0 R>>");
-  obj(2,"<</Type/Pages/Kids[3 0 R]/Count 1>>");
-  obj(3,"<</Type/Page/Parent 2 0 R/MediaBox[0 0 "+PW+" "+PH+"]"+
-        "/Resources<</XObject<</I0 4 0 R>>>>/Contents 5 0 R>>");
-  off[4]=pos;
-  put(encLatin("4 0 obj\n<</Type/XObject/Subtype/Image/Width "+iw+"/Height "+ih+
-    "/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length "+jpg.length+">>\nstream\n"));
-  put(jpg);put(encLatin("\nendstream\nendobj\n"));
-  const cs="q "+f(dw)+" 0 0 "+f(dh)+" "+f(dx)+" "+f(dy)+" cm /I0 Do Q";
-  obj(5,"<</Length "+cs.length+">>\nstream\n"+cs+"\nendstream");
-  obj(6,"<</Producer(AFAQY Sensor Tool v"+VERSION+")/Title<"+hex(title||"AFAQY")+">>>");
+  const kids=[];for(let i=0;i<N;i++)kids.push((3+i*3)+" 0 R");
+  const infoN=3+N*3,prjN=4+N*3;
+  obj(1,"<</Type/Catalog/Pages 2 0 R/AfaqyProject "+prjN+" 0 R>>");
+  obj(2,"<</Type/Pages/Kids["+kids.join(" ")+"]/Count "+N+">>");
+  list.forEach((c,i)=>{
+    const jpg=b64dec(c.toDataURL("image/jpeg",.92).split(",")[1]);
+    const iw=c.width,ih=c.height,land=iw>=ih;
+    const PW=land?842:595,PH=land?595:842,M=16;
+    const k=Math.min((PW-M*2)/iw,(PH-M*2)/ih);
+    const dw=iw*k,dh=ih*k,dx=(PW-dw)/2,dy=(PH-dh)/2;
+    const pn=3+i*3,xn=4+i*3,cn=5+i*3;
+    obj(pn,"<</Type/Page/Parent 2 0 R/MediaBox[0 0 "+PW+" "+PH+"]"+
+      "/Resources<</XObject<</I"+i+" "+xn+" 0 R>>>>/Contents "+cn+" 0 R>>");
+    off[xn]=pos;
+    put(encLatin(xn+" 0 obj\n<</Type/XObject/Subtype/Image/Width "+iw+"/Height "+ih+
+      "/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length "+jpg.length+">>\nstream\n"));
+    put(jpg);put(encLatin("\nendstream\nendobj\n"));
+    const cs2="q "+f(dw)+" 0 0 "+f(dh)+" "+f(dx)+" "+f(dy)+" cm /I"+i+" Do Q";
+    obj(cn,"<</Length "+cs2.length+">>\nstream\n"+cs2+"\nendstream");});
+  obj(infoN,"<</Producer(AFAQY Sensor Tool v"+VERSION+")/Title<"+hex(title||"AFAQY")+">>>");
   const pj=PRJ_TAG+b64+PRJ_END;
-  obj(7,"<</Type/EmbeddedFile/Length "+pj.length+">>\nstream\n"+pj+"\nendstream");
-  const xr=pos;let x="xref\n0 8\n0000000000 65535 f \n";
-  for(let n=1;n<=7;n++)x+=("0000000000"+off[n]).slice(-10)+" 00000 n \n";
-  x+="trailer\n<</Size 8/Root 1 0 R/Info 6 0 R>>\nstartxref\n"+xr+"\n%%EOF\n";
+  obj(prjN,"<</Type/EmbeddedFile/Length "+pj.length+">>\nstream\n"+pj+"\nendstream");
+  const SZ=prjN+1,xr=pos;let x="xref\n0 "+SZ+"\n0000000000 65535 f \n";
+  for(let n=1;n<SZ;n++)x+=("0000000000"+off[n]).slice(-10)+" 00000 n \n";
+  x+="trailer\n<</Size "+SZ+"/Root 1 0 R/Info "+infoN+" 0 R>>\nstartxref\n"+xr+"\n%%EOF\n";
   put(encLatin(x));
   let tot=0;parts.forEach(u=>tot+=u.length);
   const out=new Uint8Array(tot);let o2=0;
@@ -3598,7 +3631,11 @@ document.getElementById("btnNums").onclick=e=>{U.showNums=!U.showNums;
 document.getElementById("btnPng").onclick=()=>{LOG("evExport",t("bPng"));const q=pl();
   const c=exportSheet(q,2000,opCust.checked);
   if(!c){alert(t("aNoPlan"));return;}
-  dlCanvas(c,(P.name||t("filePlan"))+(P.ref?" - "+P.ref:""),!!q.imgData);};
+  const nm=(P.name||t("filePlan"))+(P.ref?" - "+P.ref:"");
+  dlCanvas(c,nm,!!q.imgData);
+  try{if(q.zones.length){const c3=sheet3D(q,2000,1250);
+    setTimeout(()=>dlBlob(new Blob([b64dec(c3.toDataURL("image/png").split(",")[1])],
+      {type:"image/png"}),nm+" - 3D.png"),380);}}catch(e){}};
 function csv(rows,name){
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob(["\uFEFF"+rows.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));
@@ -3645,17 +3682,7 @@ function hmDoc(){
   const _ps=exportSheet(q,1800,true);
   const plan=_ps?_ps.toDataURL("image/png"):"";
   /* لقطة ثلاثية الأبعاد — مطلوبة في اشتراطات الهيئة */
-  const c3=document.createElement("canvas");c3.width=1500;c3.height=880;
-  const g3=c3.getContext("2d");
-  g3.fillStyle="#ffffff";g3.fillRect(0,0,c3.width,c3.height);
-  try{
-    if(window.THREE){t3ensure();t3build(q);
-      const u=t3snapshot(1500,880);
-      if(u)g3.drawImage(T3.shot.domElement,0,0,c3.width,c3.height);
-      else{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}}
-    else{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}
-  }catch(e){try{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}catch(_e){}}
-  const iso=c3.toDataURL("image/png");
+  const iso=snap3img(q,1500,880).toDataURL("image/png");
   hmStore().on=wasOn;render();
   const esc2=x=>esc(x);
   const th='background:#2f6f8f;color:#fff;padding:6px 10px;border:1px solid #9fb3c8;text-align:left;font-size:11pt';
@@ -3850,8 +3877,10 @@ document.getElementById("btnPdf").onclick=()=>{LOG("evExport","PDF");
   if(!c){alert(t("aNoPlan"));return;}
   toast(t("tPdfWait"));
   setTimeout(()=>{try{
+    const pages=[c];
+    try{if(q.zones.length)pages.push(sheet3D(q,2400,1500));}catch(e){}
     const nm=(P.name||t("filePlan"))+(P.ref?" - "+P.ref:"");
-    dlBlob(new Blob([buildPdf(c,nm,prjB64())],{type:"application/pdf"}),nm+".pdf");
+    dlBlob(new Blob([buildPdf(pages,nm,prjB64())],{type:"application/pdf"}),nm+".pdf");
   }catch(e){alert(t("aFile"));}},40);};
 
 ["btnDraw","btnSample","btnAddRoom","btnTo2D","btnAuto"].forEach(id=>{
