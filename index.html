@@ -87,6 +87,9 @@ body.view3 .trow>*:not(#segView):not(#v3ctl){opacity:.32;pointer-events:none}
 .v3lab{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin:0}
 .v3lab input[type=range]{width:104px;padding:0}
 .v3lab input[type=number]{width:58px;padding:5px 6px;font-size:12px;text-align:center}
+.v3z{display:inline-flex;gap:4px}
+.v3z button{min-width:34px;padding:6px 0;font-weight:800}
+#btnDims.on{background:var(--accent);color:#04101c;border-color:transparent}
 .hmzones{margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .hmz{border:1px solid var(--line);border-radius:10px;background:var(--field);padding:8px 10px}
 .hmz .top{display:flex;align-items:center;gap:8px}
@@ -319,6 +322,8 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   .v3lab input[type=range]{width:70px}
   .v3lab input[type=number]{width:50px}
   #segView button{min-width:44px}
+  .v3z button{min-width:30px;padding:5px 0}
+  #btnDims,#btnV3r{padding:6px 8px;font-size:11px}
 }
 </style>
 </head>
@@ -573,8 +578,13 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
         <span class="v3only" id="v3ctl">
           <label class="v3lab"><span data-i="fRot">دوران</span>
             <input type="range" id="rngRot" min="0" max="360" value="35"></label>
+          <label class="v3lab"><span data-i="fTilt">ميل</span>
+            <input type="range" id="rngTilt" min="25" max="85" value="55"></label>
+          <span class="v3z"><button id="btnZ3m" type="button">−</button><button id="btnZ3p" type="button">+</button></span>
+          <button id="btnDims" type="button" class="on" data-i="fDims">مقاسات</button>
           <label class="v3lab"><span data-i="fHgt">الارتفاع</span>
             <input type="number" id="inH3" min="2" max="20" step="0.5" value="6"> <span data-i="unitM">متر</span></label>
+          <button id="btnV3r" type="button" data-i="bReset">إعادة</button>
         </span>
         <span class="sep"></span>
         <button data-t="pan" data-i="tPan">تحريك</button>
@@ -644,7 +654,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.2";
+const VERSION="4.3";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -682,7 +692,7 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fHgt:"ارتفاع المستودع",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fTilt:"ميل",fDims:"مقاسات",bReset:"إعادة",fHgt:"ارتفاع المستودع",
 v3Need:"ارسم الغرف الأول عشان تشوف العرض ثلاثي الأبعاد",evView:"تبديل العرض",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
 bHmHide:"رجّع الألوان العادية",bHmClr:"مسح البيانات",bHmDoc:"تقرير الخريطة الحرارية (Word)",
 hHm:"بعد التركيب، صدّر تقرير القراءات لكل غرفة من المنصة كملف <b>CSV</b> وارفعه هنا. الأداة بتربط كل ملف بالغرفة اللي بنفس الاسم — زي ما إجراءات التركيب عندكم بتسمّي الجهاز على النظام بنفس اسم الملصق. عدّل المدى المسموح لكل غرفة لو مختلف عن الافتراضي.",
@@ -805,7 +815,7 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fHgt:"Warehouse height",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fTilt:"Tilt",fDims:"Dims",bReset:"Reset",fHgt:"Warehouse height",
 v3Need:"Draw the rooms first to see the 3D view",evView:"View switched",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
 bHmHide:"Back to normal colours",bHmClr:"Clear data",bHmDoc:"Heat-map report (Word)",
 hHm:"After installation, export each room's readings report from the platform as <b>CSV</b> and upload it here. The tool links every file to the room with the same name — matching your installation SOP where the device is registered under the label name. Adjust each room's allowed range if it differs from the default.",
@@ -1435,7 +1445,7 @@ function powerIcon(g,x,y,r,k){
    مطلوب في اشتراطات الهيئة: مخطط يوضح الطول والعرض والارتفاع
    ومواقع الحساسات على ارتفاعاتها
    ================================================================ */
-const V3={on:false,rot:35,tilt:.55,z:1};
+const V3={on:false,rot:35,tilt:.55,z:1,dims:true,_p:{}};
 function h3Of(z){const kd=zKind(z);
   if(z.h3>0)return z.h3;
   return kd==="fridge"?2.2:kd==="corr"?(P.cfg.h3||6):(P.cfg.h3||6);}
@@ -1444,6 +1454,29 @@ function pr3(x,y,zz,o){
   const a=V3.rot*Math.PI/180,c=Math.cos(a),si=Math.sin(a);
   const X=x*c-y*si, Y=(x*si+y*c)*V3.tilt-zz;
   return {x:o.cx+X*o.s, y:o.cy+Y*o.s};}
+/* لون بدرجة سطوع — للإضاءة الاتجاهية */
+function shade(hex,f){const n=parseInt(hex.slice(1),16);
+  const r=Math.min(255,Math.round(((n>>16)&255)*f)),
+        gg=Math.min(255,Math.round(((n>>8)&255)*f)),
+        b=Math.min(255,Math.round((n&255)*f));
+  return "rgb("+r+","+gg+","+b+")";}
+/* شريحة نص بخلفية عشان تتقري على المشهد */
+function chip(g,x,y,lines,PR){
+  g.font='700 12px "Segoe UI",Tahoma,sans-serif';
+  let w=0;lines.forEach((ln,i)=>{g.font=(i?'':'700 ')+(i?10.5:12)+'px "Segoe UI",Tahoma,sans-serif';
+    w=Math.max(w,g.measureText(ln.t).width);});
+  const hpx=14+lines.length*14,wpx=w+16,x0=x-wpx/2,y0=y-hpx+4;
+  g.fillStyle=PR?"rgba(255,255,255,.9)":"rgba(8,14,21,.78)";
+  g.strokeStyle=PR?"rgba(60,90,120,.35)":"rgba(140,170,200,.28)";
+  g.beginPath();
+  if(g.roundRect)g.roundRect(x0,y0,wpx,hpx,6);else g.rect(x0,y0,wpx,hpx);
+  g.fill();g.stroke();
+  g.textAlign="center";
+  lines.forEach((ln,i)=>{
+    g.font=(i?'':'700 ')+(i?10.5:12)+'px "Segoe UI",Tahoma,sans-serif';
+    g.fillStyle=ln.c||(PR?"#1a2733":"#e8f0f7");
+    g.fillText(ln.t,x,y0+16+i*14);});}
+
 function face(g,pts,fill,stroke,lw){
   g.beginPath();g.moveTo(pts[0].x,pts[0].y);
   for(let i=1;i<pts.length;i++)g.lineTo(pts[i].x,pts[i].y);
@@ -1467,31 +1500,77 @@ function paint3D(g,q,o){const PR=!!o.pr;
   const zs=q.zones.map(z=>{const pts=z.pts.map(m);
       const cy=pts.reduce((a,p)=>a+p.x*Math.sin(V3.rot*Math.PI/180)+p.y*Math.cos(V3.rot*Math.PI/180),0)/pts.length;
       return {z:z,pts:pts,d:cy};}).sort((a,b)=>a.d-b.d);
+  const LT=(V3.rot+40)*Math.PI/180;   /* اتجاه الإضاءة ثابت نسبيًا للمشهد */
   zs.forEach(it=>{
     const z=it.z,pts=it.pts,H=h3Of(z),kd=zKind(z);
     const hx=hm?hmState(z):null;
     const col=hx?(hx.status==="ok"?"#22a55f":hx.status==="warn"?"#e2a500":"#d92d20")
       :kd==="fridge"?"#00b3c8":kd==="corr"?"#7d8ea0":(z.color||"#5b93ff");
-    /* أرضية */
-    face(g,pts.map(p=>pr3(p.x,p.y,0,o)),col+"33",col+"88",1.4);
-    /* جدران */
+    const cen={x:pts.reduce((a,p)=>a+p.x,0)/pts.length,y:pts.reduce((a,p)=>a+p.y,0)/pts.length};
+    const sc2=q.scale>0?q.scale:30;
+    const areaM=polyArea(z.pts)/(sc2*sc2);
+    if(kd==="corr"){
+      /* الممر مساحة مفتوحة — أرضية بس بخط متقطع */
+      face(g,pts.map(p=>pr3(p.x,p.y,0,o)),PR?"rgba(120,135,150,.12)":"rgba(125,142,160,.14)",null);
+      g.setLineDash([7,5]);
+      face(g,pts.map(p=>pr3(p.x,p.y,0,o)),null,PR?"#9aa7b4":"#7d8ea0",1.4);
+      g.setLineDash([]);
+      const lpc=pr3(cen.x,cen.y,0,o);
+      chip(g,lpc.x,lpc.y-6,[{t:z.name},{t:fmt(areaM)+" "+t("unitSq"),c:PR?"#5d7688":"#9db0c2"}],PR);
+    }else{
+    /* أرضية داكنة شوية */
+    face(g,pts.map(p=>pr3(p.x,p.y,0,o)),shade(col,.45)+"",null);
+    g.globalAlpha=PR?.25:.35;
+    face(g,pts.map(p=>pr3(p.x,p.y,0,o)),shade(col,.45),null);
+    g.globalAlpha=1;
+    /* جدران بإضاءة اتجاهية: الخلفي أصلب والأمامي شفاف عشان الحساسات تبان */
     for(let i=0;i<pts.length;i++){
       const a=pts[i],c=pts[(i+1)%pts.length];
       const mid={x:(a.x+c.x)/2,y:(a.y+c.y)/2};
       const dep=mid.x*Math.sin(V3.rot*Math.PI/180)+mid.y*Math.cos(V3.rot*Math.PI/180);
       const front=dep>it.d;
+      const nAng=Math.atan2(c.y-a.y,c.x-a.x)+Math.PI/2;
+      const lum=.55+.45*Math.max(0,Math.cos(nAng-LT));
+      g.globalAlpha=front?(PR?.16:.20):(PR?.42:.5);
       face(g,[pr3(a.x,a.y,0,o),pr3(c.x,c.y,0,o),pr3(c.x,c.y,H,o),pr3(a.x,a.y,H,o)],
-        col+(front?"1e":"2e"), col+"66",1);}
-    /* حافة السقف */
-    face(g,pts.map(p=>pr3(p.x,p.y,H,o)),null,col+"aa",1.6);
-    /* الاسم والارتفاع */
-    const cen={x:pts.reduce((a,p)=>a+p.x,0)/pts.length,y:pts.reduce((a,p)=>a+p.y,0)/pts.length};
-    const lp=pr3(cen.x,cen.y,H+.6,o);
-    g.textAlign="center";g.direction=L==="ar"?"rtl":"ltr";
-    g.fillStyle=PR?"#1a2733":"#dfe9f2";g.font='700 12px "Segoe UI",Tahoma,sans-serif';
-    g.fillText(z.name,lp.x,lp.y);
-    g.fillStyle=PR?"#5d7688":"#93a7b9";g.font='10.5px "Segoe UI",Tahoma,sans-serif';
-    g.fillText(nice(H)+" "+t("unitM")+(hx?"  ·  "+fmt1(hx.tMin)+"/"+fmt1(hx.tMax)+"°":""),lp.x,lp.y+13);
+        shade(col,lum),null);
+      g.globalAlpha=1;
+      face(g,[pr3(a.x,a.y,0,o),pr3(c.x,c.y,0,o),pr3(c.x,c.y,H,o),pr3(a.x,a.y,H,o)],
+        null, col+"55",1);}
+    /* أعمدة الأركان وحافة السقف */
+    pts.forEach(p0=>{const b0=pr3(p0.x,p0.y,0,o),t0=pr3(p0.x,p0.y,H,o);
+      g.strokeStyle=col+"99";g.lineWidth=1.4;
+      g.beginPath();g.moveTo(b0.x,b0.y);g.lineTo(t0.x,t0.y);g.stroke();});
+    face(g,pts.map(p=>pr3(p.x,p.y,H,o)),null,col+"cc",1.8);
+    /* الاسم + الارتفاع والمساحة + الحرارة */
+    const lp=pr3(cen.x,cen.y,H+1.0,o);
+    g.direction=L==="ar"?"rtl":"ltr";
+    const lines=[{t:z.name},
+      {t:nice(H)+" "+t("unitM")+"  ·  "+fmt(areaM)+" "+t("unitSq"),c:PR?"#5d7688":"#9db0c2"}];
+    if(hx)lines.push({t:fmt1(hx.tMin)+" / "+fmt1(hx.tMax)+" °",
+      c:hx.status==="ok"?(PR?"#137a44":"#5fd598"):hx.status==="warn"?(PR?"#8a6400":"#ffd056"):(PR?"#a11a12":"#ff8f85")});
+    chip(g,lp.x,lp.y,lines,PR);
+    /* خطوط الأبعاد على الحواف — للغرف المستطيلة */
+    if(V3.dims){const rd=rectDims(z,sc2);
+      if(rd){const mb=bbox(z.pts);
+        const m0={x:(mb.minX-o.ox)/sc2,y:(mb.maxY-o.oy)/sc2},
+              m1={x:(mb.maxX-o.ox)/sc2,y:(mb.maxY-o.oy)/sc2},
+              m2={x:(mb.maxX-o.ox)/sc2,y:(mb.minY-o.oy)/sc2};
+        const dim=(A,B,off,txt)=>{
+          const dx=B.x-A.x,dy=B.y-A.y,len=Math.hypot(dx,dy)||1;
+          const nx=dy/len*off,ny=-dx/len*off;
+          const a1={x:A.x+nx,y:A.y+ny},b1={x:B.x+nx,y:B.y+ny};
+          const p1=pr3(a1.x,a1.y,0,o),p2=pr3(b1.x,b1.y,0,o);
+          g.strokeStyle=PR?"#5d7688":"#93a7b9";g.lineWidth=1.1;
+          g.beginPath();g.moveTo(p1.x,p1.y);g.lineTo(p2.x,p2.y);g.stroke();
+          [[A,a1],[B,b1]].forEach(([w0,w1])=>{
+            const q0=pr3(w0.x,w0.y,0,o),q1=pr3(w1.x+ (w1.x-w0.x)*.25,w1.y+(w1.y-w0.y)*.25,0,o);
+            g.beginPath();g.moveTo(q0.x,q0.y);g.lineTo(q1.x,q1.y);g.stroke();});
+          chip(g,(p1.x+p2.x)/2,(p1.y+p2.y)/2+6,[{t:txt,c:PR?"#33506a":"#c7d6e4"}],PR);};
+        if(rd.w>2.6&&rd.h>1.9){
+          dim(m0,m1,.55,nice(rd.w)+" "+t("unitM"));
+          dim(m1,m2,.55,nice(rd.h)+" "+t("unitM"));}}}
+    }
     /* الحساسات على ٣ ارتفاعات */
     q.sensors.filter(sn=>sn.zoneId===z.id).forEach(sn=>{
       const pmt=m(sn),lv=[[.85,"UP"],[.5,"MID"],[.15,"DOWN"]];
@@ -1528,7 +1607,7 @@ function opt3(q,w,h){
     .forEach(([x,y,z])=>pts.push(pr3(x,y,z,{cx:0,cy:0,s:1})));
   const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
   const sw=Math.max(...xs)-Math.min(...xs),sh=Math.max(...ys)-Math.min(...ys);
-  const s=Math.min((w-90)/Math.max(sw,.1),(h-110)/Math.max(sh,.1));
+  const s=Math.min((w-90)/Math.max(sw,.1),(h-110)/Math.max(sh,.1))*V3.z;
   return {s:s, cx:w/2-((Math.max(...xs)+Math.min(...xs))/2)*s,
           cy:h/2-((Math.max(...ys)+Math.min(...ys))/2)*s, ox:ox, oy:oy};}
 
@@ -1539,7 +1618,8 @@ function render(){
   ctx.fillRect(0,0,r.width,r.height);
   if(V3.on){ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
     paint3D(ctx,q,opt3(q,r.width,r.height));ctx.restore();
-    badge.textContent="3D · "+nice(P.cfg.h3||6)+" "+t("unitM");return;}
+    let _ta=0;if(q.scale>0)q.zones.forEach(z=>{if(zKind(z)!=="corr")_ta+=polyArea(z.pts)/(q.scale*q.scale);});
+    badge.textContent="3D · "+nice(P.cfg.h3||6)+" "+t("unitM")+(_ta?" · "+fmt(_ta)+" "+t("unitSq"):"");return;}
   ctx.save();ctx.setTransform(k*dpr,0,0,k*dpr,V.x*dpr,V.y*dpr);
   paintWorld(ctx,k,false,q);
   if(U.draft.length){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;
@@ -2024,7 +2104,12 @@ function autoAll(){
 function pos(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
 const pts=new Map();
 cv.addEventListener("pointerdown",e=>{
-  if(V3.on){V3._d={x:e.clientX,r:V3.rot};cv.setPointerCapture(e.pointerId);return;}
+  if(V3.on){V3._p[e.pointerId]={x:e.clientX,y:e.clientY};
+    const ks=Object.keys(V3._p);
+    if(ks.length===1)V3._d={x:e.clientX,y:e.clientY,r:V3.rot,t:V3.tilt};
+    else if(ks.length>=2){const a=V3._p[ks[0]],b=V3._p[ks[1]];
+      V3._pz={d:Math.hypot(a.x-b.x,a.y-b.y),z:V3.z};V3._d=null;}
+    cv.setPointerCapture(e.pointerId);return;}
   cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,pos(e));
   if(pts.size===2){const a=[...pts.values()];U.pinch={d:dist(a[0],a[1])};return;}
   const p=pos(e),w=toWorld(p.x,p.y),q=pl();
@@ -2083,7 +2168,17 @@ cv.addEventListener("pointerdown",e=>{
       q.gateways.push({id:SEQ++,x:w.x,y:w.y,manual:true,zoneId:z?z.id:null});}
     refresh();return;}});
 cv.addEventListener("pointermove",e=>{
-  if(V3.on){if(V3._d){V3.rot=(V3._d.r+(e.clientX-V3._d.x)*.45+360)%360;rngRot.value=Math.round(V3.rot);render();}return;}
+  if(V3.on){const _pt=V3._p[e.pointerId];if(_pt){_pt.x=e.clientX;_pt.y=e.clientY;}
+    const ks=Object.keys(V3._p);
+    if(ks.length>=2&&V3._pz){const a=V3._p[ks[0]],b=V3._p[ks[1]];
+      const nd=Math.hypot(a.x-b.x,a.y-b.y);
+      V3.z=Math.min(3,Math.max(.4,V3._pz.z*nd/Math.max(1,V3._pz.d)));render();}
+    else if(V3._d){
+      V3.rot=(V3._d.r+(e.clientX-V3._d.x)*.45+360)%360;
+      V3.tilt=Math.min(.85,Math.max(.25,V3._d.t+(e.clientY-V3._d.y)*.0035));
+      rngRot.value=Math.round(V3.rot);rngTilt.value=Math.round(V3.tilt*100);
+      render();}
+    return;}
   if(!pts.has(e.pointerId)){
     const p0=pos(e);
     if(U.tool==="edit"&&pts.size===0){
@@ -2108,8 +2203,13 @@ function endP(e){pts.delete(e.pointerId);if(pts.size<2)U.pinch=null;
     if(Math.abs(a.x-b.x)>6/V.k&&Math.abs(a.y-b.y)>6/V.k)
       addZone([{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}]);
     U.rectStart=U.rectNow=null;render();}}
-cv.addEventListener("pointerup",e=>{if(V3.on){V3._d=null;return;}endP(e);});cv.addEventListener("pointercancel",e=>{if(V3.on){V3._d=null;return;}endP(e);});
-cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoomAt(p.x,p.y,e.deltaY<0?1.12:1/1.12);},{passive:false});
+const v3up=e=>{delete V3._p[e.pointerId];V3._pz=null;
+  const ks=Object.keys(V3._p);
+  V3._d=ks.length===1?{x:V3._p[ks[0]].x,y:V3._p[ks[0]].y,r:V3.rot,t:V3.tilt}:null;};
+cv.addEventListener("pointerup",e=>{if(V3.on){v3up(e);return;}endP(e);});cv.addEventListener("pointercancel",e=>{if(V3.on){v3up(e);return;}endP(e);});
+cv.addEventListener("wheel",e=>{e.preventDefault();
+  if(V3.on){V3.z=Math.min(3,Math.max(.4,V3.z*(e.deltaY<0?1.1:1/1.1)));render();return;}
+  const p=pos(e);zoomAt(p.x,p.y,e.deltaY<0?1.12:1/1.12);},{passive:false});
 cv.addEventListener("dblclick",()=>{if(U.tool==="poly")closePoly();
   if(U.tool==="wall"){U.wlast=U.wnow=null;render();}});
 window.addEventListener("keydown",e=>{
@@ -3463,6 +3563,12 @@ document.querySelectorAll("#segView button").forEach(b=>b.onclick=()=>{
   if(on)LOG("evView","3D");
   render();});
 rngRot.oninput=()=>{V3.rot=+rngRot.value;render();};
+rngTilt.oninput=()=>{V3.tilt=+rngTilt.value/100;render();};
+btnZ3p.onclick=()=>{V3.z=Math.min(3,V3.z*1.18);render();};
+btnZ3m.onclick=()=>{V3.z=Math.max(.4,V3.z/1.18);render();};
+btnDims.onclick=()=>{V3.dims=!V3.dims;btnDims.classList.toggle("on",V3.dims);render();};
+btnV3r.onclick=()=>{V3.rot=35;V3.tilt=.55;V3.z=1;V3.dims=true;
+  rngRot.value=35;rngTilt.value=55;btnDims.classList.add("on");render();};
 inH3.onchange=()=>{P.cfg.h3=Math.max(2,+inH3.value||6);render();schedAS();};
 
 btnHmUp.onclick=()=>fileHm.click();
