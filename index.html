@@ -90,6 +90,9 @@ body.view3 .trow>*:not(#segView):not(#v3ctl){opacity:.32;pointer-events:none}
 .v3z{display:inline-flex;gap:4px}
 .v3z button{min-width:34px;padding:6px 0;font-weight:800}
 #btnDims.on{background:var(--accent);color:#04101c;border-color:transparent}
+#cv3{display:none;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+body.v3gl #cv3{display:block}
+body.v3gl #cv{visibility:hidden}
 .hmzones{margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .hmz{border:1px solid var(--line);border-radius:10px;background:var(--field);padding:8px 10px}
 .hmz .top{display:flex;align-items:center;gap:8px}
@@ -326,6 +329,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   #btnDims,#btnV3r{padding:6px 8px;font-size:11px}
 }
 </style>
+<script src="three.min.js"></script>
 </head>
 <body>
 
@@ -569,6 +573,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
       <span id="mapMeta"></span>
     </div>
     <canvas id="cv"></canvas>
+    <canvas id="cv3"></canvas>
     <div class="tools">
       <div class="trow">
         <span class="kindsel" id="segView">
@@ -654,7 +659,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.3";
+const VERSION="4.4";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -1454,6 +1459,186 @@ function pr3(x,y,zz,o){
   const a=V3.rot*Math.PI/180,c=Math.cos(a),si=Math.sin(a);
   const X=x*c-y*si, Y=(x*si+y*c)*V3.tilt-zz;
   return {x:o.cx+X*o.s, y:o.cy+Y*o.s};}
+/* ================================================================
+   محرك التصيير الحقيقي — منظور وظلال وإضاءة (يشتغل لو المكتبة موجودة،
+   وإلا بيرجع للرسم اليدوي القديم تلقائيًا)
+   ================================================================ */
+const T3={ok:false};
+function t3chip(lines,PR){
+  const c=document.createElement("canvas"),g=c.getContext("2d");
+  const F1='700 26px "Segoe UI",Tahoma,sans-serif',F2='21px "Segoe UI",Tahoma,sans-serif';
+  let w=0;lines.forEach((ln,i)=>{g.font=i?F2:F1;w=Math.max(w,g.measureText(ln.t).width);});
+  c.width=Math.ceil(w+36);c.height=30+lines.length*28;
+  g.fillStyle=PR?"rgba(255,255,255,.94)":"rgba(8,14,21,.82)";
+  g.strokeStyle=PR?"rgba(60,90,120,.4)":"rgba(140,170,200,.3)";g.lineWidth=2;
+  g.beginPath();
+  if(g.roundRect)g.roundRect(1,1,c.width-2,c.height-2,10);else g.rect(1,1,c.width-2,c.height-2);
+  g.fill();g.stroke();g.textAlign="center";g.direction=L==="ar"?"rtl":"ltr";
+  lines.forEach((ln,i)=>{g.font=i?F2:F1;
+    g.fillStyle=ln.c||(PR?"#1a2733":"#e8f0f7");
+    g.fillText(ln.t,c.width/2,30+i*28);});
+  const tx=new THREE.CanvasTexture(c);tx.anisotropy=4;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false}));
+  sp.userData.asp=c.width/c.height;return sp;}
+function t3dispose(o){o.traverse(x=>{
+  if(x.geometry)x.geometry.dispose();
+  if(x.material){(Array.isArray(x.material)?x.material:[x.material]).forEach(m=>{
+    if(m.map)m.map.dispose();m.dispose();});}});}
+function t3ensure(){
+  if(T3.ok||!window.THREE)return;
+  T3.ren=new THREE.WebGLRenderer({canvas:cv3,antialias:true,preserveDrawingBuffer:true});
+  T3.ren.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  T3.ren.shadowMap.enabled=true;T3.ren.shadowMap.type=THREE.PCFSoftShadowMap;
+  T3.scene=new THREE.Scene();
+  T3.cam=new THREE.PerspectiveCamera(42,1,.1,4000);
+  T3.amb=new THREE.AmbientLight(0xffffff,.55);T3.scene.add(T3.amb);
+  T3.sun=new THREE.DirectionalLight(0xffffff,.95);
+  T3.sun.castShadow=true;T3.sun.shadow.mapSize.set(1024,1024);
+  T3.scene.add(T3.sun);
+  T3.root=new THREE.Group();T3.scene.add(T3.root);
+  T3.ok=true;}
+function t3build(q){
+  if(!T3.ok)return;
+  t3dispose(T3.root);T3.root.clear();
+  const sc=q.scale>0?q.scale:30,b=contentBox(q);if(!b)return;
+  const ox=b.minX,oy=b.minY;
+  const M=p=>({x:(p.x-ox)/sc,z:(p.y-oy)/sc});
+  const W=(b.maxX-ox)/sc,D=(b.maxY-oy)/sc,R=Math.max(W,D,6);
+  T3.center=new THREE.Vector3(W/2,0,D/2);T3.R=R;
+  T3.scene.fog=new THREE.Fog(0x0a1017,R*2.2,R*7);
+  /* الأرض والشبكة */
+  const gnd=new THREE.Mesh(new THREE.PlaneGeometry(R*8,R*8),
+    new THREE.MeshStandardMaterial({color:0x0d141c,roughness:.95}));
+  gnd.rotation.x=-Math.PI/2;gnd.position.set(W/2,-.02,D/2);gnd.receiveShadow=true;
+  T3.root.add(gnd);
+  const grid=new THREE.GridHelper(R*8,Math.round(R*4),0x223140,0x16202c);
+  grid.position.set(W/2,0,D/2);T3.root.add(grid);
+  T3.sun.position.set(W/2+R,R*1.15,D/2-R*.7);
+  T3.sun.target.position.copy(T3.center);T3.root.add(T3.sun.target);
+  const sh=T3.sun.shadow.camera;sh.left=-R*1.2;sh.right=R*1.2;sh.top=R*1.2;sh.bottom=-R*1.2;sh.far=R*5;
+  T3.dims=new THREE.Group();T3.dims.visible=V3.dims;T3.root.add(T3.dims);
+  const hm=(P.hm&&P.hm.on);
+  q.zones.forEach(z=>{
+    const kd=zKind(z),H=h3Of(z),pts=z.pts.map(M);
+    const hx=hm?hmState(z):null;
+    const colHex=hx?(hx.status==="ok"?"#22a55f":hx.status==="warn"?"#e2a500":"#d92d20")
+      :kd==="fridge"?"#00b3c8":kd==="corr"?"#7d8ea0":(z.color||"#5b93ff");
+    const col=new THREE.Color(colHex);
+    const cen={x:pts.reduce((a,p)=>a+p.x,0)/pts.length,z:pts.reduce((a,p)=>a+p.z,0)/pts.length};
+    const areaM=polyArea(z.pts)/(sc*sc);
+    /* أرضية الغرفة — بلاطة بسمك */
+    const shp=new THREE.Shape(pts.map(p=>new THREE.Vector2(p.x,p.z)));
+    const fl=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:.08,bevelEnabled:false}),
+      new THREE.MeshStandardMaterial({color:col.clone().multiplyScalar(kd==="corr"?.9:.55),
+        roughness:.9,transparent:kd==="corr",opacity:kd==="corr"?.5:1}));
+    fl.rotation.x=Math.PI/2;fl.position.y=.08;fl.receiveShadow=true;
+    T3.root.add(fl);
+    if(kd==="corr"){
+      const lg=new THREE.BufferGeometry().setFromPoints(
+        pts.concat([pts[0]]).map(p=>new THREE.Vector3(p.x,.1,p.z)));
+      const ln=new THREE.Line(lg,new THREE.LineDashedMaterial({color:0x9db0c2,dashSize:.5,gapSize:.35}));
+      ln.computeLineDistances();T3.root.add(ln);
+      const sp=t3chip([{t:z.name},{t:fmt(areaM)+" "+t("unitSq"),c:"#9db0c2"}]);
+      sp.position.set(cen.x,.9,cen.z);sp.scale.set(sp.userData.asp*1.4,1.4,1);
+      T3.root.add(sp);
+      return;}
+    /* جدران بسمك حقيقي شفافة + أعمدة أركان صلبة */
+    const wm=new THREE.MeshStandardMaterial({color:col,transparent:true,opacity:.30,
+      roughness:.55,metalness:.05,depthWrite:false,side:THREE.DoubleSide});
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i],c2=pts[(i+1)%pts.length];
+      const len=Math.hypot(c2.x-a.x,c2.z-a.z);
+      const wall=new THREE.Mesh(new THREE.BoxGeometry(len,H,.14),wm);
+      wall.position.set((a.x+c2.x)/2,H/2,(a.z+c2.z)/2);
+      wall.rotation.y=-Math.atan2(c2.z-a.z,c2.x-a.x);
+      wall.castShadow=true;T3.root.add(wall);
+      const post=new THREE.Mesh(new THREE.BoxGeometry(.2,H,.2),
+        new THREE.MeshStandardMaterial({color:col.clone().multiplyScalar(.8),roughness:.6}));
+      post.position.set(a.x,H/2,a.z);post.castShadow=true;T3.root.add(post);}
+    /* إطار السقف */
+    const tg=new THREE.BufferGeometry().setFromPoints(
+      pts.concat([pts[0]]).map(p=>new THREE.Vector3(p.x,H,p.z)));
+    T3.root.add(new THREE.Line(tg,new THREE.LineBasicMaterial({color:col})));
+    /* شريحة الاسم */
+    const lines=[{t:z.name},{t:nice(H)+" "+t("unitM")+" · "+fmt(areaM)+" "+t("unitSq"),c:"#9db0c2"}];
+    if(hx)lines.push({t:fmt1(hx.tMin)+" / "+fmt1(hx.tMax)+" °",
+      c:hx.status==="ok"?"#5fd598":hx.status==="warn"?"#ffd056":"#ff8f85"});
+    const sp=t3chip(lines);
+    sp.position.set(cen.x,H+1.1,cen.z);
+    const scl=Math.max(1.2,R*.055);
+    sp.scale.set(sp.userData.asp*scl,scl,1);T3.root.add(sp);
+    /* خطا الأبعاد */
+    const rd=rectDims(z,sc);
+    if(rd&&rd.w>2.6&&rd.h>1.9){
+      const mb=bbox(z.pts);
+      const A={x:(mb.minX-ox)/sc,z:(mb.maxY-oy)/sc},B={x:(mb.maxX-ox)/sc,z:(mb.maxY-oy)/sc},
+            C={x:(mb.maxX-ox)/sc,z:(mb.minY-oy)/sc};
+      const dim=(P1,P2,inx,inz,txt)=>{
+        const a1={x:P1.x+inx,z:P1.z+inz},b1={x:P2.x+inx,z:P2.z+inz};
+        const g1=new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(a1.x,.12,a1.z),new THREE.Vector3(b1.x,.12,b1.z)]);
+        T3.dims.add(new THREE.Line(g1,new THREE.LineBasicMaterial({color:0x93a7b9})));
+        const sp2=t3chip([{t:txt,c:"#c7d6e4"}]);
+        sp2.position.set((a1.x+b1.x)/2,.55,(a1.z+b1.z)/2);
+        sp2.scale.set(sp2.userData.asp*.85,.85,1);T3.dims.add(sp2);};
+      dim(A,B,0,-.55,nice(rd.w)+" "+t("unitM"));
+      dim(B,C,-.55,0,nice(rd.h)+" "+t("unitM"));}
+    /* الحساسات: كرة على عمود × ٣ مستويات */
+    q.sensors.filter(sn=>sn.zoneId===z.id).forEach(sn=>{
+      const pm=M(sn);
+      const pole=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,H*.85),
+        new THREE.MeshStandardMaterial({color:0x8a5550,roughness:.7}));
+      pole.position.set(pm.x,H*.425,pm.z);T3.root.add(pole);
+      [.15,.5,.85].forEach(f=>{
+        const sph=new THREE.Mesh(new THREE.SphereGeometry(.16,18,14),
+          new THREE.MeshStandardMaterial({color:0xe02b2b,emissive:0x5a0e0e,roughness:.35}));
+        sph.position.set(pm.x,H*f,pm.z);sph.castShadow=true;T3.root.add(sph);});
+      const sp3=t3chip([{t:sn.code,c:"#ffb4ad"}]);
+      sp3.position.set(pm.x,H*.85+.55,pm.z);
+      sp3.scale.set(sp3.userData.asp*.7,.7,1);T3.root.add(sp3);});
+    /* الجيت واي: صندوق بإريال أعلى الحائط */
+    q.gateways.filter(gw=>gw.zoneId===z.id).forEach(gw=>{
+      const pm=M(gw);
+      const box=new THREE.Mesh(new THREE.BoxGeometry(.42,.3,.16),
+        new THREE.MeshStandardMaterial({color:0x1f63d6,roughness:.4}));
+      box.position.set(pm.x,H*.9,pm.z);box.castShadow=true;T3.root.add(box);
+      const ant=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.5),
+        new THREE.MeshStandardMaterial({color:0xcfe0ff}));
+      ant.position.set(pm.x+.12,H*.9+.4,pm.z);T3.root.add(ant);});
+  });}
+function t3fit(){
+  if(!T3.ok||!T3.center)return;
+  const r=cv3.getBoundingClientRect();
+  T3.ren.setSize(r.width,r.height,false);
+  T3.cam.aspect=r.width/Math.max(1,r.height);T3.cam.updateProjectionMatrix();
+  const az=V3.rot*Math.PI/180,pol=(1-V3.tilt)*1.25+.15;
+  const d=T3.R*2.1/V3.z;
+  T3.cam.position.set(
+    T3.center.x+d*Math.sin(pol)*Math.sin(az),
+    d*Math.cos(pol),
+    T3.center.z+d*Math.sin(pol)*Math.cos(az));
+  T3.cam.lookAt(T3.center.x,T3.R*.12,T3.center.z);}
+function t3render(){if(T3.ok)T3.ren.render(T3.scene,T3.cam);}
+function v3draw(){
+  if(V3.on&&T3.ok){if(T3.dims)T3.dims.visible=V3.dims;t3fit();t3render();}
+  else render();}
+function t3snapshot(w,h){
+  if(!T3.ok)return null;
+  if(!T3.shot)T3.shot=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+  T3.shot.setSize(w,h,false);T3.shot.shadowMap.enabled=true;
+  const bg=T3.scene.background,fg=T3.scene.fog,am=T3.amb.intensity;
+  T3.scene.background=new THREE.Color(0xffffff);T3.scene.fog=null;T3.amb.intensity=.85;
+  const cam2=new THREE.PerspectiveCamera(42,w/h,.1,4000);
+  const az=V3.rot*Math.PI/180,pol=(1-V3.tilt)*1.25+.15,d=T3.R*2.1/Math.max(.4,V3.z);
+  cam2.position.set(T3.center.x+d*Math.sin(pol)*Math.sin(az),
+    d*Math.cos(pol),T3.center.z+d*Math.sin(pol)*Math.cos(az));
+  cam2.lookAt(T3.center.x,T3.R*.12,T3.center.z);
+  cam2.updateProjectionMatrix();
+  T3.shot.render(T3.scene,cam2);
+  const url=T3.shot.domElement.toDataURL("image/png");
+  T3.scene.background=bg;T3.scene.fog=fg;T3.amb.intensity=am;
+  return url;}
+
 /* لون بدرجة سطوع — للإضاءة الاتجاهية */
 function shade(hex,f){const n=parseInt(hex.slice(1),16);
   const r=Math.min(255,Math.round(((n>>16)&255)*f)),
@@ -1616,8 +1801,12 @@ function render(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--stage").trim()||"#0a1017";
   ctx.fillRect(0,0,r.width,r.height);
-  if(V3.on){ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
-    paint3D(ctx,q,opt3(q,r.width,r.height));ctx.restore();
+  if(V3.on){
+    if(window.THREE){t3ensure();document.body.classList.add("v3gl");
+      t3build(q);t3fit();t3render();}
+    else{document.body.classList.remove("v3gl");
+      ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
+      paint3D(ctx,q,opt3(q,r.width,r.height));ctx.restore();}
     let _ta=0;if(q.scale>0)q.zones.forEach(z=>{if(zKind(z)!=="corr")_ta+=polyArea(z.pts)/(q.scale*q.scale);});
     badge.textContent="3D · "+nice(P.cfg.h3||6)+" "+t("unitM")+(_ta?" · "+fmt(_ta)+" "+t("unitSq"):"");return;}
   ctx.save();ctx.setTransform(k*dpr,0,0,k*dpr,V.x*dpr,V.y*dpr);
@@ -2203,6 +2392,30 @@ function endP(e){pts.delete(e.pointerId);if(pts.size<2)U.pinch=null;
     if(Math.abs(a.x-b.x)>6/V.k&&Math.abs(a.y-b.y)>6/V.k)
       addZone([{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}]);
     U.rectStart=U.rectNow=null;render();}}
+["pointerdown","pointermove","pointerup","pointercancel"].forEach(ev=>
+  cv3.addEventListener(ev,e=>{
+    if(ev==="pointerdown"){V3._p[e.pointerId]={x:e.clientX,y:e.clientY};
+      const ks=Object.keys(V3._p);
+      if(ks.length===1)V3._d={x:e.clientX,y:e.clientY,r:V3.rot,t:V3.tilt};
+      else{const a=V3._p[ks[0]],b2=V3._p[ks[1]];
+        V3._pz={d:Math.hypot(a.x-b2.x,a.y-b2.y),z:V3.z};V3._d=null;}
+      cv3.setPointerCapture(e.pointerId);}
+    else if(ev==="pointermove"){const pt=V3._p[e.pointerId];if(!pt)return;
+      pt.x=e.clientX;pt.y=e.clientY;
+      const ks=Object.keys(V3._p);
+      if(ks.length>=2&&V3._pz){const a=V3._p[ks[0]],b2=V3._p[ks[1]];
+        V3.z=Math.min(3,Math.max(.4,V3._pz.z*Math.hypot(a.x-b2.x,a.y-b2.y)/Math.max(1,V3._pz.d)));v3draw();}
+      else if(V3._d){
+        V3.rot=(V3._d.r+(e.clientX-V3._d.x)*.45+360)%360;
+        V3.tilt=Math.min(.85,Math.max(.25,V3._d.t+(e.clientY-V3._d.y)*.0035));
+        rngRot.value=Math.round(V3.rot);rngTilt.value=Math.round(V3.tilt*100);v3draw();}}
+    else{delete V3._p[e.pointerId];V3._pz=null;
+      const ks=Object.keys(V3._p);
+      V3._d=ks.length===1?{x:V3._p[ks[0]].x,y:V3._p[ks[0]].y,r:V3.rot,t:V3.tilt}:null;}
+  },{passive:false}));
+cv3.addEventListener("wheel",e=>{e.preventDefault();
+  V3.z=Math.min(3,Math.max(.4,V3.z*(e.deltaY<0?1.1:1/1.1)));v3draw();},{passive:false});
+
 const v3up=e=>{delete V3._p[e.pointerId];V3._pz=null;
   const ks=Object.keys(V3._p);
   V3._d=ks.length===1?{x:V3._p[ks[0]].x,y:V3._p[ks[0]].y,r:V3.rot,t:V3.tilt}:null;};
@@ -3435,7 +3648,13 @@ function hmDoc(){
   const c3=document.createElement("canvas");c3.width=1500;c3.height=880;
   const g3=c3.getContext("2d");
   g3.fillStyle="#ffffff";g3.fillRect(0,0,c3.width,c3.height);
-  try{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}catch(e){}
+  try{
+    if(window.THREE){t3ensure();t3build(q);
+      const u=t3snapshot(1500,880);
+      if(u)g3.drawImage(T3.shot.domElement,0,0,c3.width,c3.height);
+      else{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}}
+    else{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}
+  }catch(e){try{const o3=opt3(q,c3.width,c3.height);o3.pr=true;paint3D(g3,q,o3);}catch(_e){}}
   const iso=c3.toDataURL("image/png");
   hmStore().on=wasOn;render();
   const esc2=x=>esc(x);
@@ -3560,15 +3779,16 @@ document.querySelectorAll("#segView button").forEach(b=>b.onclick=()=>{
   V3.on=on;
   document.querySelectorAll("#segView button").forEach(x=>x.classList.toggle("on",x===b));
   document.body.classList.toggle("view3",on);
+  if(!on)document.body.classList.remove("v3gl");
   if(on)LOG("evView","3D");
   render();});
-rngRot.oninput=()=>{V3.rot=+rngRot.value;render();};
-rngTilt.oninput=()=>{V3.tilt=+rngTilt.value/100;render();};
-btnZ3p.onclick=()=>{V3.z=Math.min(3,V3.z*1.18);render();};
-btnZ3m.onclick=()=>{V3.z=Math.max(.4,V3.z/1.18);render();};
-btnDims.onclick=()=>{V3.dims=!V3.dims;btnDims.classList.toggle("on",V3.dims);render();};
+rngRot.oninput=()=>{V3.rot=+rngRot.value;v3draw();};
+rngTilt.oninput=()=>{V3.tilt=+rngTilt.value/100;v3draw();};
+btnZ3p.onclick=()=>{V3.z=Math.min(3,V3.z*1.18);v3draw();};
+btnZ3m.onclick=()=>{V3.z=Math.max(.4,V3.z/1.18);v3draw();};
+btnDims.onclick=()=>{V3.dims=!V3.dims;btnDims.classList.toggle("on",V3.dims);v3draw();};
 btnV3r.onclick=()=>{V3.rot=35;V3.tilt=.55;V3.z=1;V3.dims=true;
-  rngRot.value=35;rngTilt.value=55;btnDims.classList.add("on");render();};
+  rngRot.value=35;rngTilt.value=55;btnDims.classList.add("on");v3draw();};
 inH3.onchange=()=>{P.cfg.h3=Math.max(2,+inH3.value||6);render();schedAS();};
 
 btnHmUp.onclick=()=>fileHm.click();
