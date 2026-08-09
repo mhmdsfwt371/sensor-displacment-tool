@@ -93,6 +93,10 @@ body.view3 .trow>*:not(#segView):not(#v3ctl){opacity:.32;pointer-events:none}
 #cv3{display:none;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
 body.v3gl #cv3{display:block}
 body.v3gl #cv{visibility:hidden}
+#dial3{display:none;position:absolute;top:12px;inset-inline-start:12px;width:92px;height:92px;
+  border-radius:50%;cursor:grab;touch-action:none;z-index:6;user-select:none}
+body.view3 #dial3{display:block}
+#dial3:active{cursor:grabbing}
 .hmzones{margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .hmz{border:1px solid var(--line);border-radius:10px;background:var(--field);padding:8px 10px}
 .hmz .top{display:flex;align-items:center;gap:8px}
@@ -327,6 +331,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   #segView button{min-width:44px}
   .v3z button{min-width:30px;padding:5px 0}
   #btnDims,#btnV3r{padding:6px 8px;font-size:11px}
+  #dial3{width:74px;height:74px;top:8px;inset-inline-start:8px}
 }
 </style>
 <script src="three.min.js"></script>
@@ -574,6 +579,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
     </div>
     <canvas id="cv"></canvas>
     <canvas id="cv3"></canvas>
+    <canvas id="dial3" width="184" height="184"></canvas>
     <div class="tools">
       <div class="trow">
         <span class="kindsel" id="segView">
@@ -659,7 +665,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.5";
+const VERSION="4.6";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -697,7 +703,7 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fTilt:"ميل",fDims:"مقاسات",bReset:"إعادة",fHgt:"ارتفاع المستودع",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fAng:"الزاوية",fTilt:"ميل",fDims:"مقاسات",bReset:"إعادة",fHgt:"ارتفاع المستودع",
 v3Need:"ارسم الغرف الأول عشان تشوف العرض ثلاثي الأبعاد",evView:"تبديل العرض",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
 bHmHide:"رجّع الألوان العادية",bHmClr:"مسح البيانات",bHmDoc:"تقرير الخريطة الحرارية (Word)",
 hHm:"بعد التركيب، صدّر تقرير القراءات لكل غرفة من المنصة كملف <b>CSV</b> وارفعه هنا. الأداة بتربط كل ملف بالغرفة اللي بنفس الاسم — زي ما إجراءات التركيب عندكم بتسمّي الجهاز على النظام بنفس اسم الملصق. عدّل المدى المسموح لكل غرفة لو مختلف عن الافتراضي.",
@@ -820,7 +826,7 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fTilt:"Tilt",fDims:"Dims",bReset:"Reset",fHgt:"Warehouse height",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fAng:"Angle",fTilt:"Tilt",fDims:"Dims",bReset:"Reset",fHgt:"Warehouse height",
 v3Need:"Draw the rooms first to see the 3D view",evView:"View switched",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
 bHmHide:"Back to normal colours",bHmClr:"Clear data",bHmDoc:"Heat-map report (Word)",
 hHm:"After installation, export each room's readings report from the platform as <b>CSV</b> and upload it here. The tool links every file to the room with the same name — matching your installation SOP where the device is registered under the label name. Adjust each room's allowed range if it differs from the default.",
@@ -1619,9 +1625,56 @@ function t3fit(){
     T3.center.z+d*Math.sin(pol)*Math.cos(az));
   T3.cam.lookAt(T3.center.x,T3.R*.12,T3.center.z);}
 function t3render(){if(T3.ok)T3.ren.render(T3.scene,T3.cam);}
+/* ===== بوصلة الزاوية — قراءة حية + تحكم مباشر ===== */
+const dctx=dial3.getContext("2d");
+function dial3Draw(){
+  const S=184,c=S/2,g=dctx;
+  g.clearRect(0,0,S,S);
+  g.beginPath();g.arc(c,c,c-4,0,7);
+  g.fillStyle="rgba(8,14,21,.74)";g.fill();
+  g.lineWidth=2;g.strokeStyle="rgba(140,170,200,.35)";g.stroke();
+  g.beginPath();g.moveTo(c,7);g.lineTo(c-6,18);g.lineTo(c+6,18);g.closePath();
+  g.fillStyle="#9db0c2";g.fill();
+  for(let a=0;a<360;a+=30){
+    const rd=a*Math.PI/180,maj=a%90===0;
+    const r1=c-8,r2=c-(maj?20:14);
+    g.beginPath();
+    g.moveTo(c+r1*Math.sin(rd),c-r1*Math.cos(rd));
+    g.lineTo(c+r2*Math.sin(rd),c-r2*Math.cos(rd));
+    g.lineWidth=maj?2.4:1.4;
+    g.strokeStyle=maj?"#8ea1b4":"rgba(140,160,180,.45)";g.stroke();}
+  const rd=V3.rot*Math.PI/180,nr=c-24;
+  g.beginPath();g.moveTo(c,c);
+  g.lineTo(c+nr*Math.sin(rd),c-nr*Math.cos(rd));
+  g.lineWidth=3;g.strokeStyle="#4da3ff";g.lineCap="round";g.stroke();
+  g.beginPath();g.arc(c+nr*Math.sin(rd),c-nr*Math.cos(rd),5,0,7);
+  g.fillStyle="#4da3ff";g.fill();
+  g.beginPath();g.arc(c,c,4,0,7);g.fillStyle="#c7d6e4";g.fill();
+  g.textAlign="center";g.fillStyle="#e8f0f7";
+  g.font='700 34px "Segoe UI",Tahoma,sans-serif';
+  g.fillText(ar(Math.round(V3.rot))+"°",c,c+46);
+  g.fillStyle="#8ea1b4";g.font='15px "Segoe UI",Tahoma,sans-serif';
+  g.fillText(t("fAng"),c,c+64);}
+function dial3Set(e){
+  const r=dial3.getBoundingClientRect();
+  const x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
+  V3.rot=(Math.atan2(x,-y)*180/Math.PI+360)%360;
+  rngRot.value=Math.round(V3.rot);
+  v3draw();}
+dial3.addEventListener("pointerdown",e=>{e.preventDefault();
+  dial3.setPointerCapture(e.pointerId);dial3._on=true;dial3Set(e);});
+dial3.addEventListener("pointermove",e=>{if(dial3._on)dial3Set(e);});
+["pointerup","pointercancel"].forEach(ev=>
+  dial3.addEventListener(ev,()=>{dial3._on=false;}));
+dial3.addEventListener("wheel",e=>{e.preventDefault();
+  V3.rot=(V3.rot+(e.deltaY<0?-2:2)+360)%360;
+  rngRot.value=Math.round(V3.rot);v3draw();},{passive:false});
+dial3.addEventListener("dblclick",()=>{V3.rot=35;rngRot.value=35;v3draw();});
+
 function v3draw(){
   if(V3.on&&T3.ok){if(T3.dims)T3.dims.visible=V3.dims;t3fit();t3render();}
-  else render();}
+  else render();
+  if(V3.on)dial3Draw();}
 /* صورة المجسم على أبيض — من المحرك ولو غايب من الرسم اليدوي */
 function snap3img(q,w,h){
   const c=document.createElement("canvas");c.width=w;c.height=h;
@@ -1835,7 +1888,8 @@ function render(){
       ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);
       paint3D(ctx,q,opt3(q,r.width,r.height));ctx.restore();}
     let _ta=0;if(q.scale>0)q.zones.forEach(z=>{if(zKind(z)!=="corr")_ta+=polyArea(z.pts)/(q.scale*q.scale);});
-    badge.textContent="3D · "+nice(P.cfg.h3||6)+" "+t("unitM")+(_ta?" · "+fmt(_ta)+" "+t("unitSq"):"");return;}
+    badge.textContent="3D · "+nice(P.cfg.h3||6)+" "+t("unitM")+(_ta?" · "+fmt(_ta)+" "+t("unitSq"):"");
+    dial3Draw();return;}
   ctx.save();ctx.setTransform(k*dpr,0,0,k*dpr,V.x*dpr,V.y*dpr);
   paintWorld(ctx,k,false,q);
   if(U.draft.length){ctx.strokeStyle="#ffc44d";ctx.lineWidth=2/k;
