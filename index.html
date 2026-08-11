@@ -617,7 +617,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
           </div>
           <div id="proBox" class="probox">
             <label><span data-i="dvUrl">رابط الخدمة</span>
-              <input type="text" id="proUrl" value="https://api.afaqy.sa" dir="ltr"></label>
+              <input type="text" id="proUrl" value="https://api.afaqy.pro" dir="ltr"></label>
             <label><span data-i="dvUser">المستخدم</span><input type="text" id="proUser" dir="ltr"></label>
             <label><span data-i="dvPass">كلمة السر</span><input type="password" id="proPass" dir="ltr"></label>
             <p class="hint" data-i="dvSec"></p>
@@ -753,7 +753,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="5.2";
+const VERSION="5.3";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -806,7 +806,7 @@ dvBad1:"الاتصال بالخدمة شغال — بس الدخول اترفض"
 dvBad2:"يعني الأداة وصلت للخدمة فعلًا والمشكلة في المستخدم أو كلمة السر. رد الخدمة: {m}",
 dvBlk1:"مقدرتش أوصل للخدمة",
 dvBlk2:"الأداة بتشتغل جوّه المتصفح، والمتصفح بيمنع النداء لو الخدمة مش مصرّحة لدومين الأداة. اطلب من فريق البرو يضيف دومين الأداة في المسموح — أو امشي بقالب الإكسل ونفس المخرج هيطلع.",
-dvTtl:"أجهزة النقاط",dvHint:"بعد التركيب، اكتب لكل نقطة اسمها على نظام التتبع ورقم الجهاز — أو نزّل قالب الإكسل واملاه وارفعه.",
+dvTtl:"أجهزة النقاط",dvHint:"بعد التركيب، اكتب رقم الجهاز (IMEI) لكل نقطة — والاسم بييجي من النظام لوحده لما تضغط جرّب الاتصال. أو نزّل قالب الإكسل واملاه وارفعه.",
 dvFrom:"من",dvTo:"إلى",dvTpl:"نزّل قالب إكسل",dvXls:"ارفع الإكسل",dvPro:"اتصال آفاقي برو",
 dvUrl:"رابط الخدمة",dvUser:"المستخدم",dvPass:"كلمة السر",dvGet:"جيب القراءات",
 dvSec:"بياناتك بتتخزن على جهازك بس — ولا بتترفع ولا بتتحفظ في ملف المشروع.",
@@ -821,6 +821,8 @@ dvDone:"تم: {d} جهاز · {r} قراءة",
 dvNeedCred:"اكتب رابط الخدمة والمستخدم وكلمة السر",
 dvNeedPer:"حدد الفترة (من / إلى)",
 dvNeedIds:"اكتب الاسم أو رقم الجهاز لنقطة واحدة على الأقل",
+dvNeedImei:"اكتب رقم الجهاز (IMEI) لنقطة واحدة على الأقل — الاسم مش مطلوب، بييجي من النظام.",
+dvNamed:"جاب اسم {n} جهاز من النظام",
 dvStep1:"بيدخل…",dvOkLogin:"الدخول تم",
 dvStep2:"بيدوّر على الأجهزة…",dvOkUnits:"لقى {n} جهاز",
 dvNoTok:"الرد مفيهوش مفتاح دخول",dvFail:"فشل",
@@ -963,7 +965,7 @@ dvBad1:"Connection works — but sign-in was rejected",
 dvBad2:"The tool did reach the service; the problem is the username or password. Service replied: {m}",
 dvBlk1:"Could not reach the service",
 dvBlk2:"This tool runs inside the browser, and the browser blocks calls unless the service allows this tool's domain. Ask the Pro team to allow it — or use the Excel template for the same result.",
-dvTtl:"Point devices",dvHint:"After installation, enter each point's tracking-system name and device number — or download the Excel template, fill it and upload.",
+dvTtl:"Point devices",dvHint:"After installation, enter each point's device number (IMEI) — the name is pulled from the system automatically when you test the connection. Or download the Excel template, fill it and upload.",
 dvFrom:"From",dvTo:"To",dvTpl:"Excel template",dvXls:"Upload Excel",dvPro:"Connect AFAQY Pro",
 dvUrl:"Service URL",dvUser:"Username",dvPass:"Password",dvGet:"Fetch readings",
 dvSec:"Your credentials stay on this device only — never uploaded, never saved in the project file.",
@@ -978,6 +980,8 @@ dvDone:"Done: {d} devices · {r} readings",
 dvNeedCred:"Enter service URL, username and password",
 dvNeedPer:"Set the period (From / To)",
 dvNeedIds:"Enter a name or device number for at least one point",
+dvNeedImei:"Enter the device number (IMEI) for at least one point — the name is not required, it comes from the system.",
+dvNamed:"Pulled {n} device names from the system",
 dvStep1:"Signing in…",dvOkLogin:"Signed in",
 dvStep2:"Looking up devices…",dvOkUnits:"Found {n} devices",
 dvNoTok:"Response contains no access token",dvFail:"Failed",
@@ -3456,6 +3460,22 @@ async function proTest(){
   if(r.ok){
     proStatSet("ok",t("dvOk1"),t("dvOk2").replace("{ms}",ar(ms)));
     try{localStorage.setItem("proCfg",JSON.stringify({base:base,user:us}));}catch(e){}
+    /* فرصة: نجيب أسماء الأجهزة من النظام دلوقتي بدل ما يكتبها بإيده */
+    try{
+      const imeis=devSensors().map(sn=>devOf(sn.id).imei).filter(Boolean);
+      if(imeis.length){
+        const j=await proPost(base,"/units/lists",{offset:0,limit:1000,simplify:0,
+          projection:["basic"],filters:{imei:{value:imeis,op:"in"}}},r.token);
+        let units=(j.data&&(j.data.items||j.data.list||j.data))||[];
+        if(!Array.isArray(units))units=[];
+        let n=0;
+        devSensors().forEach(sn=>{const d=devOf(sn.id);if(!d.imei)return;
+          const u=units.find(u=>String(u.imei||u.device_imei||"")===d.imei);
+          if(u&&u.name&&u.name!==d.name){d.name=String(u.name);n++;}});
+        if(n){renderDev();
+          proStatSet("ok",t("dvOk1"),t("dvOk2").replace("{ms}",ar(ms))+" "+
+            t("dvNamed").replace("{n}",ar(n)));}}
+    }catch(e){}
     return true;}
   if(r.why==="auth"){
     /* وصلنا للخدمة ورجّعت رد — يبقى الاتصال نفسه سليم */
@@ -3471,7 +3491,7 @@ async function proFetch(){
   if(!f||!tt){alert(t("dvNeedPer"));return;}
   const list=devSensors().map(sn=>({sid:sn.id,code:sn.code,d:devOf(sn.id)}))
     .filter(x=>x.d.imei||x.d.name);
-  if(!list.length){alert(t("dvNeedIds"));return;}
+  if(!list.length){alert(t("dvNeedImei"));return;}
   try{localStorage.setItem("proCfg",JSON.stringify({base:base,user:us}));}catch(e){}
   const el=document.getElementById("proLog");if(el)el.innerHTML="";
   const from=f.replace("T"," ")+":00",to=tt.replace("T"," ")+":00";
@@ -3501,10 +3521,15 @@ async function proFetch(){
            units.find(u=>nm&&String(u.name||"").toLowerCase()===nm)||null;};
   const st=hmStore();st.dev=st.dev||{};
   let okN=0,rdN=0;
+  let named=0;
   for(const x of list){
     const u=uOf(x);
-    if(!u){proLog((x.d.name||x.code)+" — "+t("dvNoUnit"),"s");continue;}
+    if(!u){proLog((x.d.name||x.d.imei||x.code)+" — "+t("dvNoUnit"),"s");continue;}
     const uid=u._id||u.id||u.unit_id;
+    /* الاسم بييجي من النظام — مش محتاج تكتبه بإيدك */
+    const sysName=String(u.name||u.unit_name||"").trim();
+    if(sysName&&sysName!==x.d.name){x.d.name=sysName;named++;}
+    if(!x.d.imei&&u.imei)x.d.imei=String(u.imei);
     try{
       let off=0,acc=[],guard=0;
       while(guard++<40){
@@ -3523,6 +3548,7 @@ async function proFetch(){
         proLog((x.d.name||x.code)+" — "+ar(acc.length),"b");}
       else proLog((x.d.name||x.code)+" — "+t("dvNoData"),"s");
     }catch(e){proLog((x.d.name||x.code)+" — "+e.message,"s");}}
+  if(named){renderDev();proLog(t("dvNamed").replace("{n}",ar(named)),"b");}
   if(okN){devRollup();renderHm();render();
     LOG("evHm","Pro · "+ar(rdN));
     alert(t("dvDone").replace("{d}",ar(okN)).replace("{r}",ar(rdN)));}
