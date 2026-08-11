@@ -210,6 +210,16 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .draftbar button{background:var(--glass);border:1.5px solid var(--bad);color:var(--bad);
   border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px}
 .draftbar #dbDone{border-color:var(--ok);color:var(--ok)}
+.savewrap{position:relative;display:inline-flex}
+#saveMenu{display:none;position:absolute;top:calc(100% + 6px);inset-inline-start:0;min-width:214px;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px;z-index:40;
+  box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.savewrap.open #saveMenu{display:block}
+#saveMenu button{display:block;width:100%;text-align:start;padding:8px 10px;border:0;background:none;
+  border-radius:7px;cursor:pointer;line-height:1.35}
+#saveMenu button:hover{background:var(--soft)}
+#saveMenu b{display:block;font-size:12.5px;color:var(--ink)}
+#saveMenu i{display:block;font-style:normal;font-size:11px;color:var(--mut);margin-top:1px}
 .histbar{position:absolute;bottom:52px;inset-inline-end:10px;display:flex;gap:6px;z-index:6}
 .histbar button{background:var(--glass);border:1px solid var(--line);color:var(--text);
   border-radius:10px;padding:9px 13px;font-size:15px;line-height:1;min-width:44px}
@@ -379,7 +389,14 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
       </div>
       <div class="r2">
         <button id="btnNew" data-i="bNew">جديد</button>
-        <button id="btnSave" data-i="save">حفظ</button>
+        <span class="savewrap">
+          <button id="btnSave" data-i="save">حفظ</button>
+          <div id="saveMenu">
+            <button id="mnuPdf"><b data-i="mPdf">PDF — ملف للطباعة</b><i data-i="mPdfS">صفحتين: المسقط + المجسم</i></button>
+            <button id="mnuPng"><b data-i="mPng">صورة PNG</b><i data-i="mPngS">للواتساب والعروض</i></button>
+            <button id="mnuJson"><b data-i="mJson">ملف المشروع</b><i data-i="mJsonS">عشان تفتحه وتكمّل عليه</i></button>
+          </div>
+        </span>
         <button id="btnOpen" data-i="open">فتح</button>
       </div>
       <input type="file" id="fileProj" accept=".json,.png,.jpg,.jpeg,.pdf" style="display:none">
@@ -674,7 +691,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.7";
+const VERSION="4.8";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -693,7 +710,10 @@ const ALLOW_OFFLINE=true;   // خلّيها false لو عايز الدخول إ�
 let L="ar";
 const DICT={
 ar:{
-appTitle:"توزيع الحساسات",save:"حفظ",open:"فتح",langBtn:"English",langTip:"English",
+appTitle:"توزيع الحساسات",mPdf:"PDF — ملف للطباعة",mPdfS:"صفحتين: المسقط + المجسم",
+mPng:"صورة PNG",mPngS:"للواتساب والعروض",
+mJson:"ملف المشروع",mJsonS:"عشان تفتحه وتكمّل عليه",
+save:"حفظ",open:"فتح",langBtn:"English",langTip:"English",
 s1:"بيانات المشروع",fName:"اسم المشروع",phName:"مخازن النور",fAux:"رقم AUX",phAux:"AUX-1024",
 fClient:"اسم الشركة (العميل / الجهة)",phClient:"شركة النور للأدوية",
 hSave:"زر <b>حفظ</b> فوق بينزّل ملف المشروع كامل بالرسمة والتوزيع — تفتحه تاني أو تبعته لزميلك ويكمّل عليه.",
@@ -816,7 +836,10 @@ aTooBig:"الملف كبير على السحابة — استعمل «تحويل
 aNoCloud:"السحابة مش متظبطة"
 },
 en:{
-appTitle:"Sensor Displacement",save:"Save",open:"Open",langBtn:"العربية",langTip:"العربية",
+appTitle:"Sensor Displacement",mPdf:"PDF — print file",mPdfS:"Two pages: plan + 3D",
+mPng:"PNG image",mPngS:"For WhatsApp and slides",
+mJson:"Project file",mJsonS:"To reopen and continue",
+save:"Save",open:"Open",langBtn:"العربية",langTip:"العربية",
 s1:"Project Details",fName:"Project Name",phName:"Al Nour Stores",fAux:"AUX Number",phAux:"AUX-1024",
 fClient:"Company (Client / Entity)",phClient:"Al Nour Pharma",
 hSave:"<b>Save</b> downloads the whole project — drawing, rooms and layout. Reopen it later or send it to a colleague to continue.",
@@ -3683,7 +3706,12 @@ document.getElementById("fileImg").onchange=e=>{if(e.target.files[0])readImage(e
 document.getElementById("btnOpen").onclick=()=>fileProj.click();
 document.getElementById("fileProj").onchange=e=>{if(e.target.files[0])readOutput(e.target.files[0]);e.target.value="";};
 document.getElementById("btnReopen").onclick=()=>fileProj.click();
-document.getElementById("btnSave").onclick=saveProject;
+const _sw=document.querySelector(".savewrap");
+document.getElementById("btnSave").onclick=e=>{e.stopPropagation();_sw.classList.toggle("open");};
+document.addEventListener("click",e=>{if(!_sw.contains(e.target))_sw.classList.remove("open");});
+mnuJson.onclick=()=>{_sw.classList.remove("open");saveProject();};
+mnuPdf.onclick =()=>{_sw.classList.remove("open");document.getElementById("btnPdf").click();};
+mnuPng.onclick =()=>{_sw.classList.remove("open");document.getElementById("btnPng").click();};
 document.getElementById("btnNew").onclick=()=>{
   if(!confirm(t("cNew")))return;
   try{localStorage.removeItem(AS_KEY);}catch(e){}
