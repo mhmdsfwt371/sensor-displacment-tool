@@ -210,6 +210,23 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .draftbar button{background:var(--glass);border:1.5px solid var(--bad);color:var(--bad);
   border-radius:10px;padding:10px 18px;font-weight:700;font-size:14px}
 .draftbar #dbDone{border-color:var(--ok);color:var(--ok)}
+.devbox{border:1px solid var(--line);border-radius:10px;padding:9px;margin:8px 0;background:var(--field)}
+.devhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.devlist{max-height:230px;overflow:auto;margin:6px 0}
+.devrow{display:grid;grid-template-columns:52px 1fr 1fr;gap:5px;align-items:center;margin-bottom:4px}
+.devrow .dvc{font-size:11px;color:var(--muted);text-align:center;
+  background:var(--panel-2);border-radius:5px;padding:5px 2px;white-space:nowrap;overflow:hidden}
+.devrow input{padding:5px 6px;font-size:11.5px;min-width:0}
+.devgrp{font-size:11px;color:var(--muted);margin:7px 0 3px;font-weight:700}
+.per{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+.per label{display:block;font-size:11px;color:var(--muted)}
+.per input{width:100%;padding:5px 6px;font-size:11.5px}
+.probox{display:none;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.probox.open{display:block}
+.probox label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
+.probox input{width:100%;padding:6px 7px;font-size:12px}
+.prolog{font-size:11px;color:var(--muted);margin-top:6px;max-height:120px;overflow:auto;line-height:1.6}
+.prolog b{color:var(--ok)}.prolog s{color:var(--bad);text-decoration:none}
 .savewrap{position:relative;display:inline-flex}
 #saveMenu{display:none;position:absolute;top:calc(100% + 6px);inset-inline-start:0;min-width:218px;
   background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px;z-index:80;
@@ -567,8 +584,37 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
         <span class="pill" id="pillHm">٠</span></summary>
       <div class="body">
         <p class="hint" data-i="hHm" data-html="1"></p>
+        <div class="devbox">
+          <div class="devhd"><b data-i="dvTtl">أجهزة النقاط</b>
+            <span class="pill" id="pillDev">٠</span></div>
+          <p class="hint" data-i="dvHint"></p>
+          <div id="devList" class="devlist"></div>
+          <div class="per">
+            <label><span data-i="dvFrom">من</span><input type="datetime-local" id="hmFrom"></label>
+            <label><span data-i="dvTo">إلى</span><input type="datetime-local" id="hmTo"></label>
+          </div>
+          <div class="btns">
+            <button id="btnDevTpl" data-i="dvTpl">نزّل قالب إكسل</button>
+            <button id="btnDevXls" data-i="dvXls">ارفع الإكسل</button>
+            <input type="file" id="fileXls" accept=".xlsx" hidden>
+          </div>
+          <div class="btns">
+            <button class="btn-main" id="btnProCfg" data-i="dvPro">اتصال آفاقي برو</button>
+          </div>
+          <div id="proBox" class="probox">
+            <label><span data-i="dvUrl">رابط الخدمة</span>
+              <input type="text" id="proUrl" value="https://api.afaqy.sa" dir="ltr"></label>
+            <label><span data-i="dvUser">المستخدم</span><input type="text" id="proUser" dir="ltr"></label>
+            <label><span data-i="dvPass">كلمة السر</span><input type="password" id="proPass" dir="ltr"></label>
+            <p class="hint" data-i="dvSec"></p>
+            <div class="btns">
+              <button class="btn-main" id="btnProGet" data-i="dvGet">جيب القراءات</button>
+            </div>
+            <div id="proLog" class="prolog"></div>
+          </div>
+        </div>
         <div class="btns">
-          <button class="btn-main" id="btnHmUp" data-i="bHmUp">ارفع ملفات القراءات</button>
+          <button id="btnHmUp" data-i="bHmUp">ارفع ملفات القراءات</button>
           <input type="file" id="fileHm" accept=".csv,.txt" multiple hidden>
         </div>
         <div id="hmZones" class="hmzones"></div>
@@ -691,7 +737,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.9";
+const VERSION="5.0";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -734,6 +780,27 @@ fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
 fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fAng:"الزاوية",dialTip:"اسحب الحافة للفّ · اسحب المنتصف لتحريك البوصلة",fTilt:"ميل",fDims:"مقاسات",bReset:"إعادة",fHgt:"ارتفاع المستودع",
 v3Need:"ارسم الغرف الأول عشان تشوف العرض ثلاثي الأبعاد",evView:"تبديل العرض",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
+dvTtl:"أجهزة النقاط",dvHint:"بعد التركيب، اكتب لكل نقطة اسمها على نظام التتبع ورقم الجهاز — أو نزّل قالب الإكسل واملاه وارفعه.",
+dvFrom:"من",dvTo:"إلى",dvTpl:"نزّل قالب إكسل",dvXls:"ارفع الإكسل",dvPro:"اتصال آفاقي برو",
+dvUrl:"رابط الخدمة",dvUser:"المستخدم",dvPass:"كلمة السر",dvGet:"جيب القراءات",
+dvSec:"بياناتك بتتخزن على جهازك بس — ولا بتترفع ولا بتتحفظ في ملف المشروع.",
+dvPhName:"الاسم على النظام",dvPhImei:"IMEI",
+dvCol1:"كود النقطة",dvCol2:"الغرفة",dvCol3:"الاسم على النظام",
+dvCol4:"التاريخ والوقت",dvCol5:"الحرارة",dvCol6:"الرطوبة",
+dvSh1:"الأجهزة",dvSh2:"القراءات",
+dvTplOk:"القالب اتنزّل — املا ورقة القراءات وارفعه",
+dvNoPts:"مفيش حساسات في الرسمة — وزّع الأول",
+dvBadXls:"مقدرتش أقرا الملف — لازم يكون xlsx",
+dvDone:"تم: {d} جهاز · {r} قراءة",
+dvNeedCred:"اكتب رابط الخدمة والمستخدم وكلمة السر",
+dvNeedPer:"حدد الفترة (من / إلى)",
+dvNeedIds:"اكتب الاسم أو رقم الجهاز لنقطة واحدة على الأقل",
+dvStep1:"بيدخل…",dvOkLogin:"الدخول تم",
+dvStep2:"بيدوّر على الأجهزة…",dvOkUnits:"لقى {n} جهاز",
+dvNoTok:"الرد مفيهوش مفتاح دخول",dvFail:"فشل",
+dvNoUnit:"مش لاقيه على النظام",dvNoData:"مفيش قراءات في الفترة دي",
+dvNoneOk:"مفيش ولا جهاز رجّع قراءات",
+dvCors:"لو الرسالة دي بتتكرر: غالبًا الخدمة مش مصرّحة للنداء من المتصفح. اسأل فريق البرو يضيف دومين الأداة، أو استعمل قالب الإكسل.",
 bHmHide:"رجّع الألوان العادية",bHmClr:"مسح البيانات",bHmDoc:"تقرير الخريطة الحرارية (Word)",
 hHm:"بعد التركيب، صدّر تقرير القراءات لكل غرفة من المنصة كملف <b>CSV</b> وارفعه هنا. الأداة بتربط كل ملف بالغرفة اللي بنفس الاسم — زي ما إجراءات التركيب عندكم بتسمّي الجهاز على النظام بنفس اسم الملصق. عدّل المدى المسموح لكل غرفة لو مختلف عن الافتراضي.",
 hHmDoc:"التقرير بيطلع بنفس هيكل تقرير آفاقي الرسمي: الغلاف والمراجع والرسمة وجدول النقاط، وصفحة لكل غرفة فيها الملخص وجدول القراءات والرسم البياني، والنتيجة النهائية. بيتفتح في وورد وتكمّل عليه التوقيعات.",
@@ -860,6 +927,27 @@ fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
 fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fAng:"Angle",dialTip:"Drag the rim to rotate · drag the centre to move the dial",fTilt:"Tilt",fDims:"Dims",bReset:"Reset",fHgt:"Warehouse height",
 v3Need:"Draw the rooms first to see the 3D view",evView:"View switched",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
+dvTtl:"Point devices",dvHint:"After installation, enter each point's tracking-system name and device number — or download the Excel template, fill it and upload.",
+dvFrom:"From",dvTo:"To",dvTpl:"Excel template",dvXls:"Upload Excel",dvPro:"Connect AFAQY Pro",
+dvUrl:"Service URL",dvUser:"Username",dvPass:"Password",dvGet:"Fetch readings",
+dvSec:"Your credentials stay on this device only — never uploaded, never saved in the project file.",
+dvPhName:"System name",dvPhImei:"IMEI",
+dvCol1:"Point code",dvCol2:"Room",dvCol3:"System name",
+dvCol4:"Date and time",dvCol5:"Temperature",dvCol6:"Humidity",
+dvSh1:"Devices",dvSh2:"Readings",
+dvTplOk:"Template downloaded — fill the Readings sheet and upload",
+dvNoPts:"No sensors in the drawing — distribute first",
+dvBadXls:"Could not read the file — it must be .xlsx",
+dvDone:"Done: {d} devices · {r} readings",
+dvNeedCred:"Enter service URL, username and password",
+dvNeedPer:"Set the period (From / To)",
+dvNeedIds:"Enter a name or device number for at least one point",
+dvStep1:"Signing in…",dvOkLogin:"Signed in",
+dvStep2:"Looking up devices…",dvOkUnits:"Found {n} devices",
+dvNoTok:"Response contains no access token",dvFail:"Failed",
+dvNoUnit:"not found on the system",dvNoData:"no readings in this period",
+dvNoneOk:"No device returned readings",
+dvCors:"If this keeps happening: the service likely does not allow browser calls. Ask the Pro team to allow this tool's domain, or use the Excel template.",
 bHmHide:"Back to normal colours",bHmClr:"Clear data",bHmDoc:"Heat-map report (Word)",
 hHm:"After installation, export each room's readings report from the platform as <b>CSV</b> and upload it here. The tool links every file to the room with the same name — matching your installation SOP where the device is registered under the label name. Adjust each room's allowed range if it differs from the default.",
 hHmDoc:"The report follows AFAQY's official structure: cover, references, the layout drawing and points table, then a page per room with the summary, full readings table and chart, and the final result. Opens in Word for signatures.",
@@ -2971,6 +3059,391 @@ function renderIssues(){
     ?list.map(i=>'<div class="issue err"><b>•</b><span>'+esc(i)+'</span></div>').join("")
     :'<div class="issue ok"><b>✓</b><span>'+t("okAll")+'</span></div>';}
 
+/* ================= محرك إكسل + أجهزة النقاط + آفاقي برو ================= */
+/* ===== ZIP + XLSX من الصفر — بلا مكتبات ===== */
+/* crc32 موجودة أصلًا في الأداة — بنعيد استعمالها */
+function zipMake(files){ /* [{name,data:Uint8Array}] → Uint8Array (store only) */
+  const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+  const u16=v=>[v&255,(v>>8)&255],u32=v=>[v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255];
+  files.forEach(f=>{
+    const nm=enc.encode(f.name),c=crc32(f.data),n=f.data.length;
+    const lh=[].concat([0x50,0x4b,3,4],u16(20),u16(0),u16(0),u16(0),u16(0),
+      u32(c),u32(n),u32(n),u16(nm.length),u16(0));
+    parts.push(new Uint8Array(lh),nm,f.data);
+    cd.push({nm,c,n,off});
+    off+=lh.length+nm.length+n;});
+  const cds=[];let cdl=0;
+  cd.forEach(e=>{
+    const h=[].concat([0x50,0x4b,1,2],u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),
+      u32(e.c),u32(e.n),u32(e.n),u16(e.nm.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(e.off));
+    cds.push(new Uint8Array(h),e.nm);cdl+=h.length+e.nm.length;});
+  const eo=new Uint8Array([].concat([0x50,0x4b,5,6],u16(0),u16(0),
+    u16(cd.length),u16(cd.length),u32(cdl),u32(off),u16(0)));
+  const all=parts.concat(cds,[eo]);
+  let tot=0;all.forEach(a=>tot+=a.length);
+  const out=new Uint8Array(tot);let p=0;all.forEach(a=>{out.set(a,p);p+=a.length;});
+  return out;}
+/* esc موجودة أصلًا — بنعيد استعمالها */
+function colName(i){let s="";i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26;}return s;}
+function sheetXml(rows){
+  let x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+   '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>';
+  rows.forEach((r,ri)=>{
+    x+='<row r="'+(ri+1)+'">';
+    r.forEach((v,ci)=>{
+      const ref=colName(ci)+(ri+1);
+      if(v===null||v===undefined||v==="")return;
+      if(typeof v==="number"&&isFinite(v))x+='<c r="'+ref+'"><v>'+v+'</v></c>';
+      else x+='<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+esc(v)+'</t></is></c>';});
+    x+='</row>';});
+  return x+'</sheetData></worksheet>';}
+function xlsxMake(sheets){ /* [{name,rows}] */
+  const enc=new TextEncoder(),F=[];
+  const ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+   '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+   '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+   '<Default Extension="xml" ContentType="application/xml"/>'+
+   '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+   sheets.map((s,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+
+     '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+
+   '</Types>';
+  F.push({name:"[Content_Types].xml",data:enc.encode(ct)});
+  F.push({name:"_rels/.rels",data:enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+   '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+   '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')});
+  F.push({name:"xl/workbook.xml",data:enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+   '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '+
+   'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'+
+   sheets.map((s,i)=>'<sheet name="'+esc(s.name)+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join('')+
+   '</sheets></workbook>')});
+  F.push({name:"xl/_rels/workbook.xml.rels",data:enc.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+   '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+   sheets.map((s,i)=>'<Relationship Id="rId'+(i+1)+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join('')+
+   '</Relationships>')});
+  sheets.forEach((s,i)=>F.push({name:"xl/worksheets/sheet"+(i+1)+".xml",data:enc.encode(sheetXml(s.rows))}));
+  return zipMake(F);}
+
+/* ===== قراءة xlsx: فك ZIP + فك الضغط بواجهة المتصفح ===== */
+async function unzip(u8){
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  let e=-1;
+  for(let i=u8.length-22;i>=0&&i>u8.length-70000;i--)
+    if(dv.getUint32(i,true)===0x06054b50){e=i;break;}
+  if(e<0)throw new Error("bad zip");
+  const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);
+  const out={};
+  for(let i=0;i<n;i++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    const meth=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),
+      nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),
+      cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true);
+    const name=new TextDecoder().decode(u8.subarray(p+46,p+46+nl));
+    const lnl=dv.getUint16(lo+26,true),lel=dv.getUint16(lo+28,true);
+    const ds=lo+30+lnl+lel,raw=u8.subarray(ds,ds+csz);
+    out[name]=meth===0?Promise.resolve(raw):inflate(raw);
+    p+=46+nl+el+cl;}
+  for(const k in out)out[k]=await out[k];
+  return out;}
+async function inflate(u8){
+  if(typeof DecompressionStream==="undefined")throw new Error("no-inflate");
+  const ds=new DecompressionStream("deflate-raw");
+  const rs=new Blob([u8]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(rs).arrayBuffer());}
+function xmlCells(xml,shared){
+  const rows=[];
+  const rre=/<row[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g;let m;
+  while((m=rre.exec(xml))){
+    const ri=+m[1]-1,cells=[];
+    const cre=/<c\s([^>]*)>([\s\S]*?)<\/c>|<c\s([^>]*)\/>/g;let c;
+    while((c=cre.exec(m[2]))){
+      const at=c[1]||c[3]||"",inner=c[2]||"";
+      const ref=(at.match(/r="([A-Z]+)\d+"/)||[])[1]||"";
+      let ci=0;for(let i=0;i<ref.length;i++)ci=ci*26+(ref.charCodeAt(i)-64);ci--;
+      const ty=(at.match(/t="([^"]+)"/)||[])[1]||"n";
+      let v=null;
+      if(ty==="inlineStr"){const t=inner.match(/<t[^>]*>([\s\S]*?)<\/t>/);v=t?unesc(t[1]):"";}
+      else{const t=inner.match(/<v>([\s\S]*?)<\/v>/);
+        if(t){v=unesc(t[1]);
+          if(ty==="s")v=shared[+v]||"";
+          else if(ty!=="str"&&v!==""&&isFinite(+v))v=+v;}}
+      if(ci>=0)cells[ci]=v;}
+    rows[ri]=cells;}
+  return rows;}
+const unesc=s=>String(s)
+  .replace(/&#x([0-9a-fA-F]+);/g,(m,h)=>String.fromCodePoint(parseInt(h,16)))
+  .replace(/&#(\d+);/g,(m,d)=>String.fromCodePoint(+d))
+  .replace(/&lt;/g,"<").replace(/&gt;/g,">")
+  .replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&");
+async function xlsxRead(u8){
+  const z=await unzip(u8),dec=new TextDecoder();
+  let shared=[];
+  if(z["xl/sharedStrings.xml"]){
+    const sx=dec.decode(z["xl/sharedStrings.xml"]);
+    shared=(sx.match(/<si>[\s\S]*?<\/si>/g)||[]).map(si=>
+      (si.match(/<t[^>]*>([\s\S]*?)<\/t>/g)||[]).map(t=>
+        unesc(t.replace(/<[^>]+>/g,""))).join(""));}
+  const wb=z["xl/workbook.xml"]?dec.decode(z["xl/workbook.xml"]):"";
+  const names=(wb.match(/<sheet [^>]*name="([^"]*)"/g)||[]).map(s=>unesc(s.match(/name="([^"]*)"/)[1]));
+  const out=[];
+  for(let i=1;i<=40;i++){
+    const k="xl/worksheets/sheet"+i+".xml";if(!z[k])continue;
+    out.push({name:names[i-1]||("Sheet"+i),rows:xmlCells(dec.decode(z[k]),shared)});}
+  return out;}
+
+
+/* ---------- هوية النقطة: مخزّنة مع المشروع ---------- */
+function devStore(){if(!P.dev)P.dev={};return P.dev;}
+function devOf(sid){const d=devStore();return d[sid]||(d[sid]={name:"",imei:""});}
+function devSensors(){const q=pl();if(!q)return [];
+  return q.sensors.slice().sort((a,b)=>{
+    const za=q.zones.findIndex(z=>z.id===a.zoneId),zb=q.zones.findIndex(z=>z.id===b.zoneId);
+    return za-zb||(a.code||"").localeCompare(b.code||"");});}
+function zoneNameOf(sid){const q=pl();if(!q)return "";
+  const sn=q.sensors.find(x=>x.id===sid);if(!sn)return "";
+  const z=q.zones.find(z=>z.id===sn.zoneId);return z?z.name:t("orphan");}
+function renderDev(){
+  const q=pl(),box=document.getElementById("devList");if(!box)return;
+  const list=devSensors();
+  box.innerHTML="";let last=null;
+  list.forEach(sn=>{
+    const zn=zoneNameOf(sn.id);
+    if(zn!==last){last=zn;
+      const h=document.createElement("div");h.className="devgrp";h.textContent=zn;box.appendChild(h);}
+    const d=devOf(sn.id);
+    const r=document.createElement("div");r.className="devrow";
+    r.innerHTML='<span class="dvc"></span>'+
+      '<input type="text" data-k="name" dir="auto">'+
+      '<input type="text" data-k="imei" dir="ltr" inputmode="numeric">';
+    r.querySelector(".dvc").textContent=sn.code||("#"+sn.id);
+    const [ni,ii]=r.querySelectorAll("input");
+    ni.value=d.name||"";ii.value=d.imei||"";
+    ni.placeholder=t("dvPhName");ii.placeholder=t("dvPhImei");
+    ni.oninput=()=>{d.name=ni.value.trim();devCount();};
+    ii.oninput=()=>{d.imei=ii.value.replace(/[^0-9]/g,"");ii.value=d.imei;devCount();};
+    box.appendChild(r);});
+  devCount();}
+function devCount(){
+  const list=devSensors();
+  const n=list.filter(sn=>{const d=devOf(sn.id);return d.name||d.imei;}).length;
+  const el=document.getElementById("pillDev");
+  if(el)el.textContent=ar(n)+"/"+ar(list.length);}
+
+/* ---------- قالب الإكسل ---------- */
+function devTemplate(){
+  const list=devSensors();
+  if(!list.length){alert(t("dvNoPts"));return;}
+  const A=[[t("dvCol1"),t("dvCol2"),t("dvCol3"),"IMEI"]];
+  list.forEach(sn=>{const d=devOf(sn.id);
+    A.push([sn.code||("#"+sn.id),zoneNameOf(sn.id),d.name||"",d.imei||""]);});
+  const B=[[t("dvCol3"),"IMEI",t("dvCol4"),t("dvCol5"),t("dvCol6")]];
+  const ex=list[0]?(devOf(list[0].id).name||list[0].code||"CA-01"):"CA-01";
+  B.push([ex,"",fmtLocal(new Date(Date.now()-864e5)),4.2,55]);
+  B.push([ex,"",fmtLocal(new Date(Date.now()-864e5+9e5)),4.4,54.6]);
+  const buf=xlsxMake([{name:t("dvSh1"),rows:A},{name:t("dvSh2"),rows:B}]);
+  dlBlob(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),
+    (P.name||t("filePlan"))+" - "+t("dvSh2")+".xlsx");
+  toast(t("dvTplOk"));}
+function fmtLocal(d){const z=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+" "+z(d.getHours())+":"+z(d.getMinutes());}
+function parseWhen(v){
+  if(v instanceof Date)return v.getTime();
+  if(typeof v==="number"&&v>20000&&v<80000)return Math.round((v-25569)*864e5); /* تاريخ إكسل رقمي */
+  const s=String(v||"").trim();if(!s)return NaN;
+  let m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0)).getTime();
+  m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m)return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0)).getTime();
+  const d=new Date(s);return isNaN(d)?NaN:d.getTime();}
+
+/* ---------- استيراد الإكسل ---------- */
+async function devImport(file){
+  let sheets;
+  try{sheets=await xlsxRead(new Uint8Array(await file.arrayBuffer()));}
+  catch(e){alert(t("dvBadXls"));return;}
+  const norm=v=>String(v==null?"":v).trim().toLowerCase();
+  let devN=0,rdN=0;
+  const byName={},byImei={};
+  devSensors().forEach(sn=>{const d=devOf(sn.id);
+    if(d.name)byName[norm(d.name)]=sn.id;if(d.imei)byImei[d.imei]=sn.id;});
+  /* ١) ورقة الأجهزة: تحديث الأسماء وأرقام الأجهزة بالكود */
+  sheets.forEach(sh=>{
+    const rows=sh.rows||[];if(rows.length<2)return;
+    const hd=(rows[0]||[]).map(norm);
+    const ic=hd.findIndex(h=>/كود|code/.test(h)),
+          inm=hd.findIndex(h=>/الاسم|name/.test(h)),
+          iim=hd.findIndex(h=>/imei/.test(h));
+    if(ic<0||inm<0)return;
+    const byCode={};devSensors().forEach(sn=>byCode[norm(sn.code)]=sn.id);
+    for(let i=1;i<rows.length;i++){
+      const r=rows[i]||[];const sid=byCode[norm(r[ic])];if(sid==null)continue;
+      const d=devOf(sid);
+      const nm=String(r[inm]==null?"":r[inm]).trim();
+      const im=String(iim>=0?(r[iim]==null?"":r[iim]):"").replace(/[^0-9]/g,"");
+      if(nm){d.name=nm;byName[norm(nm)]=sid;}
+      if(im){d.imei=im;byImei[im]=sid;}
+      if(nm||im)devN++;}});
+  /* ٢) ورقة القراءات: ربط بالاسم أو الرقم */
+  const st=hmStore();st.dev=st.dev||{};
+  sheets.forEach(sh=>{
+    const rows=sh.rows||[];if(rows.length<2)return;
+    const hd=(rows[0]||[]).map(norm);
+    const inm=hd.findIndex(h=>/الاسم|name/.test(h)),
+          iim=hd.findIndex(h=>/imei/.test(h)),
+          it=hd.findIndex(h=>/تاريخ|وقت|time|date/.test(h)),
+          ic=hd.findIndex(h=>/حرار|temp/.test(h)),
+          ih=hd.findIndex(h=>/رطوب|humid/.test(h));
+    if(it<0||ic<0)return;
+    for(let i=1;i<rows.length;i++){
+      const r=rows[i]||[];
+      let sid=null;
+      if(iim>=0){const im=String(r[iim]==null?"":r[iim]).replace(/[^0-9]/g,"");if(im)sid=byImei[im];}
+      if(sid==null&&inm>=0)sid=byName[norm(r[inm])];
+      if(sid==null)continue;
+      const tm=parseWhen(r[it]),c=Number(r[ic]);
+      if(!isFinite(tm)||!isFinite(c))continue;
+      (st.dev[sid]=st.dev[sid]||[]).push({t:tm,c:c,h:ih>=0&&isFinite(Number(r[ih]))?Number(r[ih]):null});
+      rdN++;}});
+  for(const k in st.dev)st.dev[k].sort((a,b)=>a.t-b.t);
+  devRollup();renderDev();renderHm();render();
+  LOG("evHm",t("dvXls")+" · "+ar(rdN));
+  alert(t("dvDone").replace("{d}",ar(devN)).replace("{r}",ar(rdN)));}
+
+/* ---------- تجميع قراءات النقاط على مستوى الغرفة ---------- */
+function devRollup(){
+  const q=pl(),st=hmStore();if(!q||!st.dev)return;
+  q.zones.forEach(z=>{
+    const ids=q.sensors.filter(sn=>sn.zoneId===z.id).map(sn=>sn.id).filter(id=>st.dev[id]&&st.dev[id].length);
+    if(!ids.length)return;
+    let all=[];ids.forEach(id=>{all=all.concat(st.dev[id]);});
+    all.sort((a,b)=>a.t-b.t);
+    st.data[z.name]=all;});}
+/* أسخن وأبرد نقطة في غرفة — من قراءات النقاط */
+function devExtremes(z){
+  const q=pl(),st=hmStore();if(!q||!st.dev)return null;
+  const out=[];
+  q.sensors.filter(sn=>sn.zoneId===z.id).forEach(sn=>{
+    const L=st.dev[sn.id];if(!L||!L.length)return;
+    let s=0,mn=1/0,mx=-1/0;
+    L.forEach(o=>{s+=o.c;if(o.c<mn)mn=o.c;if(o.c>mx)mx=o.c;});
+    out.push({id:sn.id,code:sn.code,name:(devOf(sn.id).name||sn.code),
+      avg:s/L.length,min:mn,max:mx,n:L.length});});
+  if(!out.length)return null;
+  const hot=out.reduce((a,b)=>b.avg>a.avg?b:a),cold=out.reduce((a,b)=>b.avg<a.avg?b:a);
+  return{pts:out.sort((a,b)=>b.avg-a.avg),hot:hot,cold:cold};}
+
+/* ---------- الاتصال بآفاقي برو ---------- */
+function proLog(msg,cls){
+  const el=document.getElementById("proLog");if(!el)return;
+  const d=document.createElement("div");
+  d.innerHTML=cls?"<"+cls+">"+msg+"</"+cls+">":msg;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;}
+async function proPost(base,path,body,token){
+  const u=base.replace(/\/+$/,"")+path+(token?(path.indexOf("?")>0?"&":"?")+"token="+encodeURIComponent(token):"");
+  const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({data:body})});
+  const j=await r.json().catch(()=>({}));
+  if(j&&j.status_code&&j.status_code>=400)throw new Error(j.message||("HTTP "+j.status_code));
+  if(!r.ok&&!j.data)throw new Error("HTTP "+r.status);
+  return j;}
+function proPick(o){ /* بيطلع الحرارة والرطوبة من شكل الإشارة أيًا كان */
+  let c=null,h=null;
+  const isT=k=>/temp|حرار|^t$|_t$|tmp/.test(k),
+        isH=k=>/humid|رطوب|^h$|_h$|hum/.test(k);
+  const num=v=>{const n=typeof v==="number"?v:parseFloat(v);return isFinite(n)?n:null;};
+  const scan=(v,key)=>{
+    const k=String(key||"").toLowerCase();
+    if(v&&typeof v==="object"&&!Array.isArray(v)){
+      /* نمط: {name:"Temp Sensor", value:-18.3} — الاسم في حقل والقيمة في حقل */
+      const nm=String(v.name||v.title||v.label||v.sensor_name||v.type||"").toLowerCase();
+      const hasV=["value","val","v","result","reading","current_value","sensor_value"]
+        .find(x=>v[x]!=null&&num(v[x])!==null);
+      if(nm&&hasV){
+        const n=num(v[hasV]);
+        if(c===null&&isT(nm))c=n;
+        if(h===null&&isH(nm))h=n;
+        if(isT(nm)||isH(nm))return;}
+      for(const kk in v)scan(v[kk],kk);
+      return;}
+    if(Array.isArray(v)){v.forEach(x=>scan(x,key));return;}
+    const n=num(v);
+    if(n===null)return;
+    if(c===null&&isT(k))c=n;
+    if(h===null&&isH(k))h=n;};
+  scan(o,"");
+  return{c:c,h:h};}
+function proTime(o){
+  const keys=["time","dt_tracker","dt","timestamp","datetime","created_at","dt_server"];
+  for(const k of keys){if(o&&o[k]!=null){
+    const v=o[k];
+    if(typeof v==="number")return v>1e12?v:v*1000;
+    const tm=parseWhen(v);if(isFinite(tm))return tm;}}
+  return NaN;}
+async function proFetch(){
+  const base=(document.getElementById("proUrl").value||"").trim();
+  const us=(document.getElementById("proUser").value||"").trim();
+  const pw=document.getElementById("proPass").value||"";
+  const f=document.getElementById("hmFrom").value,tt=document.getElementById("hmTo").value;
+  if(!base||!us||!pw){alert(t("dvNeedCred"));return;}
+  if(!f||!tt){alert(t("dvNeedPer"));return;}
+  const list=devSensors().map(sn=>({sid:sn.id,code:sn.code,d:devOf(sn.id)}))
+    .filter(x=>x.d.imei||x.d.name);
+  if(!list.length){alert(t("dvNeedIds"));return;}
+  try{localStorage.setItem("proCfg",JSON.stringify({base:base,user:us}));}catch(e){}
+  const el=document.getElementById("proLog");if(el)el.innerHTML="";
+  const from=f.replace("T"," ")+":00",to=tt.replace("T"," ")+":00";
+  let token;
+  try{proLog(t("dvStep1"));
+    const j=await proPost(base,"/auth/login",{username:us,password:pw});
+    token=(j.data&&(j.data.token||j.data.access_token||j.data.accessToken))||j.token;
+    if(!token)throw new Error(t("dvNoTok"));
+    proLog(t("dvOkLogin"),"b");
+  }catch(e){
+    proLog(t("dvFail")+": "+e.message,"s");
+    proLog(t("dvCors"),"s");return;}
+  /* مطابقة الأجهزة */
+  let units=[];
+  try{proLog(t("dvStep2"));
+    const imeis=list.map(x=>x.d.imei).filter(Boolean);
+    const body={offset:0,limit:1000,simplify:0,projection:["basic","last_update","sensors"]};
+    if(imeis.length)body.filters={imei:{value:imeis,op:"in"}};
+    const j=await proPost(base,"/units/lists",body,token);
+    units=(j.data&&(j.data.items||j.data.list||j.data))||[];
+    if(!Array.isArray(units))units=[];
+    proLog(t("dvOkUnits").replace("{n}",ar(units.length)),"b");
+  }catch(e){proLog(t("dvFail")+": "+e.message,"s");return;}
+  const uOf=x=>{
+    const im=x.d.imei,nm=(x.d.name||"").toLowerCase();
+    return units.find(u=>im&&String(u.imei||u.device_imei||"")===im)||
+           units.find(u=>nm&&String(u.name||"").toLowerCase()===nm)||null;};
+  const st=hmStore();st.dev=st.dev||{};
+  let okN=0,rdN=0;
+  for(const x of list){
+    const u=uOf(x);
+    if(!u){proLog((x.d.name||x.code)+" — "+t("dvNoUnit"),"s");continue;}
+    const uid=u._id||u.id||u.unit_id;
+    try{
+      let off=0,acc=[],guard=0;
+      while(guard++<40){
+        const j=await proPost(base,"/units/signals",{unit_id:uid,
+          date:{from:from,to:to},message_type:"data_messages",
+          limit:"1000",offset:String(off),sensors:true},token);
+        let arr=(j.data&&(j.data.items||j.data.list||j.data.messages||j.data))||[];
+        if(!Array.isArray(arr))arr=[];
+        if(!arr.length)break;
+        arr.forEach(o=>{const tm=proTime(o),v=proPick(o);
+          if(isFinite(tm)&&v.c!==null)acc.push({t:tm,c:v.c,h:v.h});});
+        if(arr.length<1000)break;
+        off+=arr.length;}
+      acc.sort((a,b)=>a.t-b.t);
+      if(acc.length){st.dev[x.sid]=acc;okN++;rdN+=acc.length;
+        proLog((x.d.name||x.code)+" — "+ar(acc.length),"b");}
+      else proLog((x.d.name||x.code)+" — "+t("dvNoData"),"s");
+    }catch(e){proLog((x.d.name||x.code)+" — "+e.message,"s");}}
+  if(okN){devRollup();renderHm();render();
+    LOG("evHm","Pro · "+ar(rdN));
+    alert(t("dvDone").replace("{d}",ar(okN)).replace("{r}",ar(rdN)));}
+  else alert(t("dvNoneOk"));}
+
 /* ================= حفظ وفتح ================= */
 function saveProject(){LOG("evSave",P.name||"");
   syncCfg();P.lang=L;P.appV=VERSION;
@@ -3928,7 +4401,44 @@ function hmDoc(){
       (!pass?'#a11a12">STUDY FAILED':obs?'#8a6400">PASS WITH OBSERVATIONS':'#137a44">PASS')+'</span></b></p>'+
     '<h2 style="'+h2+'">8. Study Repetition</h2>'+
     '<p>The study shall be repeated if any structural modification is made to the storage areas, refrigerators or freezers, or if the air-conditioning units are changed. In all cases the study shall be repeated at least every <b>5 years</b>, even when routine readings remain within the recommended limits.</p>'+
-    '<h2 style="'+h2+'">9. Final Approvals</h2>'+
+    (function(){
+      const rows=[];
+      q.zones.forEach(z=>{
+        const ex=devExtremes(z);if(!ex)return;
+        rows.push('<tr><td style="'+td+'"><b>'+esc(z.name)+'</b></td>'+
+          '<td style="'+td+'">'+esc(ex.hot.name)+'</td>'+
+          '<td style="'+td+';color:#a11a12"><b>'+fmt1(ex.hot.avg)+' °C</b></td>'+
+          '<td style="'+td+'">'+fmt1(ex.hot.max)+' °C</td>'+
+          '<td style="'+td+'">'+esc(ex.cold.name)+'</td>'+
+          '<td style="'+td+';color:#1c4587"><b>'+fmt1(ex.cold.avg)+' °C</b></td>'+
+          '<td style="'+td+'">'+fmt1(ex.cold.min)+' °C</td>'+
+          '<td style="'+td+'">'+fmt1(ex.hot.avg-ex.cold.avg)+' °C</td></tr>');});
+      if(!rows.length)return '';
+      let det='';
+      q.zones.forEach(z=>{
+        const ex=devExtremes(z);if(!ex||ex.pts.length<2)return;
+        det+='<p style="margin:12pt 0 4pt"><b>'+esc(z.name)+'</b> — '+
+          ar(ex.pts.length)+' monitored points</p>'+
+          '<table style="border-collapse:collapse;width:100%;font-size:10pt">'+
+          '<tr>'+['Point','Mean °C','Min °C','Max °C','Readings','Classification']
+            .map(x=>'<th style="'+th+'">'+x+'</th>').join('')+'</tr>'+
+          ex.pts.map((pt,i)=>'<tr><td style="'+td+'">'+esc(pt.name)+'</td>'+
+            '<td style="'+td+'">'+fmt1(pt.avg)+'</td><td style="'+td+'">'+fmt1(pt.min)+'</td>'+
+            '<td style="'+td+'">'+fmt1(pt.max)+'</td><td style="'+td+'">'+ar(pt.n)+'</td>'+
+            '<td style="'+td+'">'+(i===0?'<b style="color:#a11a12">Hottest point</b>':
+              i===ex.pts.length-1?'<b style="color:#1c4587">Coldest point</b>':'—')+'</td></tr>').join('')+
+          '</table>';});
+      return '<h2 style="'+h2+'">9. Hottest and Coldest Points</h2>'+
+        '<p>The objective of the mapping study is to identify the warmest and coolest locations '+
+        'within each storage area. The table below summarises the mean temperature recorded at every '+
+        'monitored point over the full study period.</p>'+
+        '<table style="border-collapse:collapse;width:100%;font-size:10pt"><tr>'+
+        ['Area','Hottest point','Mean','Peak','Coldest point','Mean','Lowest','Spread']
+          .map(x=>'<th style="'+th+'">'+x+'</th>').join('')+'</tr>'+rows.join('')+'</table>'+det+
+        '<p style="margin-top:10pt">Products with the tightest temperature tolerance should be stored '+
+        'away from the hottest locations identified above. Routine monitoring sensors shall remain '+
+        'installed at both the hottest and coldest points.</p>';})()+
+    '<h2 style="'+h2+'">'+(q.zones.some(z=>devExtremes(z))?'10':'9')+'. Final Approvals</h2>'+
     ['Prepared By','Reviewed By','Approved By'].map(rl=>
       '<p style="margin:14pt 0 4pt"><b>'+rl+'</b></p>'+
       '<table style="border-collapse:collapse;width:100%"><tr>'+
