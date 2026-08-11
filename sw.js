@@ -1,6 +1,6 @@
 /* Service worker — شبكة أولًا مع رجوع للذاكرة عشان الأداة تشتغل أوفلاين
    ومع ذلك تفضل قابلة للتحديث. غيّر SW_V مع كل إصدار. */
-const SW_V = "5.0";
+const SW_V = "5.1";
 const CACHE = "sensor-tool-" + SW_V;
 const CORE = ["./", "./index.html", "./three.min.js", "./manifest.json",
               "./icon-192.png", "./icon-512.png", "./icon-maskable.png",

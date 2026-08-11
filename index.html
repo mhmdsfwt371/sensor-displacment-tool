@@ -220,7 +220,12 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .devgrp{font-size:11px;color:var(--muted);margin:7px 0 3px;font-weight:700}
 .per{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
 .per label{display:block;font-size:11px;color:var(--muted)}
-.per input{width:100%;padding:5px 6px;font-size:11.5px}
+.per input{width:100%;padding:6px 7px;font-size:12px;
+  background:var(--field);color:var(--text);border:1px solid var(--line);
+  border-radius:8px;-webkit-appearance:none;appearance:none;min-height:34px}
+.per input::-webkit-date-and-time-value{text-align:start;color:var(--text)}
+.per input::-webkit-calendar-picker-indicator{filter:invert(.75)}
+html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:none}
 .probox{display:none;border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
 .probox.open{display:block}
 .probox label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
@@ -737,7 +742,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="5.0";
+const VERSION="5.1";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -1228,7 +1233,8 @@ const fmt1=x=>x==null?"—":ar((Math.round(x*10)/10).toFixed(1));
 function hmDate(ms){const d=new Date(ms),p=n=>String(n).padStart(2,"0");
   return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());}
 
-function renderHm(){
+function renderHm(){try{renderDev();}catch(e){}
+
   const q=pl(),st=hmStore(),box=document.getElementById("hmZones");
   const linked=q.zones.filter(z=>hmOf(z)).length;
   pillHm.textContent=ar(linked);
@@ -3007,7 +3013,8 @@ function issues(){
   return out;}
 
 /* ================= الواجهة ================= */
-function refresh(){renumber();renderZones();renderResults();renderIssues();render();
+function refresh(){try{renderDev();}catch(e){}
+renumber();renderZones();renderResults();renderIssues();render();
   fbUndo.disabled=!U.undo.length;fbRedo.disabled=!U.redo.length;
   btnUndo.disabled=!U.undo.length;syncMap();renderHm();}
 function renderZones(){
@@ -3453,6 +3460,8 @@ function saveProject(){LOG("evSave",P.name||"");
 function applyProject(o){
   if(!o||!o.plans)throw 0;
   P=o;P.cur=0;delete P.brand;P.log=P.log||[];LOG("evOpen",P.name||"");
+  try{const pr=(P.hm&&P.hm.per)||null;
+    if(pr){if(pr.from)hmFrom.value=pr.from;if(pr.to)hmTo.value=pr.to;}}catch(e){}
   for(const k in IMG)delete IMG[k];for(const k in ORIG)delete ORIG[k];for(const k in MASK)delete MASK[k];
   SEQ=1;P.plans.forEach(q=>{SEQ=Math.max(SEQ,q.id+1);
     q.zones.forEach(z=>SEQ=Math.max(SEQ,z.id+1));
@@ -4183,6 +4192,19 @@ const _sw=document.querySelector(".savewrap");
 document.getElementById("btnSave").onclick=e=>{e.stopPropagation();_sw.classList.toggle("open");};
 document.addEventListener("click",e=>{if(!_sw.contains(e.target))_sw.classList.remove("open");});
 mnuJson.onclick=()=>{_sw.classList.remove("open");saveProject();};
+/* — أجهزة النقاط وآفاقي برو — */
+btnDevTpl.onclick=()=>devTemplate();
+btnDevXls.onclick=()=>fileXls.click();
+fileXls.onchange=e=>{const f=e.target.files[0];if(f)devImport(f);fileXls.value="";};
+btnProCfg.onclick=()=>{proBox.classList.toggle("open");
+  if(proBox.classList.contains("open")){try{
+    const c=JSON.parse(localStorage.getItem("proCfg")||"{}");
+    if(c.base)proUrl.value=c.base;if(c.user)proUser.value=c.user;}catch(e){}}};
+btnProGet.onclick=()=>{btnProGet.disabled=true;
+  proFetch().catch(e=>proLog(String(e&&e.message||e),"s"))
+    .finally(()=>{btnProGet.disabled=false;});};
+[hmFrom,hmTo].forEach(el=>el.onchange=()=>{
+  const st=hmStore();st.per={from:hmFrom.value,to:hmTo.value};});
 mnuPdf.onclick =()=>{_sw.classList.remove("open");document.getElementById("btnPdf").click();};
 mnuPng.onclick =()=>{_sw.classList.remove("open");document.getElementById("btnPng").click();};
 document.getElementById("btnNew").onclick=()=>{
@@ -4499,7 +4521,7 @@ btnHmShow.onclick=()=>{const st=hmStore();
   if(!st.on&&!pl().zones.some(z=>hmOf(z))){alert(t("hmNeedData"));return;}
   st.on=!st.on;renderHm();render();openMap(true);schedAS();};
 btnHmClr.onclick=()=>{if(!confirm(t("cfmLogClr")))return;
-  P.hm={data:{},on:false};renderHm();render();schedAS();};
+  P.hm={data:{},dev:{},on:false};renderHm();render();schedAS();};
 document.getElementById("btnLogCsv").onclick=()=>{
   const r=[[t("thTime"),t("thAction"),t("thDetail")]];
   (P.log||[]).forEach(o=>r.push([logTime(o.t),logLabel(o.a),o.d||""]));
