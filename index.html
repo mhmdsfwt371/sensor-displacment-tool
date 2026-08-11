@@ -230,6 +230,15 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 .probox.open{display:block}
 .probox label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
 .probox input{width:100%;padding:6px 7px;font-size:12px}
+.devempty{text-align:center;padding:14px 8px;color:var(--muted);font-size:11.5px;line-height:1.7}
+.devempty b{display:block;color:var(--text);font-size:12.5px;margin-bottom:3px}
+.devempty button{margin-top:8px;padding:7px 14px;font-size:11.5px}
+.prostat{display:none;margin:7px 0;padding:8px 10px;border-radius:8px;font-size:11.5px;line-height:1.6}
+.prostat.on{display:block}
+.prostat.ok{background:rgba(87,211,140,.12);border:1px solid var(--ok);color:var(--ok)}
+.prostat.bad{background:rgba(255,107,107,.1);border:1px solid var(--bad);color:var(--bad)}
+.prostat.wait{background:var(--panel-2);border:1px solid var(--line);color:var(--muted)}
+.prostat b{display:block;font-size:12.5px;margin-bottom:2px}
 .prolog{font-size:11px;color:var(--muted);margin-top:6px;max-height:120px;overflow:auto;line-height:1.6}
 .prolog b{color:var(--ok)}.prolog s{color:var(--bad);text-decoration:none}
 .savewrap{position:relative;display:inline-flex}
@@ -612,7 +621,9 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
             <label><span data-i="dvUser">المستخدم</span><input type="text" id="proUser" dir="ltr"></label>
             <label><span data-i="dvPass">كلمة السر</span><input type="password" id="proPass" dir="ltr"></label>
             <p class="hint" data-i="dvSec"></p>
+            <div id="proStat" class="prostat"></div>
             <div class="btns">
+              <button id="btnProTest" data-i="dvTest">جرّب الاتصال</button>
               <button class="btn-main" id="btnProGet" data-i="dvGet">جيب القراءات</button>
             </div>
             <div id="proLog" class="prolog"></div>
@@ -742,7 +753,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="5.1";
+const VERSION="5.2";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -785,6 +796,16 @@ fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
 fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fAng:"الزاوية",dialTip:"اسحب الحافة للفّ · اسحب المنتصف لتحريك البوصلة",fTilt:"ميل",fDims:"مقاسات",bReset:"إعادة",fHgt:"ارتفاع المستودع",
 v3Need:"ارسم الغرف الأول عشان تشوف العرض ثلاثي الأبعاد",evView:"تبديل العرض",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
+dvEmpty:"لسه مفيش حساسات",
+dvEmptyH:"القائمة بتتبني من حساسات الرسمة — وزّعهم الأول وهيظهروا هنا بأكوادهم وغرفهم.",
+dvTest:"جرّب الاتصال",dvNeedUrl:"اكتب رابط الخدمة",
+dvTesting:"بيجرّب الاتصال…",
+dvOk1:"الاتصال شغال والدخول تم ✓",
+dvOk2:"الخدمة ردّت في {ms} جزء من الثانية. تقدر تجيب القراءات دلوقتي.",
+dvBad1:"الاتصال بالخدمة شغال — بس الدخول اترفض",
+dvBad2:"يعني الأداة وصلت للخدمة فعلًا والمشكلة في المستخدم أو كلمة السر. رد الخدمة: {m}",
+dvBlk1:"مقدرتش أوصل للخدمة",
+dvBlk2:"الأداة بتشتغل جوّه المتصفح، والمتصفح بيمنع النداء لو الخدمة مش مصرّحة لدومين الأداة. اطلب من فريق البرو يضيف دومين الأداة في المسموح — أو امشي بقالب الإكسل ونفس المخرج هيطلع.",
 dvTtl:"أجهزة النقاط",dvHint:"بعد التركيب، اكتب لكل نقطة اسمها على نظام التتبع ورقم الجهاز — أو نزّل قالب الإكسل واملاه وارفعه.",
 dvFrom:"من",dvTo:"إلى",dvTpl:"نزّل قالب إكسل",dvXls:"ارفع الإكسل",dvPro:"اتصال آفاقي برو",
 dvUrl:"رابط الخدمة",dvUser:"المستخدم",dvPass:"كلمة السر",dvGet:"جيب القراءات",
@@ -932,6 +953,16 @@ fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
 fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fAng:"Angle",dialTip:"Drag the rim to rotate · drag the centre to move the dial",fTilt:"Tilt",fDims:"Dims",bReset:"Reset",fHgt:"Warehouse height",
 v3Need:"Draw the rooms first to see the 3D view",evView:"View switched",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
+dvEmpty:"No sensors yet",
+dvEmptyH:"This list is built from the sensors on the drawing — distribute them first and they will appear here with their codes and rooms.",
+dvTest:"Test connection",dvNeedUrl:"Enter the service URL",
+dvTesting:"Testing connection…",
+dvOk1:"Connection works and sign-in succeeded ✓",
+dvOk2:"The service replied in {ms} ms. You can fetch readings now.",
+dvBad1:"Connection works — but sign-in was rejected",
+dvBad2:"The tool did reach the service; the problem is the username or password. Service replied: {m}",
+dvBlk1:"Could not reach the service",
+dvBlk2:"This tool runs inside the browser, and the browser blocks calls unless the service allows this tool's domain. Ask the Pro team to allow it — or use the Excel template for the same result.",
 dvTtl:"Point devices",dvHint:"After installation, enter each point's tracking-system name and device number — or download the Excel template, fill it and upload.",
 dvFrom:"From",dvTo:"To",dvTpl:"Excel template",dvXls:"Upload Excel",dvPro:"Connect AFAQY Pro",
 dvUrl:"Service URL",dvUser:"Username",dvPass:"Password",dvGet:"Fetch readings",
@@ -3212,6 +3243,14 @@ function renderDev(){
   const q=pl(),box=document.getElementById("devList");if(!box)return;
   const list=devSensors();
   box.innerHTML="";let last=null;
+  if(!list.length){
+    const d=document.createElement("div");d.className="devempty";
+    d.innerHTML='<b></b><span></span>';
+    d.querySelector("b").textContent=t("dvEmpty");
+    d.querySelector("span").textContent=t("dvEmptyH");
+    const b=document.createElement("button");b.type="button";b.textContent=t("bAuto");
+    b.onclick=()=>{const el=document.getElementById("btnAuto");if(el)el.click();};
+    d.appendChild(b);box.appendChild(d);devCount();return;}
   list.forEach(sn=>{
     const zn=zoneNameOf(sn.id);
     if(zn!==last){last=zn;
@@ -3385,6 +3424,44 @@ function proTime(o){
     if(typeof v==="number")return v>1e12?v:v*1000;
     const tm=parseWhen(v);if(isFinite(tm))return tm;}}
   return NaN;}
+function proStatSet(kind,title,detail){
+  const el=document.getElementById("proStat");if(!el)return;
+  el.className="prostat on "+kind;
+  el.innerHTML="<b></b><span></span>";
+  el.querySelector("b").textContent=title;
+  el.querySelector("span").textContent=detail||"";}
+/* بيرجع {ok, token, why} — والأهم إنه بيفرّق بين ٣ حالات مختلفة تمامًا */
+async function proTry(base,us,pw){
+  const u=base.replace(/\/+$/,"")+"/auth/login";
+  let r;
+  try{
+    r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({data:{username:us,password:pw}})});
+  }catch(e){
+    /* fetch بيرمي هنا في حالتين بس: الشبكة مقطوعة، أو المتصفح منع النداء */
+    return{ok:false,why:"blocked",msg:String(e&&e.message||e)};}
+  let j={};try{j=await r.json();}catch(e){}
+  const tok=(j.data&&(j.data.token||j.data.access_token||j.data.accessToken))||j.token;
+  if(tok)return{ok:true,token:tok,http:r.status};
+  return{ok:false,why:"auth",http:r.status,msg:j.message||("HTTP "+r.status)};}
+async function proTest(){
+  const base=(document.getElementById("proUrl").value||"").trim();
+  const us=(document.getElementById("proUser").value||"").trim();
+  const pw=document.getElementById("proPass").value||"";
+  if(!base){alert(t("dvNeedUrl"));return;}
+  proStatSet("wait",t("dvTesting"),base);
+  const t0=Date.now();
+  const r=await proTry(base,us,pw);
+  const ms=Date.now()-t0;
+  if(r.ok){
+    proStatSet("ok",t("dvOk1"),t("dvOk2").replace("{ms}",ar(ms)));
+    try{localStorage.setItem("proCfg",JSON.stringify({base:base,user:us}));}catch(e){}
+    return true;}
+  if(r.why==="auth"){
+    /* وصلنا للخدمة ورجّعت رد — يبقى الاتصال نفسه سليم */
+    proStatSet("bad",t("dvBad1"),t("dvBad2").replace("{m}",r.msg||"")); return false;}
+  proStatSet("bad",t("dvBlk1"),t("dvBlk2"));return false;}
+
 async function proFetch(){
   const base=(document.getElementById("proUrl").value||"").trim();
   const us=(document.getElementById("proUser").value||"").trim();
@@ -3398,15 +3475,15 @@ async function proFetch(){
   try{localStorage.setItem("proCfg",JSON.stringify({base:base,user:us}));}catch(e){}
   const el=document.getElementById("proLog");if(el)el.innerHTML="";
   const from=f.replace("T"," ")+":00",to=tt.replace("T"," ")+":00";
-  let token;
-  try{proLog(t("dvStep1"));
-    const j=await proPost(base,"/auth/login",{username:us,password:pw});
-    token=(j.data&&(j.data.token||j.data.access_token||j.data.accessToken))||j.token;
-    if(!token)throw new Error(t("dvNoTok"));
-    proLog(t("dvOkLogin"),"b");
-  }catch(e){
-    proLog(t("dvFail")+": "+e.message,"s");
-    proLog(t("dvCors"),"s");return;}
+  proLog(t("dvStep1"));
+  const lg=await proTry(base,us,pw);
+  if(!lg.ok){
+    if(lg.why==="auth")proStatSet("bad",t("dvBad1"),t("dvBad2").replace("{m}",lg.msg||""));
+    else proStatSet("bad",t("dvBlk1"),t("dvBlk2"));
+    proLog(t("dvFail")+": "+(lg.msg||""),"s");return;}
+  const token=lg.token;
+  proStatSet("ok",t("dvOk1"),"");
+  proLog(t("dvOkLogin"),"b");
   /* مطابقة الأجهزة */
   let units=[];
   try{proLog(t("dvStep2"));
@@ -4200,6 +4277,9 @@ btnProCfg.onclick=()=>{proBox.classList.toggle("open");
   if(proBox.classList.contains("open")){try{
     const c=JSON.parse(localStorage.getItem("proCfg")||"{}");
     if(c.base)proUrl.value=c.base;if(c.user)proUser.value=c.user;}catch(e){}}};
+btnProTest.onclick=()=>{btnProTest.disabled=true;
+  proTest().catch(e=>proStatSet("bad",t("dvFail"),String(e&&e.message||e)))
+    .finally(()=>{btnProTest.disabled=false;});};
 btnProGet.onclick=()=>{btnProGet.disabled=true;
   proFetch().catch(e=>proLog(String(e&&e.message||e),"s"))
     .finally(()=>{btnProGet.disabled=false;});};
