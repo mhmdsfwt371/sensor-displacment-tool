@@ -93,10 +93,17 @@ body.view3 .trow>*:not(#segView):not(#v3ctl){opacity:.32;pointer-events:none}
 #cv3{display:none;position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
 body.v3gl #cv3{display:block}
 body.v3gl #cv{visibility:hidden}
-#dial3{display:none;position:absolute;top:12px;inset-inline-start:12px;width:92px;height:92px;
-  border-radius:50%;cursor:grab;touch-action:none;z-index:6;user-select:none}
-body.view3 #dial3{display:block}
+#dial3{display:none;position:absolute;width:88px;height:88px;border-radius:50%;
+  cursor:grab;touch-action:none;z-index:7;user-select:none;opacity:.9;transition:opacity .15s}
+#dial3:hover{opacity:1}
 #dial3:active{cursor:grabbing}
+#dial3.moving{opacity:1;cursor:move;filter:drop-shadow(0 6px 18px rgba(0,0,0,.45))}
+body.view3 #dial3{display:block}
+/* أربعة أركان — والمستخدم بينقلها بينهم */
+#dial3.p-ts{top:calc(var(--toolsH,88px) + 10px);inset-inline-start:10px;bottom:auto;inset-inline-end:auto}
+#dial3.p-te{top:calc(var(--toolsH,88px) + 10px);inset-inline-end:10px;bottom:auto;inset-inline-start:auto}
+#dial3.p-bs{bottom:44px;inset-inline-start:10px;top:auto;inset-inline-end:auto}
+#dial3.p-be{bottom:90px;inset-inline-end:10px;top:auto;inset-inline-start:auto}
 .hmzones{margin-top:10px;display:flex;flex-direction:column;gap:8px}
 .hmz{border:1px solid var(--line);border-radius:10px;background:var(--field);padding:8px 10px}
 .hmz .top{display:flex;align-items:center;gap:8px}
@@ -331,7 +338,9 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   #segView button{min-width:44px}
   .v3z button{min-width:30px;padding:5px 0}
   #btnDims,#btnV3r{padding:6px 8px;font-size:11px}
-  #dial3{width:74px;height:74px;top:8px;inset-inline-start:8px}
+  #dial3{width:72px;height:72px}
+  #dial3.p-bs{bottom:calc(42px + env(safe-area-inset-bottom))}
+  #dial3.p-be{bottom:calc(84px + env(safe-area-inset-bottom))}
 }
 </style>
 <script src="three.min.js"></script>
@@ -665,7 +674,7 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 
 <script>
 "use strict";
-const VERSION="4.6";
+const VERSION="4.7";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -703,7 +712,7 @@ s4:"معايير الشركة",fSensor:"الحساس",optTg08:"تي زون TG08 
 fCov:"تغطية الحساس (م٢)",fMin:"أقل عدد للغرفة",fGw:"الجيت واي",optGsm:"جي إس إم",optWifi:"واي فاي",
 fRange:"مدى الجيت واي (متر)",fGwMode:"سياسة الجيت واي",
 optModeRoom:"جيت واي مستقل لكل غرفة",optModeRange:"تجميع حسب المدى",optModeManual:"يدوي — أنا اللي أحط وأربط",
-fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fAng:"الزاوية",fTilt:"ميل",fDims:"مقاسات",bReset:"إعادة",fHgt:"ارتفاع المستودع",
+fPerRoom:"جيت واي مستقل لكل غرفة",fSym:"حجم الرمز على الرسمة",sHm:"الخريطة الحرارية",fRot:"دوران",fAng:"الزاوية",dialTip:"اسحب الحافة للفّ · اسحب المنتصف لتحريك البوصلة",fTilt:"ميل",fDims:"مقاسات",bReset:"إعادة",fHgt:"ارتفاع المستودع",
 v3Need:"ارسم الغرف الأول عشان تشوف العرض ثلاثي الأبعاد",evView:"تبديل العرض",bHmUp:"ارفع ملفات القراءات",bHmShow:"لوّن الرسمة بالحرارة",
 bHmHide:"رجّع الألوان العادية",bHmClr:"مسح البيانات",bHmDoc:"تقرير الخريطة الحرارية (Word)",
 hHm:"بعد التركيب، صدّر تقرير القراءات لكل غرفة من المنصة كملف <b>CSV</b> وارفعه هنا. الأداة بتربط كل ملف بالغرفة اللي بنفس الاسم — زي ما إجراءات التركيب عندكم بتسمّي الجهاز على النظام بنفس اسم الملصق. عدّل المدى المسموح لكل غرفة لو مختلف عن الافتراضي.",
@@ -826,7 +835,7 @@ s4:"Company Standards",fSensor:"Sensor",optTg08:"TZone TG08 — with display",op
 fCov:"Sensor coverage (m²)",fMin:"Min per room",fGw:"Gateway",optGsm:"GSM",optWifi:"WiFi",
 fRange:"Gateway range (m)",fGwMode:"Gateway policy",
 optModeRoom:"One independent gateway per room",optModeRange:"Group by range",optModeManual:"Manual — I place and link",
-fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fAng:"Angle",fTilt:"Tilt",fDims:"Dims",bReset:"Reset",fHgt:"Warehouse height",
+fPerRoom:"One gateway per room",fSym:"Symbol size on plan",sHm:"Heat map",fRot:"Rotate",fAng:"Angle",dialTip:"Drag the rim to rotate · drag the centre to move the dial",fTilt:"Tilt",fDims:"Dims",bReset:"Reset",fHgt:"Warehouse height",
 v3Need:"Draw the rooms first to see the 3D view",evView:"View switched",bHmUp:"Upload readings files",bHmShow:"Colour drawing by temperature",
 bHmHide:"Back to normal colours",bHmClr:"Clear data",bHmDoc:"Heat-map report (Word)",
 hHm:"After installation, export each room's readings report from the platform as <b>CSV</b> and upload it here. The tool links every file to the room with the same name — matching your installation SOP where the device is registered under the label name. Adjust each room's allowed range if it differs from the default.",
@@ -1649,27 +1658,83 @@ function dial3Draw(){
   g.lineWidth=3;g.strokeStyle="#4da3ff";g.lineCap="round";g.stroke();
   g.beginPath();g.arc(c+nr*Math.sin(rd),c-nr*Math.cos(rd),5,0,7);
   g.fillStyle="#4da3ff";g.fill();
-  g.beginPath();g.arc(c,c,4,0,7);g.fillStyle="#c7d6e4";g.fill();
+  /* مقبض النقل في المنتصف — أربع نقط تلميحية */
+  g.beginPath();g.arc(c,c,17,0,7);
+  g.fillStyle="rgba(20,30,42,.9)";g.fill();
+  g.lineWidth=1.4;g.strokeStyle="rgba(160,185,210,.45)";g.stroke();
+  [[0,-9],[0,9],[-9,0],[9,0]].forEach(d=>{
+    g.beginPath();g.arc(c+d[0],c+d[1],1.7,0,7);g.fillStyle="#9db0c2";g.fill();});
+  g.beginPath();g.arc(c,c,3.2,0,7);g.fillStyle="#c7d6e4";g.fill();
   g.textAlign="center";g.fillStyle="#e8f0f7";
   g.font='700 34px "Segoe UI",Tahoma,sans-serif';
   g.fillText(ar(Math.round(V3.rot))+"°",c,c+46);
   g.fillStyle="#8ea1b4";g.font='15px "Segoe UI",Tahoma,sans-serif';
-  g.fillText(t("fAng"),c,c+64);}
+  g.fillText(t("fAng"),c,c+64);
+  dial3.title=t("dialTip");}
 function dial3Set(e){
   const r=dial3.getBoundingClientRect();
   const x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
   V3.rot=(Math.atan2(x,-y)*180/Math.PI+360)%360;
   rngRot.value=Math.round(V3.rot);
   v3draw();}
+/* ارتفاع شريط الأدوات — الأركان العلوية بتبدأ من تحته */
+const stageEl=dial3.parentElement,toolsEl=stageEl.querySelector(".tools");
+function toolsH(){return toolsEl?toolsEl.offsetHeight:88;}
+function syncToolsH(){stageEl.style.setProperty("--toolsH",toolsH()+"px");}
+syncToolsH();
+if(toolsEl&&window.ResizeObserver)new ResizeObserver(syncToolsH).observe(toolsEl);
+window.addEventListener("resize",syncToolsH);
+
+/* موضع البوصلة: أربعة أركان محفوظة */
+const DIAL_KEY="sdt.dialPos",DIAL_SLOTS=["ts","te","bs","be"];
+function dial3Slot(k,save){
+  if(DIAL_SLOTS.indexOf(k)<0)k="bs";
+  DIAL_SLOTS.forEach(x=>dial3.classList.toggle("p-"+x,x===k));
+  dial3.style.left="";dial3.style.top="";
+  if(save!==false){try{localStorage.setItem(DIAL_KEY,k);}catch(e){}}}
+dial3Slot((function(){try{return localStorage.getItem(DIAL_KEY)||"bs";}catch(e){return "bs";}})(),false);
+function dial3Snap(){
+  const st=dial3.parentElement.getBoundingClientRect(),r=dial3.getBoundingClientRect();
+  const w=r.width,cx=r.left+w/2-st.left,cy=r.top+w/2-st.top;
+  const rtl=getComputedStyle(document.documentElement).direction==="rtl";
+  const xS=rtl?st.width-10-w/2:10+w/2, xE=rtl?10+w/2:st.width-10-w/2;
+  const ty=toolsH()+10+w/2;
+  const cand={ts:[xS,ty],te:[xE,ty],
+              bs:[xS,st.height-44-w/2],be:[xE,st.height-90-w/2]};
+  let best="bs",bd=1e9;
+  for(const k in cand){const d=Math.hypot(cand[k][0]-cx,cand[k][1]-cy);
+    if(d<bd){bd=d;best=k;}}
+  dial3Slot(best);}
 dial3.addEventListener("pointerdown",e=>{e.preventDefault();
-  dial3.setPointerCapture(e.pointerId);dial3._on=true;dial3Set(e);});
-dial3.addEventListener("pointermove",e=>{if(dial3._on)dial3Set(e);});
+  const r=dial3.getBoundingClientRect(),rad=r.width/2;
+  const dx=e.clientX-r.left-rad,dy=e.clientY-r.top-rad;
+  dial3.setPointerCapture(e.pointerId);
+  if(Math.hypot(dx,dy)<=rad*.32){           /* المنتصف = نقل */
+    dial3._mv={dx:e.clientX-r.left,dy:e.clientY-r.top};
+    dial3.classList.add("moving");
+    DIAL_SLOTS.forEach(x=>dial3.classList.remove("p-"+x));
+    dial3.style.left=(r.left-dial3.parentElement.getBoundingClientRect().left)+"px";
+    dial3.style.top=(r.top-dial3.parentElement.getBoundingClientRect().top)+"px";
+    return;}
+  dial3._on=true;dial3Set(e);});                /* الحافة = لفّ */
+dial3.addEventListener("pointermove",e=>{
+  if(dial3._mv){const st=dial3.parentElement.getBoundingClientRect(),w=dial3.offsetWidth;
+    dial3.style.left=Math.max(4,Math.min(st.width-w-4,e.clientX-st.left-dial3._mv.dx))+"px";
+    dial3.style.top =Math.max(toolsH()+4,Math.min(st.height-w-4,e.clientY-st.top-dial3._mv.dy))+"px";
+    return;}
+  if(dial3._on)dial3Set(e);});
 ["pointerup","pointercancel"].forEach(ev=>
-  dial3.addEventListener(ev,()=>{dial3._on=false;}));
+  dial3.addEventListener(ev,()=>{
+    if(dial3._mv){dial3._mv=null;dial3.classList.remove("moving");dial3Snap();}
+    dial3._on=false;}));
 dial3.addEventListener("wheel",e=>{e.preventDefault();
   V3.rot=(V3.rot+(e.deltaY<0?-2:2)+360)%360;
   rngRot.value=Math.round(V3.rot);v3draw();},{passive:false});
-dial3.addEventListener("dblclick",()=>{V3.rot=35;rngRot.value=35;v3draw();});
+dial3.addEventListener("dblclick",e=>{
+  const r=dial3.getBoundingClientRect(),rad=r.width/2;
+  if(Math.hypot(e.clientX-r.left-rad,e.clientY-r.top-rad)<=rad*.32){
+    dial3Slot("bs");return;}                 /* دبل كليك على المنتصف = رجوع لمكانها */
+  V3.rot=35;rngRot.value=35;v3draw();});
 
 function v3draw(){
   if(V3.on&&T3.ok){if(T3.dims)T3.dims.visible=V3.dims;t3fit();t3render();}
