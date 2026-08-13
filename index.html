@@ -230,6 +230,10 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 .probox.open{display:block}
 .probox label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px}
 .probox input{width:100%;padding:6px 7px;font-size:12px}
+#pdfPages{display:none;margin-top:8px}
+#pdfPages .pdfl{font-size:11px;color:var(--muted);margin-inline-end:6px}
+#pdfPages button{min-width:32px;padding:5px 8px;margin:2px;font-size:11.5px}
+#pdfPages button.on{background:var(--zone);color:#fff;border-color:var(--zone);font-weight:700}
 .devempty{text-align:center;padding:14px 8px;color:var(--muted);font-size:11.5px;line-height:1.7}
 .devempty b{display:block;color:var(--text);font-size:12.5px;margin-bottom:3px}
 .devempty button{margin-top:8px;padding:7px 14px;font-size:11.5px}
@@ -472,8 +476,9 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
         </div>
         <div id="paneImage">
           <label data-i="fUpload">ارفع صورة الرسمة</label>
-          <input type="file" id="fileImg" accept="image/*" style="display:none">
-          <button class="btn-line" id="btnChoose" data-i="bChoose">اختيار صورة من الجهاز</button>
+          <input type="file" id="fileImg" accept="image/*,application/pdf,.pdf" style="display:none">
+          <button class="btn-line" id="btnChoose" data-i="bChoose">اختيار ملف من الجهاز</button>
+          <div id="pdfPages"></div>
           <div id="paneClean" style="display:none">
             <label data-i="fClean">تنضيف الصورة</label>
             <div class="btns" style="margin-top:0">
@@ -753,7 +758,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="5.3";
+const VERSION="5.4";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -782,7 +787,7 @@ hSave:"زر <b>حفظ</b> فوق بينزّل ملف المشروع كامل ب�
 s2:"الرسمة",runAll:"شغّل كل حاجة",
 hRunAll:"بيحدد الغرف ويحسب ويوزّع الحساسات والجيت واي في خطوة واحدة. هيسألك سؤال واحد بس: الرسمة كلها كام متر.",
 mImg:"صورة",mDim:"أبعاد",mTxt:"وصف مكتوب",
-fUpload:"ارفع صورة الرسمة",bChoose:"اختيار صورة من الجهاز",fClean:"تنضيف الصورة",
+fUpload:"ارفع الرسمة — صورة أو PDF",bChoose:"اختيار ملف من الجهاز",fClean:"تنضيف الصورة",
 bTo2D:"تحويل لخطوط",bOrig:"الأصلية",fStrength:"درجة التنقية",
 hImg:"التنضيف بيوضّح الخطوط بس الرسمة تفضل <b>صورة</b>. عايزها مرسومة بحوائط وأبواب ومقياس مظبوط؟ استعمل <b>وصف مكتوب</b>.",
 fRoomName:"اسم الغرفة",phRoom:"مخزن التبريد",fLen:"الطول (متر)",fWid:"العرض (متر)",bAddRoom:"إضافة الغرفة",
@@ -846,7 +851,7 @@ sLog:"سجل النشاط",bOpenMap:"افتح الرسمة",fabEmpty:"لسه ف�
 hLog:"كل حاجة بتعملها بتتسجّل هنا بوقتها. السجل بيتحفظ جوّه المشروع نفسه — يعني بيمشي مع ملف الحفظ ومع الصورة و<b>PDF</b>، وأي حد يفتح المخرَج يشوف اتعمل فيه إيه وإمتى.",
 evNew:"مشروع جديد",evOpen:"فتح مشروع",evSave:"حفظ مشروع",evRestore:"استرجاع شغل",
 evRun:"توزيع تلقائي",evCount:"تعديل عدد غرفة",evKind:"تغيير نوع منطقة",evAuto:"رجوع للتلقائي",
-evScale:"ضبط المقياس",evExport:"تصدير مخرَج",evCfg:"تعديل المعايير",evPlan:"إدخال رسمة",
+evPdf:"فتح ملف PDF",evScale:"ضبط المقياس",evExport:"تصدير مخرَج",evCfg:"تعديل المعايير",evPlan:"إدخال رسمة",
 evClear:"مسح التوزيع",evHm:"قراءات حرارة",evLang:"تبديل اللغة",
 unitM:"متر",unitArea:"إجمالي المساحة",unitSq:"م٢",
 kySensors:"الحساسات",kyGates:"الجيت واي",kyPower:"الكهرباء",
@@ -863,6 +868,9 @@ opDraw:"رسمة التوزيع",opCount:"جدول الأعداد",opInst:"جد�
 opCust:"نسخة العميل — من غير دوائر التغطية والوصلات",bPdf:"PDF",
 bReopen:"افتح مخرَج للتعديل",fTable:"جدول الأعداد",
 hOut:"الصورة و<b>PDF</b> جوّاهم المشروع كله. نزّلهم وابعتهم عادي، ولما تحب تعدّل ارفع <b>نفس الملف</b> من زر «افتح مخرَج للتعديل» — بيقبل <code>png</code> و<code>jpg</code> و<code>pdf</code> وملف المشروع <code>json</code>.",
+pdfPage:"صفحة",pdfWork:"بيفتح الملف…",
+pdfErr:"مقدرتش أفتح ملف الـPDF — يمكن يكون محمي بكلمة سر أو تالف. جرّب تصدّره تاني أو صوّره صورة.",
+pdfMulti:"الملف فيه {n} صفحات — اختار الصفحة من فوق",
 aNoPrj:"الملف ده مفيهوش مشروع محفوظ — لازم يكون صورة أو PDF طالعين من الأداة",
 tPdfWait:"بيجهّز الملف…",
 hPdf:"من نافذة الطباعة اختار <b>حفظ كملف</b> بدل الطابعة.",
@@ -941,7 +949,7 @@ hSave:"<b>Save</b> downloads the whole project — drawing, rooms and layout. Re
 s2:"Drawing",runAll:"Run Everything",
 hRunAll:"Detects the rooms, measures them, then places sensors and gateways in one step. It asks a single question: how many metres across is the plan.",
 mImg:"Image",mDim:"Dimensions",mTxt:"Description",
-fUpload:"Upload plan image",bChoose:"Choose image from device",fClean:"Clean up image",
+fUpload:"Upload plan — image or PDF",bChoose:"Choose file from device",fClean:"Clean up image",
 bTo2D:"To line art",bOrig:"Original",fStrength:"Cleanup strength",
 hImg:"Cleanup sharpens the lines but the plan stays an <b>image</b>. Want real walls, doors and an exact scale? Use <b>Description</b>.",
 fRoomName:"Room name",phRoom:"Cold store",fLen:"Length (m)",fWid:"Width (m)",bAddRoom:"Add Room",
@@ -1005,7 +1013,7 @@ sLog:"Activity log",bOpenMap:"Open drawing",fabEmpty:"still empty",thTime:"Time"
 hLog:"Everything you do is recorded here with its timestamp. The log is stored inside the project itself — it travels with the save file, the image and the <b>PDF</b>, so anyone opening an output can see what was done and when.",
 evNew:"New project",evOpen:"Open project",evSave:"Save project",evRestore:"Restore work",
 evRun:"Auto distribution",evCount:"Room count changed",evKind:"Zone type changed",evAuto:"Back to auto",
-evScale:"Scale set",evExport:"Output exported",evCfg:"Standards changed",evPlan:"Plan loaded",
+evPdf:"PDF opened",evScale:"Scale set",evExport:"Output exported",evCfg:"Standards changed",evPlan:"Plan loaded",
 evClear:"Layout cleared",evHm:"Heat readings",evLang:"Language switched",
 unitM:"m",unitArea:"Total area",unitSq:"m²",
 kySensors:"Sensors",kyGates:"Gateways",kyPower:"Power",
@@ -1022,6 +1030,9 @@ opDraw:"Layout drawing",opCount:"Counts table",opInst:"Installation schedule",op
 opCust:"Client version — no coverage circles or links",bPdf:"PDF",
 bReopen:"Open an output to edit",fTable:"Counts table",
 hOut:"The image and the <b>PDF</b> carry the whole project inside them. Download and send them as usual — to edit later, load <b>the same file</b> back with “Open an output to edit”: it accepts <code>png</code>, <code>jpg</code>, <code>pdf</code> and the <code>json</code> project file.",
+pdfPage:"Page",pdfWork:"Opening file…",
+pdfErr:"Could not open the PDF — it may be password-protected or damaged. Re-export it, or upload an image instead.",
+pdfMulti:"This file has {n} pages — pick one above",
 aNoPrj:"This file has no project inside it — it must be an image or PDF produced by this tool",
 tPdfWait:"Building the file…",
 hPdf:"In the print dialog choose <b>Save as file</b> instead of a printer.",
@@ -2414,7 +2425,7 @@ function readOutput(f){
     else if(u[0]===0xFF&&u[1]===0xD8)b=jpgGet(u);
     else if(u[0]===0x25&&u[1]===0x50){isPdf=true;b=pdfGet(u);}
     if(b){openPrj(b);toast(t("tOpened"));openMap(true);return;}
-    if(isPdf){alert(t("aNoPrj"));return;}
+    if(isPdf){readPdfFile(f);return;}
     readImage(f);
   }catch(e){alert(t("aFile"));}};
   rd.readAsArrayBuffer(f);}
@@ -3603,6 +3614,85 @@ function offerRestore(){try{
   restoreLabel();}catch(e){}}
 function hasWork(){const q=pl();
   return !!(q.zones.length||q.sensors.length||q.imgData||(q.text&&q.text.trim()));}
+/* ================= رسم على ملف PDF =================
+   المحرك (pdf.min.js + pdf.worker.min.js) مش بيتحمّل مع الأداة — بيتحمّل أول
+   مرة تفتح فيها PDF بس، وبعدها عامل الخدمة بيخزّنه فيشتغل أوفلاين. */
+const PDFD={};        /* المستند المفتوح لكل رسمة — في الذاكرة بس */
+const PDF_PX=2600;    /* أقصى بُعد للصفحة المرسومة بالبكسل */
+let PDFLIB=null;
+function isPdfFile(f){return /\.pdf$/i.test(f&&f.name||"")||(f&&f.type)==="application/pdf";}
+function pdfLib(){
+  if(PDFLIB)return PDFLIB;
+  PDFLIB=new Promise((res,rej)=>{
+    const ready=()=>{const L=window.pdfjsLib;
+      if(!L)return rej(new Error("lib"));
+      L.GlobalWorkerOptions.workerSrc="pdf.worker.min.js";res(L);};
+    if(window.pdfjsLib)return ready();
+    const sc=document.createElement("script");
+    sc.src="pdf.min.js";sc.onload=ready;sc.onerror=()=>rej(new Error("net"));
+    document.head.appendChild(sc);});
+  PDFLIB.catch(()=>{PDFLIB=null;});
+  return PDFLIB;}
+/* بيرسم صفحة ويحطها كخلفية للرسمة — نفس مسار الصورة بالظبط */
+function pdfShow(n){
+  const q=pl(),D=PDFD[q&&q.id];
+  if(!D)return Promise.reject(new Error("no-doc"));
+  n=Math.max(1,Math.min(D.doc.numPages,parseInt(n,10)||1));
+  toast(t("pdfWork"));
+  return D.doc.getPage(n).then(page=>{
+    const v1=page.getViewport({scale:1});
+    const k=Math.min(4,Math.max(1,PDF_PX/Math.max(v1.width,v1.height)));
+    const vp=page.getViewport({scale:k});
+    const c=document.createElement("canvas");
+    c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+    const g=c.getContext("2d");
+    g.fillStyle="#ffffff";g.fillRect(0,0,c.width,c.height);
+    return page.render({canvasContext:g,viewport:vp}).promise.then(()=>c);})
+  .then(c=>new Promise(res=>{
+    const im=new Image();
+    im.onload=()=>{
+      D.page=n;
+      q.imgW=im.naturalWidth;q.imgH=im.naturalHeight;
+      q.drawn=false;q.walls=[];q.doors=[];q.clean=null;
+      q.imgData=shrink(im,1600);ORIG[q.id]=im;IMG[q.id]=im;delete MASK[q.id];
+      paneClean.style.display="block";fitView();refresh();openMap(true);
+      pdfBar();res();};
+    im.src=c.toDataURL("image/png");}));}
+/* شريط اختيار الصفحة — بيظهر لو الملف أكتر من صفحة */
+function pdfBar(){
+  const box=document.getElementById("pdfPages");if(!box)return;
+  const q=pl(),D=PDFD[q&&q.id];
+  box.innerHTML="";
+  if(!D||D.doc.numPages<2){box.style.display="none";return;}
+  box.style.display="block";
+  const lab=document.createElement("span");
+  lab.className="pdfl";lab.textContent=t("pdfPage");box.appendChild(lab);
+  for(let i=1;i<=D.doc.numPages;i++){
+    const b=document.createElement("button");b.type="button";b.textContent=ar(i);
+    if(i===D.page)b.className="on";
+    b.onclick=()=>{if(i===D.page)return;snap();
+      pdfShow(i).catch(()=>{toast(t("pdfErr"));});};
+    box.appendChild(b);}}
+function readPdfFile(f){
+  toast(t("pdfWork"));
+  const rd=new FileReader();
+  rd.onerror=()=>alert(t("pdfErr"));
+  rd.onload=()=>{
+    const u8=new Uint8Array(rd.result);
+    /* لو الملف طالع من الأداة نفسها — يرجع مشروع مش خلفية */
+    try{const b=pdfGet(u8);
+      if(b){openPrj(b);toast(t("tOpened"));openMap(true);return;}}catch(e){}
+    pdfLib()
+      .then(L=>L.getDocument({data:u8,isEvalSupported:false}).promise)
+      .then(doc=>{const q=pl();snap();
+        PDFD[q.id]={doc:doc,page:1,name:f.name||""};
+        LOG("evPdf",(f.name||"PDF")+" · "+ar(doc.numPages));
+        return pdfShow(1).then(()=>doc);})
+      .then(doc=>{if(doc.numPages>1)
+        toast(t("pdfMulti").replace("{n}",ar(doc.numPages)));})
+      .catch(()=>{alert(t("pdfErr"));});};
+  rd.readAsArrayBuffer(f);}
+
 function readImage(f){
   const rd=new FileReader();
   rd.onload=()=>{const im=new Image();
@@ -4287,7 +4377,9 @@ document.querySelectorAll("#segMode button").forEach(b=>{b.onclick=()=>{
   paneDims.style.display=b.dataset.m==="dims"?"block":"none";
   paneText.style.display=b.dataset.m==="text"?"block":"none";};});
 document.getElementById("btnChoose").onclick=()=>fileImg.click();
-document.getElementById("fileImg").onchange=e=>{if(e.target.files[0])readImage(e.target.files[0]);};
+document.getElementById("fileImg").onchange=e=>{const f=e.target.files[0];
+  if(f){if(isPdfFile(f))readPdfFile(f);else readImage(f);}
+  e.target.value="";};
 document.getElementById("btnOpen").onclick=()=>fileProj.click();
 document.getElementById("fileProj").onchange=e=>{if(e.target.files[0])readOutput(e.target.files[0]);e.target.value="";};
 document.getElementById("btnReopen").onclick=()=>fileProj.click();
