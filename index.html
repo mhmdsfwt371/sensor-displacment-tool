@@ -246,6 +246,15 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 .prolog{font-size:11px;color:var(--muted);margin-top:6px;max-height:120px;overflow:auto;line-height:1.6}
 .prolog b{color:var(--ok)}.prolog s{color:var(--bad);text-decoration:none}
 .savewrap{position:relative;display:inline-flex}
+#openMenu{display:none;position:absolute;top:calc(100% + 6px);inset-inline-start:0;min-width:218px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px;z-index:80;
+  box-shadow:0 14px 34px rgba(0,0,0,.45)}
+#openwrap.open #openMenu{display:block}
+#openMenu button{display:block;width:100%;text-align:start;padding:8px 10px;border:0;
+  background:var(--panel);color:var(--text);border-radius:7px;cursor:pointer;line-height:1.35}
+#openMenu button:hover{background:var(--panel-2)}
+#openMenu b{display:block;font-size:12.5px;color:var(--text);font-weight:700}
+#openMenu i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:1px}
 #saveMenu{display:none;position:absolute;top:calc(100% + 6px);inset-inline-start:0;min-width:218px;
   background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px;z-index:80;
   box-shadow:0 14px 34px rgba(0,0,0,.45)}
@@ -432,7 +441,13 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
             <button id="mnuJson"><b data-i="mJson">ملف المشروع</b><i data-i="mJsonS">عشان تفتحه وتكمّل عليه</i></button>
           </div>
         </span>
-        <button id="btnOpen" data-i="open">فتح</button>
+        <span class="savewrap" id="openwrap">
+          <button id="btnOpen" data-i="open">فتح</button>
+          <div id="openMenu">
+            <button id="mnuPlan"><b data-i="oPlan">ارفع رسمة — صورة أو PDF</b><i data-i="oPlanS">مخطط العميل عشان ترسم عليه</i></button>
+            <button id="mnuPrj"><b data-i="oPrj">افتح مشروع محفوظ</b><i data-i="oPrjS">ملف المشروع أو أي مخرَج من الأداة</i></button>
+          </div>
+        </span>
       </div>
       <input type="file" id="fileProj" accept=".json,.png,.jpg,.jpeg,.pdf" style="display:none">
     </div>
@@ -758,7 +773,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="5.4";
+const VERSION="5.5";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -780,14 +795,15 @@ ar:{
 appTitle:"توزيع الحساسات",mPdf:"PDF — ملف للطباعة",mPdfS:"صفحتين: المسقط + المجسم",
 mPng:"صورة PNG",mPngS:"للواتساب والعروض",
 mJson:"ملف المشروع",mJsonS:"عشان تفتحه وتكمّل عليه",
-save:"حفظ",open:"فتح",langBtn:"English",langTip:"English",
+save:"حفظ",open:"فتح",oPlan:"ارفع رسمة — صورة أو PDF",oPlanS:"مخطط العميل عشان ترسم عليه",
+oPrj:"افتح مشروع محفوظ",oPrjS:"ملف المشروع أو أي مخرَج من الأداة",langBtn:"English",langTip:"English",
 s1:"بيانات المشروع",fName:"اسم المشروع",phName:"مخازن النور",fAux:"رقم AUX",phAux:"AUX-1024",
 fClient:"اسم الشركة (العميل / الجهة)",phClient:"شركة النور للأدوية",
 hSave:"زر <b>حفظ</b> فوق بينزّل ملف المشروع كامل بالرسمة والتوزيع — تفتحه تاني أو تبعته لزميلك ويكمّل عليه.",
 s2:"الرسمة",runAll:"شغّل كل حاجة",
 hRunAll:"بيحدد الغرف ويحسب ويوزّع الحساسات والجيت واي في خطوة واحدة. هيسألك سؤال واحد بس: الرسمة كلها كام متر.",
 mImg:"صورة",mDim:"أبعاد",mTxt:"وصف مكتوب",
-fUpload:"ارفع الرسمة — صورة أو PDF",bChoose:"اختيار ملف من الجهاز",fClean:"تنضيف الصورة",
+fUpload:"ارفع الرسمة — صورة أو PDF",bChoose:"ارفع صورة أو ملف PDF",fClean:"تنضيف الصورة",
 bTo2D:"تحويل لخطوط",bOrig:"الأصلية",fStrength:"درجة التنقية",
 hImg:"التنضيف بيوضّح الخطوط بس الرسمة تفضل <b>صورة</b>. عايزها مرسومة بحوائط وأبواب ومقياس مظبوط؟ استعمل <b>وصف مكتوب</b>.",
 fRoomName:"اسم الغرفة",phRoom:"مخزن التبريد",fLen:"الطول (متر)",fWid:"العرض (متر)",bAddRoom:"إضافة الغرفة",
@@ -942,14 +958,15 @@ en:{
 appTitle:"Sensor Displacement",mPdf:"PDF — print file",mPdfS:"Two pages: plan + 3D",
 mPng:"PNG image",mPngS:"For WhatsApp and slides",
 mJson:"Project file",mJsonS:"To reopen and continue",
-save:"Save",open:"Open",langBtn:"العربية",langTip:"العربية",
+save:"Save",open:"Open",oPlan:"Upload a plan — image or PDF",oPlanS:"The client drawing, to draw on",
+oPrj:"Open a saved project",oPrjS:"Project file, or any output from the tool",langBtn:"العربية",langTip:"العربية",
 s1:"Project Details",fName:"Project Name",phName:"Al Nour Stores",fAux:"AUX Number",phAux:"AUX-1024",
 fClient:"Company (Client / Entity)",phClient:"Al Nour Pharma",
 hSave:"<b>Save</b> downloads the whole project — drawing, rooms and layout. Reopen it later or send it to a colleague to continue.",
 s2:"Drawing",runAll:"Run Everything",
 hRunAll:"Detects the rooms, measures them, then places sensors and gateways in one step. It asks a single question: how many metres across is the plan.",
 mImg:"Image",mDim:"Dimensions",mTxt:"Description",
-fUpload:"Upload plan — image or PDF",bChoose:"Choose file from device",fClean:"Clean up image",
+fUpload:"Upload plan — image or PDF",bChoose:"Upload an image or PDF",fClean:"Clean up image",
 bTo2D:"To line art",bOrig:"Original",fStrength:"Cleanup strength",
 hImg:"Cleanup sharpens the lines but the plan stays an <b>image</b>. Want real walls, doors and an exact scale? Use <b>Description</b>.",
 fRoomName:"Room name",phRoom:"Cold store",fLen:"Length (m)",fWid:"Width (m)",bAddRoom:"Add Room",
@@ -4380,7 +4397,11 @@ document.getElementById("btnChoose").onclick=()=>fileImg.click();
 document.getElementById("fileImg").onchange=e=>{const f=e.target.files[0];
   if(f){if(isPdfFile(f))readPdfFile(f);else readImage(f);}
   e.target.value="";};
-document.getElementById("btnOpen").onclick=()=>fileProj.click();
+const _ow=document.getElementById("openwrap");
+document.getElementById("btnOpen").onclick=e=>{e.stopPropagation();_ow.classList.toggle("open");};
+document.addEventListener("click",e=>{if(!_ow.contains(e.target))_ow.classList.remove("open");});
+mnuPlan.onclick=()=>{_ow.classList.remove("open");fileImg.click();};
+mnuPrj.onclick =()=>{_ow.classList.remove("open");fileProj.click();};
 document.getElementById("fileProj").onchange=e=>{if(e.target.files[0])readOutput(e.target.files[0]);e.target.value="";};
 document.getElementById("btnReopen").onclick=()=>fileProj.click();
 const _sw=document.querySelector(".savewrap");
