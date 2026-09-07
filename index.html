@@ -439,6 +439,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
             <button id="mnuPdf"><b data-i="mPdf">PDF — ملف للطباعة</b><i data-i="mPdfS">صفحتين: المسقط + المجسم</i></button>
             <button id="mnuPng"><b data-i="mPng">صورة PNG</b><i data-i="mPngS">للواتساب والعروض</i></button>
             <button id="mnuJson"><b data-i="mJson">ملف المشروع</b><i data-i="mJsonS">عشان تفتحه وتكمّل عليه</i></button>
+            <button id="mnuCert"><b data-i="mCert">شهادات المعايرة</b><i data-i="mCertS">مولّد شهادات لكل حساس — يفتح في صفحة جديدة</i></button>
           </div>
         </span>
         <span class="savewrap" id="openwrap">
@@ -773,7 +774,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="5.6";
+const VERSION="5.7";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -795,6 +796,7 @@ ar:{
 appTitle:"توزيع الحساسات",mPdf:"PDF — ملف للطباعة",mPdfS:"صفحتين: المسقط + المجسم",
 mPng:"صورة PNG",mPngS:"للواتساب والعروض",
 mJson:"ملف المشروع",mJsonS:"عشان تفتحه وتكمّل عليه",
+mCert:"شهادات المعايرة",mCertS:"مولّد شهادات لكل حساس — يفتح في صفحة جديدة",
 save:"حفظ",open:"فتح",oPlan:"ارفع رسمة — صورة أو PDF",oPlanS:"مخطط العميل عشان ترسم عليه",
 oPrj:"افتح مشروع محفوظ",oPrjS:"ملف المشروع أو أي مخرَج من الأداة",langBtn:"English",langTip:"English",
 s1:"بيانات المشروع",fName:"اسم المشروع",phName:"مخازن النور",fAux:"رقم AUX",phAux:"AUX-1024",
@@ -958,6 +960,7 @@ en:{
 appTitle:"Sensor Displacement",mPdf:"PDF — print file",mPdfS:"Two pages: plan + 3D",
 mPng:"PNG image",mPngS:"For WhatsApp and slides",
 mJson:"Project file",mJsonS:"To reopen and continue",
+mCert:"Calibration certificates",mCertS:"Per-sensor certificate generator — opens in a new page",
 save:"Save",open:"Open",oPlan:"Upload a plan — image or PDF",oPlanS:"The client drawing, to draw on",
 oPrj:"Open a saved project",oPrjS:"Project file, or any output from the tool",langBtn:"العربية",langTip:"العربية",
 s1:"Project Details",fName:"Project Name",phName:"Al Nour Stores",fAux:"AUX Number",phAux:"AUX-1024",
@@ -4025,7 +4028,18 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td>Counts look wrong</td><td>Check the scale — the badge under the drawing shows px/m</td></tr>
 <tr><td>"Understood" line is wrong</td><td>Rewrite the description or fix it with the drawing tools</td></tr>
 <tr><td>Too large for the cloud</td><td>Use <b>To line art</b>, or a smaller image</td></tr>
-<tr><td>A room drifted while panning</td><td>Press <b>↶</b>, then use the <b>Pan</b> tool</td></tr></table>`;
+<tr><td>A room drifted while panning</td><td>Press <b>↶</b>, then use the <b>Pan</b> tool</td></tr></table>
+
+<h3>15. Calibration certificates</h3>
+<p><b>Save</b> → <b>Calibration certificates</b> opens the in-house certificate generator on a
+separate page. It issues an AFAQY certificate for every sensor that was actually checked against a
+calibrated reference: upload the technician's Excel (one row per sensor, template inside) and get one
+PDF per serial packed in a ZIP, or fill the single-sensor form for one PDF.</p>
+<blockquote>A row without real test data — test date, technician, reference instrument with its own
+certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
+certificate for a test that did not happen; validity is counted from the test date, not from the print
+date, and the certificate says clearly that it is an in-house, non-accredited (not ISO/IEC 17025) calibration.
+Certificate text is in English, like the manufacturers' certificates.</blockquote>`;
 
   return `
 <h3>١. الأداة بتعمل إيه</h3>
@@ -4246,7 +4260,16 @@ Check the list for who edited last before you overwrite.</blockquote>
 <tr><td>الأعداد شكلها غلط</td><td>راجع المقياس — الشريط تحت الرسمة بيوريه بالبكسل لكل متر</td></tr>
 <tr><td>سطر «اللي فهمته» غلط</td><td>أعد صياغة الوصف أو ظبّطه بأدوات الرسم</td></tr>
 <tr><td>الملف كبير على السحابة</td><td>استعمل <b>تحويل لخطوط</b> أو صورة أصغر</td></tr>
-<tr><td>غرفة اتزحلقت وإنت بتحرك</td><td>دوس <b>↶</b> واستعمل أداة <b>تحريك</b></td></tr></table>`;}
+<tr><td>غرفة اتزحلقت وإنت بتحرك</td><td>دوس <b>↶</b> واستعمل أداة <b>تحريك</b></td></tr></table>
+
+<h3>١٥. شهادات المعايرة</h3>
+<p>من <b>حفظ</b> ← <b>شهادات المعايرة</b> بتفتح صفحة مولّد الشهادات الداخلية. الصفحة بتطلع شهادة
+باسم آفاقي لكل حساس اتفحص فعلًا على جهاز مرجعي متعاير: ارفع إكسل الفني (صف لكل حساس، والقالب
+جوّه الصفحة) وهتاخد ملف PDF لكل سيريال مضغوطين في ZIP، أو املا فورم الحساس الواحد لملف واحد.</p>
+<blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
+نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
+بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة
+(مش ISO/IEC 17025). نص الشهادة بالإنجليزي زي شهادات المصانع.</blockquote>`;}
 function manualHead(){
   return '<p style="color:var(--muted);font-size:12.5px;margin:0 0 4px">'+
     t("manVer",VERSION)+' · '+today()+'</p>';}
@@ -4427,6 +4450,7 @@ document.getElementById("btnSave").onclick=e=>{e.stopPropagation();
   if(_sw.classList.contains("open"))menuPos(_sw,saveMenu);};
 document.addEventListener("click",e=>{if(!_sw.contains(e.target))_sw.classList.remove("open");});
 mnuJson.onclick=()=>{_sw.classList.remove("open");saveProject();};
+mnuCert.onclick=()=>{_sw.classList.remove("open");window.open("certificates.html","_blank");};
 /* — أجهزة النقاط وآفاقي برو — */
 btnDevTpl.onclick=()=>devTemplate();
 btnDevXls.onclick=()=>fileXls.click();

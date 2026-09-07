@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>مولّد شهادات المعايرة الداخلية — أفاقي</title>
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="lib/jspdf.plugin.autotable.min.js"></script>
+<script src="lib/jszip.min.js"></script>
+<style>
+  :root{
+    --paper:#F3F5F8; --panel:#FFFFFF; --ink:#101828; --muted:#5F6978; --navy:#14213D; --steel:#1B6F9A;
+    --pass:#157347; --fail:#B42318; --warn:#9A5B00; --line:#D0D5DD; --fill:#EEF1F5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"Segoe UI","Noto Sans Arabic","Noto Naskh Arabic",Tahoma,Arial,sans-serif;font-size:15px;line-height:1.6}
+  header{background:var(--navy);color:#fff;padding:14px 18px}
+  header h1{margin:0;font-size:18px;font-weight:700}
+  header p{margin:2px 0 0;font-size:13px;opacity:.85}
+  main{max-width:980px;margin:0 auto;padding:16px 14px 110px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:14px}
+  h2{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px 14px}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:3px}
+  input[type=text],input[type=number],input[type=date],textarea,select{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:4px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}
+  input:focus,textarea:focus,select:focus,button:focus{outline:2px solid var(--steel);outline-offset:1px}
+  .ltr{direction:ltr;text-align:left}
+  textarea{min-height:76px;resize:vertical}
+  .tabs{display:flex;gap:6px;margin:0 0 12px}
+  .tabs button{flex:1;padding:10px;border:1px solid var(--line);background:#fff;border-radius:4px;font:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+  .tabs button[aria-selected=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .drop{border:1.5px dashed var(--line);border-radius:6px;padding:18px;text-align:center;background:var(--fill);color:var(--muted);font-size:14px}
+  .drop input{display:block;margin:10px auto 0;font:inherit}
+  .btn{display:inline-block;padding:9px 16px;border-radius:4px;border:1px solid var(--navy);background:var(--navy);color:#fff;font:inherit;font-size:14px;cursor:pointer}
+  .btn.secondary{background:#fff;color:var(--navy)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+  table.ledger{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+  .ledger th,.ledger td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:right;vertical-align:top}
+  .ledger th{color:var(--muted);font-weight:600;background:var(--fill)}
+  .ledger td.mono{direction:ltr;text-align:left;font-family:Consolas,Menlo,monospace;font-size:12.5px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;border:1px solid}
+  .pill.ok{color:var(--pass);border-color:var(--pass);background:#EAF5EF}
+  .pill.bad{color:var(--fail);border-color:var(--fail);background:#FBEDEB}
+  .pill.warn{color:var(--warn);border-color:var(--warn);background:#FFF5E5}
+  .reasons{margin:4px 0 0;padding:0 16px 0 0;color:var(--fail);font-size:12.5px}
+  .summary{font-size:14px;margin-top:10px;color:var(--muted)}
+  .note{font-size:13px;color:var(--muted);margin:6px 0 0}
+  .points{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:6px 8px;align-items:end}
+  .points .h{font-size:12px;color:var(--muted)}
+  .points .slot{font-size:12px;color:var(--navy);font-weight:600;grid-column:1/-1;margin-top:6px}
+  .bar{position:fixed;bottom:0;right:0;left:0;background:#fff;border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .bar .status{font-size:13px;color:var(--muted)}
+  .alert{border:1px solid var(--fail);color:var(--fail);background:#FBEDEB;padding:10px 12px;border-radius:4px;font-size:14px;margin-bottom:12px}
+  .links a{display:inline-block;margin:6px 0 0 12px;color:var(--steel);font-size:13px}
+  @media (max-width:600px){ .points{grid-template-columns:1fr 1fr} .points .lbl{grid-column:1/-1} }
+  @media (prefers-reduced-motion:no-preference){ .pill{transition:background .15s} }
+</style>
+</head>
+<body>
+<header>
+  <a href="./" style="color:#fff;opacity:.85;font-size:13px;text-decoration:none">← أداة توزيع الحساسات</a>
+  <h1>مولّد شهادات المعايرة الداخلية</h1>
+  <p>شهادة باسم أفاقي لكل حساس اتفحص فعلًا على مرجع متعاير. الصف اللي مافيهوش قراءات مش بيطلع له شهادة.</p>
+</header>
+
+<main>
+  <div id="libAlert" class="alert" hidden>المكتبات ما اتحملتش (إكسل / PDF / ضغط). اتأكد إن مجلد lib موجود جنب الصفحة على السيرفر.</div>
+
+  <section>
+    <h2>إعدادات الإصدار</h2>
+    <div class="grid">
+      <div><label>اسم الجهة المصدرة</label><input type="text" id="issuer" class="ltr" value="AFAQY"></div>
+      <div><label>بادئة رقم الشهادة</label><input type="text" id="prefix" class="ltr" value="AFQ-CAL-2026-"></div>
+      <div><label>الرقم التالي (يتزود تلقائيًا بعد كل توليد)</label><input type="number" id="nextNo" class="ltr" value="1" min="1"></div>
+      <div><label>صلاحية الشهادة بالشهور من تاريخ الفحص</label><input type="number" id="validity" class="ltr" value="24" min="1" max="36"></div>
+      <div><label>مراجعة واعتماد (اسم، اختياري)</label><input type="text" id="reviewer" class="ltr" placeholder="Quality reviewer"></div>
+      <div><label>سطر التذييل</label><input type="text" id="footer" class="ltr" value="AFAQY  |  Jeddah, Saudi Arabia"></div>
+      <div><label>لوجو أفاقي (PNG أو JPG، اختياري)</label><input type="file" id="logo" accept="image/png,image/jpeg"></div>
+    </div>
+    <div style="margin-top:10px"><label>نص الإقرار على الشهادة (بالإنجليزي، سيبه فاضي للنص الافتراضي)</label><textarea id="statement" class="ltr" placeholder="Default statement will be used"></textarea></div>
+    <p class="note">تاريخ الإصدار بيتحط تلقائيًا بتاريخ النهارده. تاريخ الفحص والصلاحية بيتحسبوا من تاريخ الفحص الفعلي اللي الفني كتبه، مش من تاريخ الطباعة.</p>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="batch">دفعة من إكسل</button>
+    <button role="tab" aria-selected="false" data-tab="single">حساس واحد</button>
+  </div>
+
+  <section id="tab-batch">
+    <h2>ملف الفحص الميداني</h2>
+    <div class="drop">
+      ارفع ملف الإكسل اللي رجع بيه الفني من الموقع (صف لكل حساس)
+      <input type="file" id="xlsx" accept=".xlsx,.xls,.csv">
+    </div>
+    <div class="row-actions">
+      <button class="btn secondary" id="tpl">نزّل قالب الإكسل</button>
+      <span class="note" id="fileName"></span>
+    </div>
+    <div id="ledgerWrap" hidden>
+      <table class="ledger" id="ledger">
+        <thead><tr><th>#</th><th>السيريال</th><th>العميل / الموقع</th><th>تاريخ الفحص</th><th>الحالة</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="summary" id="summary"></p>
+    </div>
+  </section>
+
+  <section id="tab-single" hidden>
+    <h2>بيانات الحساس والفحص</h2>
+    <div class="grid" id="singleForm">
+      <div><label>السيريال</label><input type="text" class="ltr" name="serial"></div>
+      <div><label>الموديل</label><input type="text" class="ltr" name="model" placeholder="TAG07B"></div>
+      <div><label>وصف المنتج</label><input type="text" class="ltr" name="product" value="BLE Temperature & Humidity Sensor"></div>
+      <div><label>العميل</label><input type="text" class="ltr" name="customer"></div>
+      <div><label>الموقع</label><input type="text" class="ltr" name="site" placeholder="Warehouse A - Fridge 3"></div>
+      <div><label>الفني</label><input type="text" class="ltr" name="technician"></div>
+      <div><label>تاريخ الفحص</label><input type="date" class="ltr" name="cal_date"></div>
+      <div><label>حرارة الجو وقت الفحص</label><input type="number" step="0.1" class="ltr" name="env_temp"></div>
+      <div><label>رطوبة الجو وقت الفحص</label><input type="number" step="1" class="ltr" name="env_rh"></div>
+      <div><label>جهاز المرجع</label><input type="text" class="ltr" name="ref_name" placeholder="Reference thermo-hygrometer"></div>
+      <div><label>موديل المرجع</label><input type="text" class="ltr" name="ref_model"></div>
+      <div><label>سيريال المرجع</label><input type="text" class="ltr" name="ref_serial"></div>
+      <div><label>المعمل اللي عاير المرجع</label><input type="text" class="ltr" name="ref_cal_by"></div>
+      <div><label>رقم شهادة المرجع</label><input type="text" class="ltr" name="ref_cert_no"></div>
+      <div><label>صلاحية شهادة المرجع</label><input type="date" class="ltr" name="ref_valid_until"></div>
+    </div>
+    <h2 style="margin-top:16px">نقاط القياس</h2>
+    <div class="points" id="points"></div>
+    <p class="note">اكتب على الأقل نقطة واحدة كاملة: وصف، قراءة المرجع، قراءة الحساس، التفاوت المقبول.</p>
+  </section>
+
+  <div class="links" id="links"></div>
+</main>
+
+<div class="bar">
+  <span class="status" id="barStatus">ارفع ملف أو املا بيانات حساس واحد.</span>
+  <button class="btn" id="go" disabled>توليد الشهادات</button>
+</div>
+
+<script>
+/* CertCore — in-house calibration certificate generator core
+ * DOM-free. Works in the browser (window.CertCore) and in Node (module.exports).
+ * A certificate is only produced when the row carries real test data:
+ * calibration date, technician, reference standard (with its own certificate) and readings.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.CertCore = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  /* ---------- small helpers ---------- */
+  function pad(n, w) { n = String(n); while (n.length < w) n = '0' + n; return n; }
+  function str(v) { return v == null ? '' : String(v).trim(); }
+  function num(v) {
+    if (v === '' || v == null) return null;
+    var n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.').replace(/[^\d.+-]/g, ''));
+    return isNaN(n) ? null : n;
+  }
+  function isLatin(s) { return !/[^\x00-\x7F]/.test(s); }
+  function fmtDate(d) {
+    if (!(d instanceof Date) || isNaN(d)) return '';
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2);
+  }
+  function parseDate(v) {
+    if (v == null || v === '') return null;
+    if (v instanceof Date) return isNaN(v) ? null : new Date(v.getFullYear(), v.getMonth(), v.getDate());
+    if (typeof v === 'number') {               // Excel serial date
+      var d0 = new Date(Math.round((v - 25569) * 86400 * 1000));
+      return new Date(d0.getUTCFullYear(), d0.getUTCMonth(), d0.getUTCDate());
+    }
+    var s = String(v).trim(), m;
+    if ((m = s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))) return new Date(+m[1], +m[2] - 1, +m[3]);
+    if ((m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})/))) return new Date(+m[3], +m[2] - 1, +m[1]);
+    var d = new Date(s);
+    return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  function addMonths(d, months) {
+    var r = new Date(d.getFullYear(), d.getMonth() + months, d.getDate());
+    if (r.getDate() !== d.getDate()) r.setDate(0);   // e.g. 31 Jan + 1 month -> 28/29 Feb
+    return r;
+  }
+  function today() { var t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+  function fmtNum(n, dp) { return (n == null || isNaN(n)) ? '' : (Math.round(n * Math.pow(10, dp)) / Math.pow(10, dp)).toFixed(dp); }
+
+  /* ---------- Excel layout ---------- */
+  var POINT_SLOTS = [
+    { key: 'T1',  param: 'Temperature', unit: '°C'  },
+    { key: 'T2',  param: 'Temperature', unit: '°C'  },
+    { key: 'T3',  param: 'Temperature', unit: '°C'  },
+    { key: 'RH1', param: 'Humidity',    unit: '%RH' },
+    { key: 'RH2', param: 'Humidity',    unit: '%RH' }
+  ];
+  var BASE_COLUMNS = ['serial', 'model', 'product', 'customer', 'site', 'technician', 'cal_date',
+    'env_temp', 'env_rh', 'ref_name', 'ref_model', 'ref_serial', 'ref_cal_by', 'ref_cert_no', 'ref_valid_until'];
+  var COLUMNS = BASE_COLUMNS.slice();
+  POINT_SLOTS.forEach(function (p) { COLUMNS.push(p.key + '_label', p.key + '_ref', p.key + '_uut', p.key + '_tol'); });
+
+  /* Arabic guide for the template's second sheet */
+  var GUIDE = [
+    ['serial', 'الرقم التسلسلي أو عنوان الحساس (إلزامي، بدون تكرار داخل الملف)'],
+    ['model', 'موديل الحساس مثل TAG07B أو TSTH1-B (إلزامي)'],
+    ['product', 'وصف المنتج مثل BLE Temperature & Humidity Sensor'],
+    ['customer', 'اسم العميل بالإنجليزي (إلزامي)'],
+    ['site', 'الموقع: المستودع / الغرفة / الثلاجة (إلزامي)'],
+    ['technician', 'اسم الفني اللي عمل الفحص (إلزامي)'],
+    ['cal_date', 'تاريخ الفحص الفعلي YYYY-MM-DD (إلزامي، مش تاريخ الطباعة)'],
+    ['env_temp', 'حرارة الجو وقت الفحص (اختياري)'],
+    ['env_rh', 'رطوبة الجو وقت الفحص (اختياري)'],
+    ['ref_name', 'اسم جهاز المرجع (إلزامي)'],
+    ['ref_model', 'موديل جهاز المرجع'],
+    ['ref_serial', 'سيريال جهاز المرجع (إلزامي)'],
+    ['ref_cal_by', 'المعمل اللي عاير جهاز المرجع'],
+    ['ref_cert_no', 'رقم شهادة معايرة جهاز المرجع (إلزامي)'],
+    ['ref_valid_until', 'تاريخ انتهاء شهادة المرجع (إلزامي، ولازم يكون بعد تاريخ الفحص)'],
+    ['T1..T3 / RH1..RH2', 'لكل نقطة: label وصف النقطة، ref قراءة المرجع، uut قراءة الحساس، tol التفاوت المقبول ±. نقطة واحدة كاملة على الأقل إلزامية.']
+  ];
+
+  var SAMPLE_ROW = {
+    serial: 'E48DD9031284', model: 'TSTH1-B', product: 'BLE Temperature & Humidity Sensor',
+    customer: 'Example Pharma Co.', site: 'Jeddah warehouse - Cold room 2', technician: 'A. Technician',
+    cal_date: fmtDate(today()), env_temp: 24.1, env_rh: 45,
+    ref_name: 'Reference thermo-hygrometer', ref_model: 'Fluke 971', ref_serial: '12345678',
+    ref_cal_by: 'SAAC-accredited lab (example)', ref_cert_no: 'CAL-2026-0001', ref_valid_until: fmtDate(addMonths(today(), 6)),
+    T1_label: 'Cold room', T1_ref: 5.2, T1_uut: 5.4, T1_tol: 0.5,
+    T2_label: 'Ambient', T2_ref: 24.1, T2_uut: 23.9, T2_tol: 0.5,
+    RH1_label: 'Ambient', RH1_ref: 45.0, RH1_uut: 46.8, RH1_tol: 3
+  };
+
+  /* ---------- row -> data ---------- */
+  function fromRow(raw) {
+    var r = {};
+    Object.keys(raw || {}).forEach(function (k) { r[String(k).trim().toLowerCase()] = raw[k]; });
+    var d = {
+      serial: str(r.serial), model: str(r.model), product: str(r.product) || 'Temperature & Humidity Sensor',
+      customer: str(r.customer), site: str(r.site), technician: str(r.technician),
+      calDateObj: parseDate(r.cal_date),
+      env: { temp: num(r.env_temp), rh: num(r.env_rh) },
+      ref: {
+        name: str(r.ref_name), model: str(r.ref_model), serial: str(r.ref_serial), calBy: str(r.ref_cal_by),
+        certNo: str(r.ref_cert_no), validUntilObj: parseDate(r.ref_valid_until)
+      },
+      points: []
+    };
+    d.calDate = fmtDate(d.calDateObj);
+    d.ref.validUntil = fmtDate(d.ref.validUntilObj);
+    POINT_SLOTS.forEach(function (p) {
+      var k = p.key.toLowerCase();
+      var ref = num(r[k + '_ref']), uut = num(r[k + '_uut']), tol = num(r[k + '_tol']), label = str(r[k + '_label']);
+      if (ref == null && uut == null && tol == null && !label) return;       // slot unused
+      d.points.push({ slot: p.key, param: p.param, unit: p.unit, label: label || p.param, ref: ref, uut: uut, tol: tol });
+    });
+    return d;
+  }
+
+  /* ---------- validation: the gate ---------- */
+  function validate(d) {
+    var e = [];
+    if (!d.serial) e.push('السيريال ناقص');
+    if (!d.model) e.push('الموديل ناقص');
+    if (!d.customer) e.push('اسم العميل ناقص');
+    if (!d.site) e.push('الموقع ناقص');
+    if (!d.technician) e.push('اسم الفني ناقص');
+    if (!d.calDateObj) e.push('تاريخ الفحص ناقص أو غير مفهوم');
+    else if (d.calDateObj > today()) e.push('تاريخ الفحص في المستقبل');
+    if (!d.ref.name) e.push('اسم جهاز المرجع ناقص');
+    if (!d.ref.serial) e.push('سيريال جهاز المرجع ناقص');
+    if (!d.ref.certNo) e.push('رقم شهادة المرجع ناقص');
+    if (!d.ref.validUntilObj) e.push('تاريخ صلاحية شهادة المرجع ناقص');
+    else if (d.calDateObj && d.ref.validUntilObj < d.calDateObj) e.push('شهادة المرجع كانت منتهية يوم الفحص');
+    if (!d.points.length) e.push('مافيش ولا نقطة قياس');
+    d.points.forEach(function (p) {
+      if (p.ref == null || p.uut == null || p.tol == null) e.push('نقطة ' + p.slot + ' ناقص فيها قراءة أو تفاوت');
+      else if (p.tol <= 0) e.push('تفاوت نقطة ' + p.slot + ' لازم يكون أكبر من صفر');
+    });
+    ['serial', 'model', 'product', 'customer', 'site', 'technician'].forEach(function (k) {
+      if (d[k] && !isLatin(d[k])) e.push('حقل ' + k + ' لازم يكون بحروف لاتينية في النسخة دي');
+    });
+    ['name', 'model', 'serial', 'calBy', 'certNo'].forEach(function (k) {
+      if (d.ref[k] && !isLatin(d.ref[k])) e.push('حقل المرجع ' + k + ' لازم يكون بحروف لاتينية');
+    });
+    d.points.forEach(function (p) { if (p.label && !isLatin(p.label)) e.push('وصف نقطة ' + p.slot + ' لازم يكون بحروف لاتينية'); });
+    return e;
+  }
+
+  /* ---------- evaluation ---------- */
+  function evaluate(d) {
+    var overall = true;
+    d.points.forEach(function (p) {
+      p.deviation = p.uut - p.ref;
+      p.pass = Math.abs(p.deviation) <= p.tol + 1e-9;
+      if (!p.pass) overall = false;
+    });
+    d.overall = overall ? 'PASS' : 'FAIL';
+    return d;
+  }
+
+  /* ---------- numbering & dates ---------- */
+  function certNo(prefix, n, width) { return str(prefix) + pad(n, width || 5); }
+  function finalize(d, settings, n) {
+    d.certNo = certNo(settings.prefix, n, settings.pad);
+    d.issueDateObj = settings.issueDate || today();
+    d.issueDate = fmtDate(d.issueDateObj);
+    d.validUntilObj = addMonths(d.calDateObj, settings.validityMonths || 24);   // from the real test date
+    d.validUntil = fmtDate(d.validUntilObj);
+    return d;
+  }
+  function fileName(d) { return d.certNo.replace(/[^\w.-]+/g, '_') + '_' + d.serial.replace(/[^\w.-]+/g, '_') + '.pdf'; }
+
+  /* ---------- PDF rendering (jsPDF + autoTable) ---------- */
+  function render(doc, d, opts) {
+    opts = opts || {};
+    var at = opts.autoTable || function (doc_, o) { return doc_.autoTable(o); };
+    var W = 210, M = 15, USABLE = W - 2 * M;
+    var NAVY = [20, 33, 61], INK = [16, 24, 40], GREY = [95, 105, 120], LINE = [208, 213, 221], FILL = [243, 245, 248];
+    var GREEN = [21, 115, 71], RED = [180, 35, 24];
+    var issuer = opts.issuerName || 'AFAQY';
+    var y = 16;
+
+    if (opts.logoDataUrl) {
+      try { doc.addImage(opts.logoDataUrl, opts.logoFormat || 'PNG', M, y - 3, 42, 14, undefined, 'FAST'); } catch (err) { /* fall through to text */ }
+    } else {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(issuer, M, y + 7);
+    }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+    doc.text('Calibration Certificate', W - M, y + 5, { align: 'right' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('In-house calibration by comparison  -  not an ISO/IEC 17025 accredited calibration', W - M, y + 10.5, { align: 'right' });
+    y += 17;
+    doc.setDrawColor(NAVY[0], NAVY[1], NAVY[2]); doc.setLineWidth(0.7); doc.line(M, y, W - M, y);
+    y += 4;
+
+    var baseStyles = { fontSize: 9, cellPadding: 1.8, textColor: INK, lineColor: LINE, lineWidth: 0.2, font: 'helvetica' };
+    var headStyles = { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold' };
+
+    at(doc, {
+      startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles,
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 34, fillColor: FILL }, 1: { cellWidth: 56 }, 2: { fontStyle: 'bold', cellWidth: 34, fillColor: FILL }, 3: { cellWidth: 56 } },
+      body: [
+        ['Certificate No.', d.certNo, 'Issue date', d.issueDate],
+        ['Calibration date', d.calDate, 'Valid until', d.validUntil],
+        ['Customer', d.customer, 'Site / location', d.site],
+        ['Technician', d.technician, 'Performed at', 'Customer site']
+      ]
+    });
+    y = doc.lastAutoTable.finalY + 6;
+
+    function section(title) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+      doc.text(title, M, y); y += 2;
+    }
+
+    section('Device under test');
+    at(doc, { startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+      head: [['Product', 'Model', 'Serial / ID']], body: [[d.product, d.model, d.serial]] });
+    y = doc.lastAutoTable.finalY + 6;
+
+    section('Reference standard');
+    at(doc, { startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+      head: [['Instrument', 'Model', 'Serial', 'Calibrated by', 'Certificate No.', 'Valid until']],
+      body: [[d.ref.name, d.ref.model, d.ref.serial, d.ref.calBy, d.ref.certNo, d.ref.validUntil]] });
+    y = doc.lastAutoTable.finalY + 6;
+
+    section('Calibration results');
+    var envParts = [];
+    if (d.env.temp != null) envParts.push('ambient ' + fmtNum(d.env.temp, 1) + ' °C');
+    if (d.env.rh != null) envParts.push(fmtNum(d.env.rh, 0) + ' %RH');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('Method: direct comparison against the reference standard at the points below.' + (envParts.length ? '  Environment: ' + envParts.join(', ') + '.' : ''), M, y + 3);
+    y += 6;
+    var body = d.points.map(function (p) {
+      var dp = p.param === 'Humidity' ? 1 : 2;
+      return [p.label, p.param, fmtNum(p.ref, dp) + ' ' + p.unit, fmtNum(p.uut, dp) + ' ' + p.unit,
+        (p.deviation > 0 ? '+' : '') + fmtNum(p.deviation, dp) + ' ' + p.unit, '± ' + fmtNum(p.tol, dp) + ' ' + p.unit, p.pass ? 'Pass' : 'Fail'];
+    });
+    at(doc, { startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+      head: [['Point', 'Parameter', 'Reference', 'UUT reading', 'Deviation', 'Tolerance', 'Result']], body: body,
+      columnStyles: { 6: { fontStyle: 'bold', halign: 'center' } },
+      didParseCell: function (data) {
+        if (data.section === 'body' && data.column.index === 6) {
+          var ok = data.cell.raw === 'Pass';
+          data.cell.styles.textColor = ok ? GREEN : RED;
+        }
+      } });
+    y = doc.lastAutoTable.finalY + 5;
+
+    var ok = d.overall === 'PASS', col = ok ? GREEN : RED;
+    doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(0.6); doc.rect(M, y, USABLE, 10);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(col[0], col[1], col[2]);
+    doc.text('Overall result: ' + d.overall + (ok ? '  -  all points within tolerance' : '  -  one or more points outside tolerance; device must not be used until adjusted or replaced'), M + 3, y + 6.5);
+    y += 16;
+
+    var statement = opts.statement || (issuer + ' certifies that the device identified above was compared against the reference standard listed, at the points, date and location stated. Deviation = UUT reading - reference reading; a point passes when |deviation| <= tolerance. This calibration was performed by ' + issuer + ' personnel and is not an accredited (ISO/IEC 17025) calibration. Recalibration is recommended on or before the "Valid until" date.');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(INK[0], INK[1], INK[2]);
+    var lines = doc.splitTextToSize(statement, USABLE);
+    doc.text(lines, M, y); y += lines.length * 4.4 + 10;
+
+    doc.setDrawColor(INK[0], INK[1], INK[2]); doc.setLineWidth(0.3);
+    var colW = USABLE / 2 - 8;
+    doc.line(M, y + 12, M + colW, y + 12);
+    doc.line(W - M - colW, y + 12, W - M, y + 12);
+    doc.setFontSize(8.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('Calibration technician', M, y + 16); doc.text('Reviewed by', W - M - colW, y + 16);
+    doc.setFontSize(10); doc.setTextColor(INK[0], INK[1], INK[2]); doc.setFont('helvetica', 'bold');
+    doc.text(d.technician, M, y + 9); doc.setFont('helvetica', 'normal');
+    doc.text(opts.reviewer || '', W - M - colW, y + 9);
+
+    doc.setFontSize(7.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.3); doc.line(M, 281, W - M, 281);
+    doc.text((opts.issuerFooter || (issuer + '  |  Saudi Arabia')), M, 285.5);
+    doc.text(d.certNo + '  |  ' + d.serial + '  |  Page 1 of 1', W - M, 285.5, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    return doc;
+  }
+
+  return {
+    POINT_SLOTS: POINT_SLOTS, COLUMNS: COLUMNS, GUIDE: GUIDE, SAMPLE_ROW: SAMPLE_ROW,
+    pad: pad, str: str, num: num, isLatin: isLatin, fmtDate: fmtDate, parseDate: parseDate, addMonths: addMonths, today: today,
+    fromRow: fromRow, validate: validate, evaluate: evaluate, certNo: certNo, finalize: finalize, fileName: fileName, render: render
+  };
+});
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (s) { return document.querySelector(s); };
+  var C = window.CertCore;
+  var S = { logoDataUrl: null, logoFormat: 'PNG', batch: [], tab: 'batch' };
+  var libsOk = !!(window.XLSX && window.jspdf && window.JSZip);
+  if (!libsOk) $('#libAlert').hidden = false;
+
+  /* ---------- settings ---------- */
+  function settings() {
+    return { prefix: $('#prefix').value, pad: 5, validityMonths: parseInt($('#validity').value, 10) || 24, issueDate: C.today() };
+  }
+  function renderOpts() {
+    return { issuerName: $('#issuer').value.trim() || 'AFAQY', issuerFooter: $('#footer').value.trim(), reviewer: $('#reviewer').value.trim(),
+      statement: $('#statement').value.trim() || undefined, logoDataUrl: S.logoDataUrl, logoFormat: S.logoFormat };
+  }
+  $('#logo').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) { S.logoDataUrl = null; return; }
+    var r = new FileReader();
+    r.onload = function () { S.logoDataUrl = r.result; S.logoFormat = /png/i.test(f.type) ? 'PNG' : 'JPEG'; };
+    r.readAsDataURL(f);
+  });
+
+  /* ---------- tabs ---------- */
+  document.querySelectorAll('.tabs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      S.tab = b.dataset.tab;
+      document.querySelectorAll('.tabs button').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      $('#tab-batch').hidden = S.tab !== 'batch'; $('#tab-single').hidden = S.tab !== 'single';
+      refreshBar();
+    });
+  });
+
+  /* ---------- single form points ---------- */
+  (function buildPoints() {
+    var host = $('#points');
+    host.innerHTML = '';
+    C.POINT_SLOTS.forEach(function (p) {
+      var ar = (p.param === 'Humidity' ? 'رطوبة ' : 'حرارة ') + p.key + ' (' + p.unit + ')';
+      var frag = document.createElement('div'); frag.className = 'slot'; frag.textContent = ar; host.appendChild(frag);
+      [['label', 'وصف النقطة', 'text', 'lbl'], ['ref', 'قراءة المرجع', 'number', ''], ['uut', 'قراءة الحساس', 'number', ''], ['tol', 'التفاوت ±', 'number', '']].forEach(function (f) {
+        var w = document.createElement('div'); w.className = f[3];
+        w.innerHTML = '<div class="h">' + f[1] + '</div><input type="' + f[2] + '" step="0.01" class="ltr" name="' + p.key + '_' + f[0] + '">';
+        host.appendChild(w);
+      });
+    });
+  })();
+  document.getElementById('tab-single').addEventListener('input', refreshBar);
+
+  function singleRaw() {
+    var raw = {};
+    document.querySelectorAll('#tab-single input[name]').forEach(function (i) { raw[i.name] = i.value; });
+    return raw;
+  }
+
+  /* ---------- batch: read Excel ---------- */
+  $('#xlsx').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    $('#fileName').textContent = f.name;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var wb = XLSX.read(new Uint8Array(r.result), { type: 'array', cellDates: true });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(ws, { raw: true, defval: '' });
+        loadRows(rows);
+      } catch (err) { alert('الملف ما اتقراش: ' + err.message); }
+    };
+    r.readAsArrayBuffer(f);
+  });
+
+  function loadRows(rows) {
+    var seen = {};
+    S.batch = rows.map(function (raw, i) {
+      var d = C.fromRow(raw), errs = C.validate(d);
+      if (d.serial) { if (seen[d.serial]) errs.push('السيريال متكرر في الملف'); seen[d.serial] = true; }
+      if (!errs.length) C.evaluate(d);
+      return { i: i + 1, d: d, errs: errs };
+    }).filter(function (x) { return x.d.serial || x.errs.length; });
+    renderLedger(); refreshBar();
+  }
+
+  function renderLedger() {
+    var tb = $('#ledger tbody'); tb.innerHTML = '';
+    var ok = 0, bad = 0, failing = 0;
+    S.batch.forEach(function (x) {
+      var tr = document.createElement('tr');
+      var status;
+      if (x.errs.length) { bad++; status = '<span class="pill bad">مرفوضة</span><ul class="reasons">' + x.errs.map(function (m) { return '<li>' + esc(m) + '</li>'; }).join('') + '</ul>'; }
+      else if (x.d.overall === 'FAIL') { ok++; failing++; status = '<span class="pill warn">جاهزة، والقياس خارج التفاوت (هتطلع بنتيجة Fail)</span>'; }
+      else { ok++; status = '<span class="pill ok">جاهزة، ضمن التفاوت</span>'; }
+      tr.innerHTML = '<td>' + x.i + '</td><td class="mono">' + esc(x.d.serial || '—') + '</td><td>' + esc(x.d.customer) + '<br><span class="note">' + esc(x.d.site) + '</span></td><td class="mono">' + esc(x.d.calDate || '—') + '</td><td>' + status + '</td>';
+      tb.appendChild(tr);
+    });
+    $('#ledgerWrap').hidden = !S.batch.length;
+    $('#summary').textContent = S.batch.length ? (ok + ' جاهزة للتوليد' + (failing ? ' (منها ' + failing + ' خارج التفاوت)' : '') + '، ' + bad + ' مرفوضة عشان ناقصها بيانات فحص.') : '';
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  /* ---------- template ---------- */
+  $('#tpl').addEventListener('click', function () {
+    if (!window.XLSX) return;
+    var wb = XLSX.utils.book_new();
+    var aoa = [C.COLUMNS, C.COLUMNS.map(function (c) { return C.SAMPLE_ROW[c] == null ? '' : C.SAMPLE_ROW[c]; })];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'sensors');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['column', 'meaning']].concat(C.GUIDE)), 'guide');
+    XLSX.writeFile(wb, 'calibration_template.xlsx');
+  });
+
+  /* ---------- generate ---------- */
+  function readyItems() {
+    if (S.tab === 'batch') return S.batch.filter(function (x) { return !x.errs.length; }).map(function (x) { return x.d; });
+    var d = C.fromRow(singleRaw()), errs = C.validate(d);
+    return errs.length ? [] : [C.evaluate(d)];
+  }
+  function refreshBar() {
+    var go = $('#go'), st = $('#barStatus');
+    if (S.tab === 'batch') {
+      var n = readyItems().length;
+      go.disabled = !libsOk || !n; go.textContent = n ? 'توليد الشهادات (' + n + ')' : 'توليد الشهادات';
+      st.textContent = S.batch.length ? (n ? 'الرقم التالي: ' + C.certNo(settings().prefix, parseInt($('#nextNo').value, 10) || 1, 5) : 'مافيش صف صالح للتوليد.') : 'ارفع ملف الفحص أو نزّل القالب.';
+    } else {
+      var d = C.fromRow(singleRaw()), errs = C.validate(d);
+      go.disabled = !libsOk || !!errs.length; go.textContent = 'توليد شهادة واحدة';
+      st.textContent = errs.length ? 'ناقص: ' + errs.slice(0, 3).join('، ') + (errs.length > 3 ? ' …' : '') : 'جاهزة. الرقم: ' + C.certNo(settings().prefix, parseInt($('#nextNo').value, 10) || 1, 5);
+    }
+  }
+  ['#prefix', '#nextNo'].forEach(function (s) { $(s).addEventListener('input', refreshBar); });
+
+  $('#go').addEventListener('click', function () {
+    var items = readyItems(); if (!items.length) return;
+    var st = settings(), opts = renderOpts(), n = parseInt($('#nextNo').value, 10) || 1;
+    var docs = items.map(function (d) {
+      C.finalize(d, st, n++);
+      var doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+      C.render(doc, d, opts);
+      return { name: C.fileName(d), blob: doc.output('blob'), d: d };
+    });
+    $('#nextNo').value = n;
+    var links = $('#links'); links.innerHTML = '';
+    if (docs.length === 1) {
+      download(docs[0].blob, docs[0].name); addLink(docs[0]);
+      $('#barStatus').textContent = 'اتولدت شهادة ' + docs[0].d.certNo + ' للسيريال ' + docs[0].d.serial + '.';
+    } else {
+      var zip = new JSZip();
+      docs.forEach(function (x) { zip.file(x.name, x.blob); addLink(x); });
+      var zipName = 'certificates_' + (docs[0].d.customer.replace(/[^\w-]+/g, '_') || 'batch') + '_' + C.fmtDate(C.today()) + '.zip';
+      zip.generateAsync({ type: 'blob' }).then(function (b) {
+        download(b, zipName);
+        $('#barStatus').textContent = 'اتولد ' + docs.length + ' شهادة من ' + docs[0].d.certNo + ' إلى ' + docs[docs.length - 1].d.certNo + ' في ' + zipName;
+      });
+    }
+    function addLink(x) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(x.blob); a.target = '_blank'; a.textContent = x.name; links.appendChild(a);
+    }
+  });
+
+  function download(blob, name) {
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+  refreshBar();
+})();
+</script>
+</body>
+</html>
