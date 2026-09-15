@@ -77,8 +77,14 @@
       <div><label>الرقم التالي (يتزود تلقائيًا بعد كل توليد)</label><input type="number" id="nextNo" class="ltr" value="1" min="1"></div>
       <div><label>صلاحية الشهادة بالشهور من تاريخ الفحص</label><input type="number" id="validity" class="ltr" value="24" min="1" max="36"></div>
       <div><label>مراجعة واعتماد (اسم، اختياري)</label><input type="text" id="reviewer" class="ltr" placeholder="Quality reviewer"></div>
-      <div><label>سطر التذييل</label><input type="text" id="footer" class="ltr" value="AFAQY  |  Jeddah, Saudi Arabia"></div>
-      <div><label>لوجو أفاقي (PNG أو JPG، اختياري)</label><input type="file" id="logo" accept="image/png,image/jpeg"><span class="note" id="logoNote"></span></div>
+      <div><label>سطر تحت اللوجو (نشاط الشركة)</label><input type="text" id="tagline" class="ltr" value="Temperature &amp; humidity monitoring"></div>
+      <div><label>الموقع الإلكتروني</label><input type="text" id="web" class="ltr" placeholder="www.afaqy.com"></div>
+      <div><label>الاسم القانوني في التذييل</label><input type="text" id="legal" class="ltr" placeholder="AFAQY Technology Co. Ltd."></div>
+      <div><label>العنوان في التذييل</label><input type="text" id="address" class="ltr" placeholder="Jeddah, Kingdom of Saudi Arabia"></div>
+      <div><label>سطر الاتصال في التذييل</label><input type="text" id="contact" class="ltr" placeholder="Tel: ... | Email: ... | Web: ..."></div>
+      <div><label>لوجو أفاقي (PNG أو JPG)</label><input type="file" id="logo" accept="image/png,image/jpeg"><span class="note" id="logoNote"></span></div>
+      <div><label>لوجو الحساس (يظهر جنب جدول الجهاز)</label><input type="file" id="brand" accept="image/png,image/jpeg"><span class="note" id="brandNote"></span></div>
+      <div><label>توقيع الفني (صورة PNG بخلفية شفافة)</label><input type="file" id="sign" accept="image/png,image/jpeg"><span class="note" id="signNote"></span></div>
     </div>
     <div style="margin-top:10px"><label>نص الإقرار على الشهادة (بالإنجليزي، سيبه فاضي للنص الافتراضي)</label><textarea id="statement" class="ltr" placeholder="Default statement will be used"></textarea></div>
     <p class="note">تاريخ الإصدار بيتحط تلقائيًا بتاريخ النهارده. تاريخ الفحص والصلاحية بيتحسبوا من تاريخ الفحص الفعلي اللي الفني كتبه، مش من تاريخ الطباعة. الإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع بتتحفظ على الجهاز ده. <button class="btn secondary" id="clearSaved" style="padding:3px 10px;font-size:12px">مسح المحفوظ</button></p>
@@ -343,112 +349,171 @@
   }
   function fileName(d) { return d.certNo.replace(/[^\w.-]+/g, '_') + '_' + d.serial.replace(/[^\w.-]+/g, '_') + '.pdf'; }
 
-  /* ---------- PDF rendering (jsPDF + autoTable) ---------- */
+  /* ---------- PDF rendering (jsPDF + autoTable) ----------
+   * Laid out like a factory calibration certificate: logo row, colour title band,
+   * boxed identity row, framed sections, result row with signature, company footer.
+   */
   function render(doc, d, opts) {
     opts = opts || {};
     var at = opts.autoTable || function (doc_, o) { return doc_.autoTable(o); };
-    var W = 210, M = 15, USABLE = W - 2 * M;
-    var NAVY = [20, 33, 61], INK = [16, 24, 40], GREY = [95, 105, 120], LINE = [208, 213, 221], FILL = [243, 245, 248];
+    var W = 210, M = 14, USABLE = W - 2 * M;
+    var BAND = opts.bandColor || [20, 33, 61];
+    var INK = [17, 24, 39], GREY = [100, 110, 124], LINE = [150, 158, 170], FILL = [238, 241, 246];
     var GREEN = [21, 115, 71], RED = [180, 35, 24];
     var issuer = opts.issuerName || 'AFAQY';
-    var y = 16;
+    var y = 12;
 
+    /* --- logo row --- */
     if (opts.logoDataUrl) {
-      try { doc.addImage(opts.logoDataUrl, opts.logoFormat || 'PNG', M, y - 3, 42, 14, undefined, 'FAST'); } catch (err) { /* fall through to text */ }
+      try { doc.addImage(opts.logoDataUrl, opts.logoFormat || 'PNG', M, y, 46, 15, undefined, 'FAST'); }
+      catch (e) { doc.setFont('helvetica', 'bold'); doc.setFontSize(21); doc.setTextColor(BAND[0], BAND[1], BAND[2]); doc.text(issuer, M, y + 11); }
     } else {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-      doc.text(issuer, M, y + 7);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(21); doc.setTextColor(BAND[0], BAND[1], BAND[2]);
+      doc.text(issuer, M, y + 11);
     }
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-    doc.text('Calibration Certificate', W - M, y + 5, { align: 'right' });
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-    doc.text('In-house calibration by comparison  -  not an ISO/IEC 17025 accredited calibration', W - M, y + 10.5, { align: 'right' });
-    y += 17;
-    doc.setDrawColor(NAVY[0], NAVY[1], NAVY[2]); doc.setLineWidth(0.7); doc.line(M, y, W - M, y);
-    y += 4;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text(opts.issuerTagline || 'Temperature & humidity monitoring', W - M, y + 6, { align: 'right' });
+    if (opts.issuerWeb) doc.text(opts.issuerWeb, W - M, y + 10.5, { align: 'right' });
+    y += 19;
 
-    var baseStyles = { fontSize: 9, cellPadding: 1.8, textColor: INK, lineColor: LINE, lineWidth: 0.2, font: 'helvetica' };
-    var headStyles = { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold' };
+    /* --- title band --- */
+    doc.setFillColor(BAND[0], BAND[1], BAND[2]); doc.rect(M, y, USABLE, 13, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(255, 255, 255);
+    doc.text('Calibration Certificate', W / 2, y + 8.8, { align: 'center' });
+    y += 13;
+    doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(M, y, USABLE, 6, 'F');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('In-house calibration by comparison, performed by ' + issuer + ' - not an ISO/IEC 17025 accredited calibration', W / 2, y + 4, { align: 'center' });
+    y += 10;
 
+    var baseStyles = { fontSize: 8.6, cellPadding: 1.9, textColor: INK, lineColor: LINE, lineWidth: 0.2, font: 'helvetica', valign: 'middle' };
+    var headStyles = { fillColor: FILL, textColor: BAND, fontStyle: 'bold', halign: 'center', lineColor: LINE, lineWidth: 0.2 };
+    var labelCol = { fontStyle: 'bold', fillColor: FILL, cellWidth: 30 };
+
+    /* --- identity row --- */
     at(doc, {
       startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles,
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 34, fillColor: FILL }, 1: { cellWidth: 56 }, 2: { fontStyle: 'bold', cellWidth: 34, fillColor: FILL }, 3: { cellWidth: 56 } },
+      columnStyles: { 0: labelCol, 1: { cellWidth: 51 }, 2: Object.assign({}, labelCol, { cellWidth: 31 }), 3: { cellWidth: 'auto' } },
       body: [
-        ['Certificate No.', d.certNo, 'Issue date', d.issueDate],
+        ['Certificate No.', d.certNo, 'Certificate date', d.issueDate],
         ['Calibration date', d.calDate, 'Valid until', d.validUntil],
-        ['Customer', d.customer, 'Site / location', d.site],
-        ['Technician', d.technician, 'Performed at', 'Customer site']
+        ['Customer', d.customer, 'Site / location', d.site]
       ]
     });
-    y = doc.lastAutoTable.finalY + 6;
+    y = doc.lastAutoTable.finalY + 5;
 
-    function section(title) {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-      doc.text(title, M, y); y += 2;
+    function heading(txt) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(BAND[0], BAND[1], BAND[2]);
+      doc.text(txt, M, y); y += 1.5;
     }
 
-    section('Device under test');
-    at(doc, { startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
-      head: [['Product', 'Model', 'Manufacturer', 'Serial / ID']], body: [[d.product, d.model, d.manufacturer || '-', d.serial]] });
-    y = doc.lastAutoTable.finalY + 6;
+    /* --- device under test --- */
+    heading('Product Information');
+    var brandW = 0;
+    if (opts.brandDataUrl) brandW = 26;
+    at(doc, {
+      startY: y, margin: { left: M, right: M + brandW }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+      head: [['Product name', 'Model', 'Manufacturer', 'Serial / ID', 'Quantity']],
+      body: [[d.product, d.model, d.manufacturer || '-', d.serial, '1 pc']],
+      columnStyles: { 1: { halign: 'center' }, 4: { halign: 'center', cellWidth: 16 } }
+    });
+    if (opts.brandDataUrl) {
+      var bt = doc.lastAutoTable, bh = bt.finalY - y;
+      try {
+        doc.addImage(opts.brandDataUrl, opts.brandFormat || 'PNG', W - M - brandW + 2, y + 1, brandW - 4, Math.max(8, bh - 2), undefined, 'FAST');
+        doc.setFontSize(6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+        doc.text('device brand', W - M - brandW / 2, bt.finalY + 2.6, { align: 'center' });
+      } catch (e) {}
+    }
+    y = doc.lastAutoTable.finalY + (opts.brandDataUrl ? 7 : 5);
 
-    section('Reference standard');
-    at(doc, { startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+    /* --- reference instrumentation --- */
+    heading('Reference Instrumentation');
+    at(doc, {
+      startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
       head: [['Instrument', 'Model', 'Serial', 'Calibrated by', 'Certificate No.', 'Valid until']],
-      body: [[d.ref.name, d.ref.model, d.ref.serial, d.ref.calBy, d.ref.certNo, d.ref.validUntil]] });
-    y = doc.lastAutoTable.finalY + 6;
+      body: [[d.ref.name, d.ref.model || '-', d.ref.serial, d.ref.calBy || '-', d.ref.certNo, d.ref.validUntil]],
+      columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 5: { halign: 'center' } }
+    });
+    y = doc.lastAutoTable.finalY + 5;
 
-    section('Calibration results');
+    /* --- results --- */
     var envParts = [];
-    if (d.env.temp != null) envParts.push('ambient ' + fmtNum(d.env.temp, 1) + ' °C');
-    if (d.env.rh != null) envParts.push(fmtNum(d.env.rh, 0) + ' %RH');
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-    doc.text('Method: direct comparison against the reference standard at the points below.' + (envParts.length ? '  Environment: ' + envParts.join(', ') + '.' : ''), M, y + 3);
-    y += 6;
+    if (d.env.temp != null) envParts.push('air temperature ' + fmtNum(d.env.temp, 1) + ' C');
+    if (d.env.rh != null) envParts.push('relative humidity ' + fmtNum(d.env.rh, 0) + ' %');
+    heading('Calibration Results');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    var mLines = doc.splitTextToSize('(Method: direct comparison against the reference instrument at the validation points below'
+      + (envParts.length ? '. Environment conditions: ' + envParts.join(', ') : '') + ')', USABLE);
+    doc.text(mLines, M, y + 3.6);
+    y += 2.6 + mLines.length * 3.4;
     var body = d.points.map(function (p) {
       var dp = p.param === 'Humidity' ? 1 : 2;
       return [p.label, p.param, fmtNum(p.ref, dp) + ' ' + p.unit, fmtNum(p.uut, dp) + ' ' + p.unit,
-        (p.deviation > 0 ? '+' : '') + fmtNum(p.deviation, dp) + ' ' + p.unit, '± ' + fmtNum(p.tol, dp) + ' ' + p.unit, p.pass ? 'Pass' : 'Fail'];
+        (p.deviation > 0 ? '+' : '') + fmtNum(p.deviation, dp) + ' ' + p.unit, '+/- ' + fmtNum(p.tol, dp) + ' ' + p.unit, p.pass ? 'Pass' : 'Fail'];
     });
-    at(doc, { startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
-      head: [['Point', 'Parameter', 'Reference', 'UUT reading', 'Deviation', 'Tolerance', 'Result']], body: body,
-      columnStyles: { 6: { fontStyle: 'bold', halign: 'center' } },
+    at(doc, {
+      startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+      head: [['Validation point', 'Parameter', 'Reference', 'Device reading', 'Deviation', 'Tolerance', 'Result']],
+      body: body,
+      columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' }, 5: { halign: 'center' }, 6: { halign: 'center', fontStyle: 'bold', cellWidth: 18 } },
       didParseCell: function (data) {
-        if (data.section === 'body' && data.column.index === 6) {
-          var ok = data.cell.raw === 'Pass';
-          data.cell.styles.textColor = ok ? GREEN : RED;
-        }
-      } });
+        if (data.section === 'body' && data.column.index === 6) data.cell.styles.textColor = data.cell.raw === 'Pass' ? GREEN : RED;
+      }
+    });
     y = doc.lastAutoTable.finalY + 5;
 
+    /* --- result + signature row --- */
     var ok = d.overall === 'PASS', col = ok ? GREEN : RED;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    var resLines = doc.splitTextToSize('Overall result: ' + d.overall + (ok ? '  -  all points within tolerance' : '  -  one or more points outside tolerance. Do not use the device until it is adjusted or replaced.'), USABLE - 6);
-    var boxH = 5 + resLines.length * 5;
-    doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(0.6); doc.rect(M, y, USABLE, boxH);
-    doc.setTextColor(col[0], col[1], col[2]);
-    doc.text(resLines, M + 3, y + 6.5);
-    y += boxH + 6;
+    at(doc, {
+      startY: y, margin: { left: M, right: M }, theme: 'grid', styles: Object.assign({}, baseStyles, { minCellHeight: 15 }),
+      columnStyles: { 0: Object.assign({}, labelCol, { cellWidth: 42, halign: 'center' }), 1: { cellWidth: 36, halign: 'center', fontStyle: 'bold', fontSize: 12 },
+        2: Object.assign({}, labelCol, { cellWidth: 46, halign: 'center' }), 3: { halign: 'center' } },
+      body: [['Test result Pass/Fail', d.overall, 'Signature of calibration technician', opts.signDataUrl ? '' : d.technician]],
+      didParseCell: function (data) { if (data.column.index === 1) data.cell.styles.textColor = col; },
+      didDrawCell: function (data) {
+        if (data.section !== 'body' || data.column.index !== 3 || !opts.signDataUrl) return;
+        var c = data.cell, h = Math.min(11, c.height - 5), w = Math.min(34, c.width - 8);
+        try { doc.addImage(opts.signDataUrl, opts.signFormat || 'PNG', c.x + (c.width - w) / 2, c.y + 1.5, w, h, undefined, 'FAST'); } catch (e) {}
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.4); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+        doc.text(d.technician, c.x + c.width / 2, c.y + c.height - 2.4, { align: 'center' });
+        doc.setTextColor(INK[0], INK[1], INK[2]);
+      }
+    });
+    y = doc.lastAutoTable.finalY + (ok ? 5 : 3);
 
-    var statement = opts.statement || (issuer + ' certifies that the device identified above was compared against the reference standard listed, at the points, date and location stated. Deviation = UUT reading - reference reading; a point passes when |deviation| <= tolerance. This calibration was performed by ' + issuer + ' personnel and is not an accredited (ISO/IEC 17025) calibration. Recalibration is recommended on or before the "Valid until" date.');
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(INK[0], INK[1], INK[2]);
+    if (!ok) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.4); doc.setTextColor(RED[0], RED[1], RED[2]);
+      var warn = doc.splitTextToSize('One or more validation points are outside tolerance. Do not put this device into service until it is adjusted or replaced.', USABLE);
+      doc.text(warn, M, y + 3); y += warn.length * 4 + 4;
+    }
+
+    /* --- statement --- */
+    var statement = opts.statement || (issuer + ' certifies that the device identified above was compared against the reference instrument listed, at the validation points, date and location stated on this certificate. Deviation = device reading - reference reading; a point passes when the absolute deviation is within the stated tolerance. This calibration was performed by ' + issuer + ' personnel using a reference instrument whose own calibration certificate is identified above, and is not an accredited (ISO/IEC 17025) calibration. Recalibration is recommended on or before the "Valid until" date, or earlier if required by the customer quality system.');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); doc.setTextColor(INK[0], INK[1], INK[2]);
     var lines = doc.splitTextToSize(statement, USABLE);
-    doc.text(lines, M, y); y += lines.length * 4.4 + 10;
+    doc.text(lines, M, y + 3.5); y += lines.length * 3.8 + 8;
 
-    doc.setDrawColor(INK[0], INK[1], INK[2]); doc.setLineWidth(0.3);
-    var colW = USABLE / 2 - 8;
-    doc.line(M, y + 12, M + colW, y + 12);
-    doc.line(W - M - colW, y + 12, W - M, y + 12);
-    doc.setFontSize(8.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-    doc.text('Calibration technician', M, y + 16); doc.text('Reviewed by', W - M - colW, y + 16);
-    doc.setFontSize(10); doc.setTextColor(INK[0], INK[1], INK[2]); doc.setFont('helvetica', 'bold');
-    doc.text(d.technician, M, y + 9); doc.setFont('helvetica', 'normal');
-    doc.text(opts.reviewer || '', W - M - colW, y + 9);
+    /* --- reviewer / stamp --- */
+    doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.3);
+    var colW = USABLE / 2 - 6;
+    doc.line(M, y + 10, M + colW, y + 10);
+    doc.rect(W - M - colW, y - 4, colW, 20);
+    doc.setFontSize(7.4); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('Reviewed by (name and date)', M, y + 14);
+    doc.text('Company stamp', W - M - colW / 2, y + 14, { align: 'center' });
+    doc.setFontSize(9.5); doc.setTextColor(INK[0], INK[1], INK[2]);
+    if (opts.reviewer) doc.text(opts.reviewer, M, y + 7);
 
-    doc.setFontSize(7.5); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
-    doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.3); doc.line(M, 281, W - M, 281);
-    doc.text((opts.issuerFooter || (issuer + '  |  Saudi Arabia')), M, 285.5);
-    doc.text(d.certNo + '  |  ' + d.serial + '  |  Page 1 of 1', W - M, 285.5, { align: 'right' });
+    /* --- company footer --- */
+    var fy = 276;
+    doc.setDrawColor(BAND[0], BAND[1], BAND[2]); doc.setLineWidth(0.6); doc.line(M, fy, W - M, fy);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.4); doc.setTextColor(BAND[0], BAND[1], BAND[2]);
+    doc.text(opts.issuerLegal || (issuer + ' Technology Co. Ltd.'), M, fy + 4.6);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.4); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    if (opts.issuerAddress) doc.text(opts.issuerAddress, M, fy + 8.6);
+    if (opts.issuerContact) doc.text(opts.issuerContact, M, fy + 12.2);
+    doc.text(d.certNo + ' | ' + d.serial + ' | page 1 of 1', W - M, fy + 12.2, { align: 'right' });
     doc.setTextColor(0, 0, 0);
     return doc;
   }
@@ -466,7 +531,7 @@
   'use strict';
   var $ = function (s) { return document.querySelector(s); };
   var C = window.CertCore;
-  var S = { logoDataUrl: null, logoFormat: 'PNG', batch: [], tab: 'batch' };
+  var S = { logoDataUrl: null, logoFormat: 'PNG', brandDataUrl: null, brandFormat: 'PNG', signDataUrl: null, signFormat: 'PNG', batch: [], tab: 'batch' };
   var libsOk = !!(window.XLSX && window.jspdf && window.JSZip);
   if (!libsOk) $('#libAlert').hidden = false;
   var LS_SET = 'afqCert.settings', LS_STICKY = 'afqCert.sticky';
@@ -480,18 +545,30 @@
     return { prefix: $('#prefix').value, pad: 5, validityMonths: parseInt($('#validity').value, 10) || 24, issueDate: C.today() };
   }
   function renderOpts() {
-    return { issuerName: $('#issuer').value.trim() || 'AFAQY', issuerFooter: $('#footer').value.trim(), reviewer: $('#reviewer').value.trim(),
-      statement: $('#statement').value.trim() || undefined, logoDataUrl: S.logoDataUrl, logoFormat: S.logoFormat };
+    return { issuerName: $('#issuer').value.trim() || 'AFAQY', reviewer: $('#reviewer').value.trim(),
+      issuerTagline: $('#tagline').value.trim(), issuerWeb: $('#web').value.trim(),
+      issuerLegal: $('#legal').value.trim(), issuerAddress: $('#address').value.trim(), issuerContact: $('#contact').value.trim(),
+      statement: $('#statement').value.trim() || undefined,
+      logoDataUrl: S.logoDataUrl, logoFormat: S.logoFormat,
+      brandDataUrl: S.brandDataUrl, brandFormat: S.brandFormat,
+      signDataUrl: S.signDataUrl, signFormat: S.signFormat };
   }
-  $('#logo').addEventListener('change', function (e) {
-    var f = e.target.files[0]; if (!f) { S.logoDataUrl = null; saveSettings(); return; }
-    var r = new FileReader();
-    r.onload = function () { S.logoDataUrl = r.result; S.logoFormat = /png/i.test(f.type) ? 'PNG' : 'JPEG'; saveSettings(); };
-    r.readAsDataURL(f);
-  });
+  [['logo', 'logoDataUrl', 'logoFormat', '#logoNote'], ['brand', 'brandDataUrl', 'brandFormat', '#brandNote'], ['sign', 'signDataUrl', 'signFormat', '#signNote']]
+    .forEach(function (cfg) {
+      $('#' + cfg[0]).addEventListener('change', function (e) {
+        var f = e.target.files[0];
+        if (!f) { S[cfg[1]] = null; $(cfg[3]).textContent = ''; saveSettings(); return; }
+        var r = new FileReader();
+        r.onload = function () { S[cfg[1]] = r.result; S[cfg[2]] = /png/i.test(f.type) ? 'PNG' : 'JPEG'; $(cfg[3]).textContent = 'محفوظ'; saveSettings(); };
+        r.readAsDataURL(f);
+      });
+    });
   function saveSettings() {
-    lsSet(LS_SET, { issuer: $('#issuer').value, prefix: $('#prefix').value, nextNo: $('#nextNo').value, validity: $('#validity').value,
-      reviewer: $('#reviewer').value, footer: $('#footer').value, statement: $('#statement').value, logo: S.logoDataUrl, logoFormat: S.logoFormat });
+    var o = {}; ['issuer', 'prefix', 'nextNo', 'validity', 'reviewer', 'tagline', 'web', 'legal', 'address', 'contact', 'statement'].forEach(function (k) { o[k] = $('#' + k).value; });
+    o.logo = S.logoDataUrl; o.logoFormat = S.logoFormat;
+    o.brand = S.brandDataUrl; o.brandFormat = S.brandFormat;
+    o.sign = S.signDataUrl; o.signFormat = S.signFormat;
+    lsSet(LS_SET, o);
   }
   function saveSticky() {
     var o = {}; STICKY.forEach(function (n) { var i = document.querySelector('#tab-single input[name="' + n + '"]'); if (i) o[n] = i.value; });
@@ -500,13 +577,14 @@
   }
   function restore() {
     var s = lsGet(LS_SET);
-    if (s) { ['issuer', 'prefix', 'nextNo', 'validity', 'reviewer', 'footer', 'statement'].forEach(function (k) { if (s[k] != null && s[k] !== '') $('#' + k).value = s[k]; });
-      if (s.logo) { S.logoDataUrl = s.logo; S.logoFormat = s.logoFormat || 'PNG'; $('#logoNote').textContent = 'لوجو محفوظ من قبل'; } }
+    if (s) { ['issuer', 'prefix', 'nextNo', 'validity', 'reviewer', 'tagline', 'web', 'legal', 'address', 'contact', 'statement'].forEach(function (k) { if (s[k] != null && s[k] !== '') $('#' + k).value = s[k]; });
+      [['logo', 'logoDataUrl', 'logoFormat', '#logoNote'], ['brand', 'brandDataUrl', 'brandFormat', '#brandNote'], ['sign', 'signDataUrl', 'signFormat', '#signNote']]
+        .forEach(function (c) { if (s[c[0]]) { S[c[1]] = s[c[0]]; S[c[2]] = s[c[0] + 'Format'] || 'PNG'; $(c[3]).textContent = 'محفوظ'; } }); }
     var t = lsGet(LS_STICKY);
     if (t) Object.keys(t).forEach(function (n) { var i = document.querySelector('#tab-single input[name="' + n + '"]'); if (i && t[n] !== '') i.value = t[n]; });
     var cd = document.querySelector('#tab-single input[name="cal_date"]'); if (cd && !cd.value) cd.value = C.fmtDate(C.today());
   }
-  ['#issuer', '#prefix', '#nextNo', '#validity', '#reviewer', '#footer', '#statement'].forEach(function (s) { $(s).addEventListener('change', saveSettings); });
+  ['#issuer', '#prefix', '#nextNo', '#validity', '#reviewer', '#tagline', '#web', '#legal', '#address', '#contact', '#statement'].forEach(function (s) { $(s).addEventListener('change', saveSettings); });
   $('#clearSaved').addEventListener('click', function () {
     if (!confirm('يتمسح كل المحفوظ على الجهاز ده (الإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع)؟')) return;
     try { localStorage.removeItem(LS_SET); localStorage.removeItem(LS_STICKY); } catch (e) {}
@@ -643,7 +721,7 @@
     $('#nextNo').value = n; saveSettings();
     if (S.tab === 'single') {
       document.querySelectorAll('#tab-single input[name="serial"], #tab-single input[name$="_ref"], #tab-single input[name$="_uut"]').forEach(function (i) { i.value = ''; });
-      setTimeout(refreshBar, 0);
+      setTimeout(function () { refreshBar(); var i = document.querySelector('#tab-single input[name="serial"]'); if (i) i.focus(); }, 0);
     }
     var links = $('#links'); links.innerHTML = '';
     if (docs.length === 1) {
@@ -668,7 +746,14 @@
     document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   }
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.target.tagName === 'TEXTAREA') return;
+    var go = $('#go'); if (!go.disabled) { e.preventDefault(); go.click(); }
+  });
+  function focusSerial() { var i = document.querySelector('#tab-single input[name="serial"]'); if (i) i.focus(); }
+  document.querySelector('.tabs button[data-tab="single"]').addEventListener('click', focusSerial);
   restore(); refreshBar();
+  if (lsGet(LS_STICKY)) { document.querySelector('.tabs button[data-tab="single"]').click(); focusSerial(); }
 })();
 </script>
 </body>

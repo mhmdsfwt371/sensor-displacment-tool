@@ -774,7 +774,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="5.8";
+const VERSION="5.9";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -4037,7 +4037,10 @@ calibrated reference: upload the technician's Excel (one row per sensor, templat
 PDF per serial packed in a ZIP, or fill the single-sensor form for one PDF. Known models (TAG07B, TSTH1-B)
 fill in the manufacturer, point labels and acceptance tolerances from the factory certificates; your settings,
 logo, next number, technician and reference-instrument details are remembered on the device, so a single sensor
-needs only its serial and the readings.</p>
+needs only its serial and the readings, and <b>Enter</b> issues it. The certificate follows the factory layout:
+logo row, title band, framed identity / product / reference / results sections, a result-and-signature row and a
+company footer — with optional images for the AFAQY logo, the sensor brand (shown beside the product table) and
+the technician signature.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
 certificate for a test that did not happen; validity is counted from the test date, not from the print
@@ -4271,7 +4274,9 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 جوّه الصفحة) وهتاخد ملف PDF لكل سيريال مضغوطين في ZIP، أو املا فورم الحساس الواحد لملف واحد.
 الموديلات المعروفة (TAG07B وTSTH1-B) بتملي الشركة المصنعة وأوصاف النقاط والتفاوتات المقبولة من
 شهادات المصنع، والإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع بتتحفظ على الجهاز، فالحساس
-الواحد محتاج سيرياله وقراءاته بس.</p>
+الواحد محتاج سيرياله وقراءاته بس، وزرار <b>Enter</b> بيصدّرها. وشكل الشهادة بقى زي شهادات المصانع:
+صف اللوجو، وشريط العنوان، وأقسام مؤطرة (بيانات الشهادة، الجهاز، المرجع، النتائج)، وصف النتيجة والتوقيع،
+وتذييل بيانات الشركة — مع صور اختيارية للوجو أفاقي، ولوجو الحساس (جنب جدول الجهاز)، وتوقيع الفني.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
 بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة
