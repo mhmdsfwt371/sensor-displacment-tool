@@ -774,7 +774,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="5.7";
+const VERSION="5.8";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -4034,7 +4034,10 @@ Check the list for who edited last before you overwrite.</blockquote>
 <p><b>Save</b> → <b>Calibration certificates</b> opens the in-house certificate generator on a
 separate page. It issues an AFAQY certificate for every sensor that was actually checked against a
 calibrated reference: upload the technician's Excel (one row per sensor, template inside) and get one
-PDF per serial packed in a ZIP, or fill the single-sensor form for one PDF.</p>
+PDF per serial packed in a ZIP, or fill the single-sensor form for one PDF. Known models (TAG07B, TSTH1-B)
+fill in the manufacturer, point labels and acceptance tolerances from the factory certificates; your settings,
+logo, next number, technician and reference-instrument details are remembered on the device, so a single sensor
+needs only its serial and the readings.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
 certificate for a test that did not happen; validity is counted from the test date, not from the print
@@ -4265,7 +4268,10 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 <h3>١٥. شهادات المعايرة</h3>
 <p>من <b>حفظ</b> ← <b>شهادات المعايرة</b> بتفتح صفحة مولّد الشهادات الداخلية. الصفحة بتطلع شهادة
 باسم آفاقي لكل حساس اتفحص فعلًا على جهاز مرجعي متعاير: ارفع إكسل الفني (صف لكل حساس، والقالب
-جوّه الصفحة) وهتاخد ملف PDF لكل سيريال مضغوطين في ZIP، أو املا فورم الحساس الواحد لملف واحد.</p>
+جوّه الصفحة) وهتاخد ملف PDF لكل سيريال مضغوطين في ZIP، أو املا فورم الحساس الواحد لملف واحد.
+الموديلات المعروفة (TAG07B وTSTH1-B) بتملي الشركة المصنعة وأوصاف النقاط والتفاوتات المقبولة من
+شهادات المصنع، والإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع بتتحفظ على الجهاز، فالحساس
+الواحد محتاج سيرياله وقراءاته بس.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
 بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة

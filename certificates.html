@@ -78,10 +78,10 @@
       <div><label>صلاحية الشهادة بالشهور من تاريخ الفحص</label><input type="number" id="validity" class="ltr" value="24" min="1" max="36"></div>
       <div><label>مراجعة واعتماد (اسم، اختياري)</label><input type="text" id="reviewer" class="ltr" placeholder="Quality reviewer"></div>
       <div><label>سطر التذييل</label><input type="text" id="footer" class="ltr" value="AFAQY  |  Jeddah, Saudi Arabia"></div>
-      <div><label>لوجو أفاقي (PNG أو JPG، اختياري)</label><input type="file" id="logo" accept="image/png,image/jpeg"></div>
+      <div><label>لوجو أفاقي (PNG أو JPG، اختياري)</label><input type="file" id="logo" accept="image/png,image/jpeg"><span class="note" id="logoNote"></span></div>
     </div>
     <div style="margin-top:10px"><label>نص الإقرار على الشهادة (بالإنجليزي، سيبه فاضي للنص الافتراضي)</label><textarea id="statement" class="ltr" placeholder="Default statement will be used"></textarea></div>
-    <p class="note">تاريخ الإصدار بيتحط تلقائيًا بتاريخ النهارده. تاريخ الفحص والصلاحية بيتحسبوا من تاريخ الفحص الفعلي اللي الفني كتبه، مش من تاريخ الطباعة.</p>
+    <p class="note">تاريخ الإصدار بيتحط تلقائيًا بتاريخ النهارده. تاريخ الفحص والصلاحية بيتحسبوا من تاريخ الفحص الفعلي اللي الفني كتبه، مش من تاريخ الطباعة. الإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع بتتحفظ على الجهاز ده. <button class="btn secondary" id="clearSaved" style="padding:3px 10px;font-size:12px">مسح المحفوظ</button></p>
   </section>
 
   <div class="tabs" role="tablist">
@@ -112,7 +112,8 @@
     <h2>بيانات الحساس والفحص</h2>
     <div class="grid" id="singleForm">
       <div><label>السيريال</label><input type="text" class="ltr" name="serial"></div>
-      <div><label>الموديل</label><input type="text" class="ltr" name="model" placeholder="TAG07B"></div>
+      <div><label>الموديل (الموديلات المعروفة بتملي الباقي لوحدها)</label><input type="text" class="ltr" name="model" list="models" placeholder="TAG07B"><datalist id="models"></datalist></div>
+      <div><label>الشركة المصنعة</label><input type="text" class="ltr" name="manufacturer"></div>
       <div><label>وصف المنتج</label><input type="text" class="ltr" name="product" value="BLE Temperature & Humidity Sensor"></div>
       <div><label>العميل</label><input type="text" class="ltr" name="customer"></div>
       <div><label>الموقع</label><input type="text" class="ltr" name="site" placeholder="Warehouse A - Fridge 3"></div>
@@ -129,7 +130,7 @@
     </div>
     <h2 style="margin-top:16px">نقاط القياس</h2>
     <div class="points" id="points"></div>
-    <p class="note">اكتب على الأقل نقطة واحدة كاملة: وصف، قراءة المرجع، قراءة الحساس، التفاوت المقبول.</p>
+    <p class="note">اكتب على الأقل نقطة واحدة كاملة: وصف، قراءة المرجع، قراءة الحساس، التفاوت المقبول. التفاوتات والأوصاف بتتملي لوحدها للموديلات المعروفة (من جداول شهادات المصنع)، والقراءات بتتكتب من الفحص كل مرة. بعد كل توليد السيريال والقراءات بيتمسحوا وباقي البيانات بتفضل.</p>
   </section>
 
   <div class="links" id="links"></div>
@@ -194,7 +195,7 @@
     { key: 'RH1', param: 'Humidity',    unit: '%RH' },
     { key: 'RH2', param: 'Humidity',    unit: '%RH' }
   ];
-  var BASE_COLUMNS = ['serial', 'model', 'product', 'customer', 'site', 'technician', 'cal_date',
+  var BASE_COLUMNS = ['serial', 'model', 'manufacturer', 'product', 'customer', 'site', 'technician', 'cal_date',
     'env_temp', 'env_rh', 'ref_name', 'ref_model', 'ref_serial', 'ref_cal_by', 'ref_cert_no', 'ref_valid_until'];
   var COLUMNS = BASE_COLUMNS.slice();
   POINT_SLOTS.forEach(function (p) { COLUMNS.push(p.key + '_label', p.key + '_ref', p.key + '_uut', p.key + '_tol'); });
@@ -202,7 +203,8 @@
   /* Arabic guide for the template's second sheet */
   var GUIDE = [
     ['serial', 'الرقم التسلسلي أو عنوان الحساس (إلزامي، بدون تكرار داخل الملف)'],
-    ['model', 'موديل الحساس مثل TAG07B أو TSTH1-B (إلزامي)'],
+    ['model', 'موديل الحساس مثل TAG07B أو TSTH1-B (إلزامي). الموديلات المعروفة بتملي الشركة المصنعة والتفاوتات لوحدها'],
+    ['manufacturer', 'الشركة المصنعة للحساس (اختياري، بيتملي تلقائيًا للموديلات المعروفة)'],
     ['product', 'وصف المنتج مثل BLE Temperature & Humidity Sensor'],
     ['customer', 'اسم العميل بالإنجليزي (إلزامي)'],
     ['site', 'الموقع: المستودع / الغرفة / الثلاجة (إلزامي)'],
@@ -220,7 +222,7 @@
   ];
 
   var SAMPLE_ROW = {
-    serial: 'E48DD9031284', model: 'TSTH1-B', product: 'BLE Temperature & Humidity Sensor',
+    serial: 'E48DD9031284', model: 'TSTH1-B', manufacturer: 'TOPFLYtech', product: 'BLE Temperature & Humidity Sensor',
     customer: 'Example Pharma Co.', site: 'Jeddah warehouse - Cold room 2', technician: 'A. Technician',
     cal_date: fmtDate(today()), env_temp: 24.1, env_rh: 45,
     ref_name: 'Reference thermo-hygrometer', ref_model: 'Fluke 971', ref_serial: '12345678',
@@ -230,12 +232,43 @@
     RH1_label: 'Ambient', RH1_ref: 45.0, RH1_uut: 46.8, RH1_tol: 3
   };
 
+  /* ---------- model presets ----------
+   * Constants that legitimately live in a preset: acceptance tolerances and point labels,
+   * taken from the manufacturers' own factory certificates (validation-point tables).
+   * Readings are never preset — they are what the technician measures.
+   */
+  var PRESETS = {
+    'TSTH1-B': { manufacturer: 'TOPFLYtech', product: 'BLE Temperature & Humidity Sensor',
+      source: 'TOPFLYtech factory certificate: ±0.5 °C at -20/0/40 °C, ±3 %RH at 40/60/80 %RH',
+      points: { T1: { label: 'Cold room (2-8 C)', tol: 0.5 }, T2: { label: 'Ambient (15-25 C)', tol: 0.5 }, T3: { label: '', tol: 0.5 },
+                RH1: { label: 'Ambient', tol: 3 }, RH2: { label: '', tol: 3 } } },
+    'TAG07B': { manufacturer: 'TZONE Digital Technology', product: 'BLE Temperature & Humidity Sensor',
+      source: 'TZONE factory certificate: ±0.8 °C at -20, ±0.7 at 0, ±0.5 at 10, ±0.3 at 25 °C; ±3 %RH',
+      points: { T1: { label: 'Cold room (2-8 C)', tol: 0.5 }, T2: { label: 'Ambient (15-25 C)', tol: 0.3 }, T3: { label: '', tol: 0.5 },
+                RH1: { label: 'Ambient', tol: 3 }, RH2: { label: '', tol: 3 } } }
+  };
+  function preset(model) { return PRESETS[str(model).toUpperCase()] || null; }
+  function presetKey(model) { var k = str(model).toUpperCase(); return PRESETS[k] ? k : null; }
+  /* fill only what is missing: manufacturer/product, and per-point label/tolerance */
+  function applyPreset(d) {
+    var p = preset(d.model); if (!p) return d;
+    d.model = presetKey(d.model);                       // canonical spelling of a known model
+    if (!d.manufacturer) d.manufacturer = p.manufacturer;
+    if (!d.product || d.product === 'Temperature & Humidity Sensor') d.product = p.product;
+    d.points.forEach(function (pt) {
+      var pp = p.points[pt.slot]; if (!pp) return;
+      if (pt.tol == null) pt.tol = pp.tol;
+      if (!pt.label || pt.label === pt.param) pt.label = pp.label || pt.param;
+    });
+    return d;
+  }
+
   /* ---------- row -> data ---------- */
   function fromRow(raw) {
     var r = {};
     Object.keys(raw || {}).forEach(function (k) { r[String(k).trim().toLowerCase()] = raw[k]; });
     var d = {
-      serial: str(r.serial), model: str(r.model), product: str(r.product) || 'Temperature & Humidity Sensor',
+      serial: str(r.serial), model: str(r.model), manufacturer: str(r.manufacturer), product: str(r.product) || 'Temperature & Humidity Sensor',
       customer: str(r.customer), site: str(r.site), technician: str(r.technician),
       calDateObj: parseDate(r.cal_date),
       env: { temp: num(r.env_temp), rh: num(r.env_rh) },
@@ -250,7 +283,7 @@
     POINT_SLOTS.forEach(function (p) {
       var k = p.key.toLowerCase();
       var ref = num(r[k + '_ref']), uut = num(r[k + '_uut']), tol = num(r[k + '_tol']), label = str(r[k + '_label']);
-      if (ref == null && uut == null && tol == null && !label) return;       // slot unused
+      if (ref == null && uut == null && tol == null && !label) return;       // slot unused (a preset never creates a point)
       d.points.push({ slot: p.key, param: p.param, unit: p.unit, label: label || p.param, ref: ref, uut: uut, tol: tol });
     });
     return d;
@@ -276,7 +309,7 @@
       if (p.ref == null || p.uut == null || p.tol == null) e.push('نقطة ' + p.slot + ' ناقص فيها قراءة أو تفاوت');
       else if (p.tol <= 0) e.push('تفاوت نقطة ' + p.slot + ' لازم يكون أكبر من صفر');
     });
-    ['serial', 'model', 'product', 'customer', 'site', 'technician'].forEach(function (k) {
+    ['serial', 'model', 'manufacturer', 'product', 'customer', 'site', 'technician'].forEach(function (k) {
       if (d[k] && !isLatin(d[k])) e.push('حقل ' + k + ' لازم يكون بحروف لاتينية في النسخة دي');
     });
     ['name', 'model', 'serial', 'calBy', 'certNo'].forEach(function (k) {
@@ -356,7 +389,7 @@
 
     section('Device under test');
     at(doc, { startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
-      head: [['Product', 'Model', 'Serial / ID']], body: [[d.product, d.model, d.serial]] });
+      head: [['Product', 'Model', 'Manufacturer', 'Serial / ID']], body: [[d.product, d.model, d.manufacturer || '-', d.serial]] });
     y = doc.lastAutoTable.finalY + 6;
 
     section('Reference standard');
@@ -389,10 +422,13 @@
     y = doc.lastAutoTable.finalY + 5;
 
     var ok = d.overall === 'PASS', col = ok ? GREEN : RED;
-    doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(0.6); doc.rect(M, y, USABLE, 10);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(col[0], col[1], col[2]);
-    doc.text('Overall result: ' + d.overall + (ok ? '  -  all points within tolerance' : '  -  one or more points outside tolerance; device must not be used until adjusted or replaced'), M + 3, y + 6.5);
-    y += 16;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    var resLines = doc.splitTextToSize('Overall result: ' + d.overall + (ok ? '  -  all points within tolerance' : '  -  one or more points outside tolerance. Do not use the device until it is adjusted or replaced.'), USABLE - 6);
+    var boxH = 5 + resLines.length * 5;
+    doc.setDrawColor(col[0], col[1], col[2]); doc.setLineWidth(0.6); doc.rect(M, y, USABLE, boxH);
+    doc.setTextColor(col[0], col[1], col[2]);
+    doc.text(resLines, M + 3, y + 6.5);
+    y += boxH + 6;
 
     var statement = opts.statement || (issuer + ' certifies that the device identified above was compared against the reference standard listed, at the points, date and location stated. Deviation = UUT reading - reference reading; a point passes when |deviation| <= tolerance. This calibration was performed by ' + issuer + ' personnel and is not an accredited (ISO/IEC 17025) calibration. Recalibration is recommended on or before the "Valid until" date.');
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(INK[0], INK[1], INK[2]);
@@ -418,7 +454,7 @@
   }
 
   return {
-    POINT_SLOTS: POINT_SLOTS, COLUMNS: COLUMNS, GUIDE: GUIDE, SAMPLE_ROW: SAMPLE_ROW,
+    POINT_SLOTS: POINT_SLOTS, COLUMNS: COLUMNS, GUIDE: GUIDE, SAMPLE_ROW: SAMPLE_ROW, PRESETS: PRESETS, preset: preset, applyPreset: applyPreset,
     pad: pad, str: str, num: num, isLatin: isLatin, fmtDate: fmtDate, parseDate: parseDate, addMonths: addMonths, today: today,
     fromRow: fromRow, validate: validate, evaluate: evaluate, certNo: certNo, finalize: finalize, fileName: fileName, render: render
   };
@@ -433,6 +469,11 @@
   var S = { logoDataUrl: null, logoFormat: 'PNG', batch: [], tab: 'batch' };
   var libsOk = !!(window.XLSX && window.jspdf && window.JSZip);
   if (!libsOk) $('#libAlert').hidden = false;
+  var LS_SET = 'afqCert.settings', LS_STICKY = 'afqCert.sticky';
+  var STICKY = ['model', 'manufacturer', 'product', 'customer', 'site', 'technician', 'env_temp', 'env_rh',
+    'ref_name', 'ref_model', 'ref_serial', 'ref_cal_by', 'ref_cert_no', 'ref_valid_until'];
+  function lsGet(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
   /* ---------- settings ---------- */
   function settings() {
@@ -443,10 +484,33 @@
       statement: $('#statement').value.trim() || undefined, logoDataUrl: S.logoDataUrl, logoFormat: S.logoFormat };
   }
   $('#logo').addEventListener('change', function (e) {
-    var f = e.target.files[0]; if (!f) { S.logoDataUrl = null; return; }
+    var f = e.target.files[0]; if (!f) { S.logoDataUrl = null; saveSettings(); return; }
     var r = new FileReader();
-    r.onload = function () { S.logoDataUrl = r.result; S.logoFormat = /png/i.test(f.type) ? 'PNG' : 'JPEG'; };
+    r.onload = function () { S.logoDataUrl = r.result; S.logoFormat = /png/i.test(f.type) ? 'PNG' : 'JPEG'; saveSettings(); };
     r.readAsDataURL(f);
+  });
+  function saveSettings() {
+    lsSet(LS_SET, { issuer: $('#issuer').value, prefix: $('#prefix').value, nextNo: $('#nextNo').value, validity: $('#validity').value,
+      reviewer: $('#reviewer').value, footer: $('#footer').value, statement: $('#statement').value, logo: S.logoDataUrl, logoFormat: S.logoFormat });
+  }
+  function saveSticky() {
+    var o = {}; STICKY.forEach(function (n) { var i = document.querySelector('#tab-single input[name="' + n + '"]'); if (i) o[n] = i.value; });
+    C.POINT_SLOTS.forEach(function (p) { ['label', 'tol'].forEach(function (f) { var i = document.querySelector('#tab-single input[name="' + p.key + '_' + f + '"]'); if (i) o[p.key + '_' + f] = i.value; }); });
+    lsSet(LS_STICKY, o);
+  }
+  function restore() {
+    var s = lsGet(LS_SET);
+    if (s) { ['issuer', 'prefix', 'nextNo', 'validity', 'reviewer', 'footer', 'statement'].forEach(function (k) { if (s[k] != null && s[k] !== '') $('#' + k).value = s[k]; });
+      if (s.logo) { S.logoDataUrl = s.logo; S.logoFormat = s.logoFormat || 'PNG'; $('#logoNote').textContent = 'لوجو محفوظ من قبل'; } }
+    var t = lsGet(LS_STICKY);
+    if (t) Object.keys(t).forEach(function (n) { var i = document.querySelector('#tab-single input[name="' + n + '"]'); if (i && t[n] !== '') i.value = t[n]; });
+    var cd = document.querySelector('#tab-single input[name="cal_date"]'); if (cd && !cd.value) cd.value = C.fmtDate(C.today());
+  }
+  ['#issuer', '#prefix', '#nextNo', '#validity', '#reviewer', '#footer', '#statement'].forEach(function (s) { $(s).addEventListener('change', saveSettings); });
+  $('#clearSaved').addEventListener('click', function () {
+    if (!confirm('يتمسح كل المحفوظ على الجهاز ده (الإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع)؟')) return;
+    try { localStorage.removeItem(LS_SET); localStorage.removeItem(LS_STICKY); } catch (e) {}
+    location.reload();
   });
 
   /* ---------- tabs ---------- */
@@ -474,6 +538,18 @@
     });
   })();
   document.getElementById('tab-single').addEventListener('input', refreshBar);
+  document.getElementById('tab-single').addEventListener('change', saveSticky);
+  (function buildModels() {
+    var dl = $('#models'); Object.keys(C.PRESETS).forEach(function (m) { var o = document.createElement('option'); o.value = m; dl.appendChild(o); });
+  })();
+  function fillFromPreset() {
+    var mi = document.querySelector('#tab-single input[name="model"]'), p = C.preset(mi.value); if (!p) return;
+    var set = function (name, val) { var i = document.querySelector('#tab-single input[name="' + name + '"]'); if (i && !i.value.trim() && val != null && val !== '') i.value = val; };
+    set('manufacturer', p.manufacturer); set('product', p.product);
+    C.POINT_SLOTS.forEach(function (ps) { var pp = p.points[ps.key]; if (!pp) return; if (pp.label) set(ps.key + '_label', pp.label); set(ps.key + '_tol', pp.tol); });
+    refreshBar(); saveSticky();
+  }
+  document.querySelector('#tab-single input[name="model"]').addEventListener('change', fillFromPreset);
 
   function singleRaw() {
     var raw = {};
@@ -500,7 +576,7 @@
   function loadRows(rows) {
     var seen = {};
     S.batch = rows.map(function (raw, i) {
-      var d = C.fromRow(raw), errs = C.validate(d);
+      var d = C.applyPreset(C.fromRow(raw)), errs = C.validate(d);
       if (d.serial) { if (seen[d.serial]) errs.push('السيريال متكرر في الملف'); seen[d.serial] = true; }
       if (!errs.length) C.evaluate(d);
       return { i: i + 1, d: d, errs: errs };
@@ -538,7 +614,7 @@
   /* ---------- generate ---------- */
   function readyItems() {
     if (S.tab === 'batch') return S.batch.filter(function (x) { return !x.errs.length; }).map(function (x) { return x.d; });
-    var d = C.fromRow(singleRaw()), errs = C.validate(d);
+    var d = C.applyPreset(C.fromRow(singleRaw())), errs = C.validate(d);
     return errs.length ? [] : [C.evaluate(d)];
   }
   function refreshBar() {
@@ -548,7 +624,7 @@
       go.disabled = !libsOk || !n; go.textContent = n ? 'توليد الشهادات (' + n + ')' : 'توليد الشهادات';
       st.textContent = S.batch.length ? (n ? 'الرقم التالي: ' + C.certNo(settings().prefix, parseInt($('#nextNo').value, 10) || 1, 5) : 'مافيش صف صالح للتوليد.') : 'ارفع ملف الفحص أو نزّل القالب.';
     } else {
-      var d = C.fromRow(singleRaw()), errs = C.validate(d);
+      var d = C.applyPreset(C.fromRow(singleRaw())), errs = C.validate(d);
       go.disabled = !libsOk || !!errs.length; go.textContent = 'توليد شهادة واحدة';
       st.textContent = errs.length ? 'ناقص: ' + errs.slice(0, 3).join('، ') + (errs.length > 3 ? ' …' : '') : 'جاهزة. الرقم: ' + C.certNo(settings().prefix, parseInt($('#nextNo').value, 10) || 1, 5);
     }
@@ -564,7 +640,11 @@
       C.render(doc, d, opts);
       return { name: C.fileName(d), blob: doc.output('blob'), d: d };
     });
-    $('#nextNo').value = n;
+    $('#nextNo').value = n; saveSettings();
+    if (S.tab === 'single') {
+      document.querySelectorAll('#tab-single input[name="serial"], #tab-single input[name$="_ref"], #tab-single input[name$="_uut"]').forEach(function (i) { i.value = ''; });
+      setTimeout(refreshBar, 0);
+    }
     var links = $('#links'); links.innerHTML = '';
     if (docs.length === 1) {
       download(docs[0].blob, docs[0].name); addLink(docs[0]);
@@ -588,7 +668,7 @@
     document.body.appendChild(a); a.click();
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   }
-  refreshBar();
+  restore(); refreshBar();
 })();
 </script>
 </body>
