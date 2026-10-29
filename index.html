@@ -774,7 +774,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.1";
+const VERSION="6.2";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -4045,7 +4045,12 @@ the technician signature, plus a fixed company stamp.</p>
 serials, set the batch details once (model, customer, site, delivery date and the manufacturer's factory
 certificate number, date and validity) and every serial gets its own PDF, packed in a ZIP. It carries no
 measured values, so it needs no readings: it states that the device was supplied and delivered by AFAQY and
-points to the factory calibration certificate, flagging it in red when that certificate is already expired.</p>
+points to the factory calibration certificate, flagging it in red when that certificate is already expired.
+One click picks TZONE TAG07B or TOPFLYtech TSTH1-B and fills the model, manufacturer and factory certificate
+number and date; serials can be pasted or imported from an Excel column. The certificate then also reproduces
+that manufacturer's own validation-point table and reference instruments, labelled as declared by the
+manufacturer rather than measured by AFAQY. Generation requires ticking the line confirming the serials are
+covered by the factory certificate named on the page.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
 certificate for a test that did not happen; validity is counted from the test date, not from the print
@@ -4285,7 +4290,11 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 <p>وفي نفس الصفحة نوع تاني: <b>شهادة مطابقة وتسليم</b>. تلزق لستة السيريالات، وتكتب بيانات الدفعة مرة واحدة
 (الموديل والعميل والموقع وتاريخ التسليم ورقم شهادة معايرة المصنع وتاريخها وصلاحيتها)، وكل سيريال بيطلع له
 ملف PDF لوحده مضغوطين في ZIP. الورقة دي مافيهاش أي قيمة مقاسة، فمش محتاجة قراءات: بتقول إن الجهاز اتورّد
-واتسلّم من أفاقي، وبتشاور على شهادة معايرة المصنع، وبتعلّم بالأحمر لو الشهادة دي منتهية.</p>
+واتسلّم من أفاقي، وبتشاور على شهادة معايرة المصنع، وبتعلّم بالأحمر لو الشهادة دي منتهية.
+وبزرار واحد بتختار تي زون TAG07B أو توب فلاي TSTH1-B فيتملّى الموديل والشركة ورقم شهادة المصنع وتاريخها،
+والسيريالات بتتلزق أو بتترفع من عمود في إكسل. والشهادة ساعتها بتطبع كمان جدول نقاط التحقق وأجهزة المرجع
+بتاعة المصنع نفسه، مكتوب فوقه إنها نقاط أعلنها المصنع مش قياس عملته أفاقي. التوليد مربوط بالتعليم على
+سطر الإقرار إن السيريالات مغطاة بشهادة المصنع المذكورة.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
 بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة

@@ -146,10 +146,21 @@
   <section id="tab-coc" hidden>
     <h2>شهادة مطابقة وتسليم — من لستة سيريالات</h2>
     <p class="note" style="margin-bottom:10px">دي مش شهادة معايرة: دي ورقة بتصدرها أفاقي لكل حساس بتقول إنه اتورّد واتسلّم للعميل ده في الموقع ده، وبتشاور على شهادة معايرة المصنع برقمها وتاريخها وصلاحيتها. مافيهاش قراءات، فبتطلع من السيريالات على طول بضغطة زرار.</p>
+    <div class="row-actions" style="margin:0 0 10px">
+      <span class="note" style="margin-left:4px">اختار الموديل:</span>
+      <button class="btn secondary" data-pick="TAG07B">تي زون — TAG07B</button>
+      <button class="btn secondary" data-pick="TSTH1-B">توب فلاي — TSTH1-B</button>
+      <span class="note" id="pickNote"></span>
+    </div>
     <div style="margin-bottom:12px">
       <label>السيريالات (كل واحد في سطر، أو مفصولين بفاصلة — المتكرر بيتشال لوحده)</label>
       <textarea id="serials" class="ltr" style="min-height:120px" placeholder="2430392272&#10;2430392164&#10;2430392271"></textarea>
       <span class="note" id="serialCount"></span>
+      <div class="row-actions">
+        <label for="serialXlsx" class="btn secondary" style="cursor:pointer">أو ارفع إكسل بالسيريالات</label>
+        <input type="file" id="serialXlsx" accept=".xlsx,.xls,.csv" style="display:none">
+        <button class="btn secondary" id="clearSerials">مسح اللستة</button>
+      </div>
     </div>
     <div class="grid" id="cocForm">
       <div><label>الموديل</label><input type="text" class="ltr" name="model" list="models" placeholder="TAG07B"></div>
@@ -163,6 +174,10 @@
       <div><label>صلاحية شهادة المصنع</label><input type="date" class="ltr" name="factory_valid_until"></div>
     </div>
     <p class="note">البيانات دي بتتكتب مرة واحدة للدفعة كلها وبتتحفظ على الجهاز. السيريالات بس هي اللي بتتغير.</p>
+    <p style="margin-top:10px"><label style="display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:13.5px">
+      <input type="checkbox" id="cocConfirm" style="margin-top:4px">
+      <span>أقرّ إن السيريالات دي مغطاة فعلًا بشهادة معايرة المصنع المكتوبة فوق (نفس الدفعة اللي وصلت بالشهادة دي).</span>
+    </label></p>
   </section>
 
   <div class="links" id="links"></div>
@@ -271,10 +286,24 @@
    */
   var PRESETS = {
     'TSTH1-B': { manufacturer: 'TOPFLYtech', product: 'BLE Temperature & Humidity Sensor',
+      factory: {
+        certNo: 'T202410100270', certDate: '2025-10-02',
+        env: 'air temperature 20.5 C, relative humidity 53.0 %',
+        points: [['-20 C', '+/- 0.5 C'], ['0 C', '+/- 0.5 C'], ['40 C', '+/- 0.5 C'],
+                 ['40 %RH', '+/- 3 %RH'], ['60 %RH', '+/- 3 %RH'], ['80 %RH', '+/- 3 %RH']],
+        refs: [['Programmable temperature & humidity chamber', 'PL80', '(-40 to 150) C', 'Class A', '2025-10-01'],
+               ['Standard platinum resistance thermometer', 'F1523', '(-200 to 420) C', 'Class A', '2025-10-01']] },
       source: 'TOPFLYtech factory certificate: ±0.5 °C at -20/0/40 °C, ±3 %RH at 40/60/80 %RH',
       points: { T1: { label: 'Cold room (2-8 C)', tol: 0.5 }, T2: { label: 'Ambient (15-25 C)', tol: 0.5 }, T3: { label: '', tol: 0.5 },
                 RH1: { label: 'Ambient', tol: 3 }, RH2: { label: '', tol: 3 } } },
     'TAG07B': { manufacturer: 'TZONE Digital Technology', product: 'BLE Temperature & Humidity Sensor',
+      factory: {
+        certNo: 'TZ20243433562', certDate: '2025-10-25',
+        env: 'air temperature 20.5 C, relative humidity 53.0 %',
+        points: [['-20 C', '+/- 0.8 C'], ['0 C', '+/- 0.7 C'], ['10 C', '+/- 0.5 C'], ['25 C', '+/- 0.3 C'],
+                 ['30 %RH', '+/- 3 %RH'], ['50 %RH', '+/- 3 %RH'], ['70 %RH', '+/- 3 %RH']],
+        refs: [['Programmable temperature & humidity chamber', 'KS-HW150', '-', '+/- 0.5 C; +/- 3 %RH', '2025-10-25'],
+               ['High accuracy RTD thermometer', 'HH376', '-', '+/- 0.15 C', '2025-10-25']] },
       source: 'TZONE factory certificate: ±0.8 °C at -20, ±0.7 at 0, ±0.5 at 10, ±0.3 at 25 °C; ±3 %RH',
       points: { T1: { label: 'Cold room (2-8 C)', tol: 0.5 }, T2: { label: 'Ambient (15-25 C)', tol: 0.3 }, T3: { label: '', tol: 0.5 },
                 RH1: { label: 'Ambient', tol: 3 }, RH2: { label: '', tol: 3 } } }
@@ -392,7 +421,12 @@
         factory: { certNo: str(common.factory_cert_no), certDateObj: parseDate(common.factory_cert_date), validUntilObj: parseDate(common.factory_valid_until) }
       };
       var pr = preset(d.model);
-      if (pr) { d.model = presetKey(d.model); if (!d.manufacturer) d.manufacturer = pr.manufacturer; if (!common.product) d.product = pr.product; }
+      if (pr) {
+        d.model = presetKey(d.model);
+        if (!d.manufacturer) d.manufacturer = pr.manufacturer;
+        if (!common.product) d.product = pr.product;
+        d.factoryTable = pr.factory || null;        // what the manufacturer certificate itself declares
+      }
       d.deliveryDate = fmtDate(d.deliveryDateObj);
       d.factory.certDate = fmtDate(d.factory.certDateObj);
       d.factory.validUntil = fmtDate(d.factory.validUntilObj);
@@ -673,7 +707,31 @@
       doc.text(w, M, y + 3); y += w.length * 4 + 3;
     }
 
-    var statement = opts.cocStatement || (issuer + ' confirms that the device identified above was supplied by ' + issuer + ' and delivered to the customer and site stated on this certificate. The device was calibrated by its manufacturer before shipment, under the factory calibration certificate identified above, which covers this serial number and remains in force until the "Valid until" date shown. This document is a statement of supply and conformity issued by ' + issuer + '. It is not itself a calibration and does not replace the manufacturer certificate, a copy of which is supplied with the device. Recalibration is the responsibility of the customer quality system once the factory certificate expires.');
+    if (d.factoryTable && d.factoryTable.points && d.factoryTable.points.length) {
+      heading('Validation Points Declared in the Manufacturer Certificate');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+      var cap = doc.splitTextToSize('(Reproduced from manufacturer certificate ' + d.factory.certNo + '. These are the points, tolerances and results declared by the manufacturer for this model; they are not measurements performed by ' + issuer
+        + (d.factoryTable.env ? '. Manufacturer environment conditions: ' + d.factoryTable.env : '') + ')', USABLE);
+      doc.text(cap, M, y + 3.6); y += 2.6 + cap.length * 3.4;
+      at(doc, {
+        startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+        head: [['Validation point', 'Tolerance', 'Manufacturer result']],
+        body: d.factoryTable.points.map(function (r) { return [r[0], r[1], 'Pass']; }),
+        columnStyles: { 0: { halign: 'center' }, 1: { halign: 'center' }, 2: { halign: 'center', fontStyle: 'bold', textColor: GREEN } }
+      });
+      y = doc.lastAutoTable.finalY + 4;
+      if (d.factoryTable.refs && d.factoryTable.refs.length) {
+        at(doc, {
+          startY: y, margin: { left: M, right: M }, theme: 'grid', styles: Object.assign({}, baseStyles, { fontSize: 7.8 }), headStyles: Object.assign({}, headStyles, { fontSize: 7.8 }),
+          head: [['Manufacturer reference instrument', 'Model', 'Range', 'Accuracy', 'Calibration date']],
+          body: d.factoryTable.refs,
+          columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' } }
+        });
+        y = doc.lastAutoTable.finalY + 5;
+      }
+    }
+
+    var statement = opts.cocStatement || (issuer + ' confirms that the device identified above was supplied by ' + issuer + ' and delivered to the customer and site stated on this certificate. The device was calibrated by its manufacturer before shipment, under the factory calibration certificate identified above, which per the delivery records of the supplier covers this serial number and remains in force until the "Valid until" date shown. This document is a statement of supply and conformity issued by ' + issuer + '. It is not itself a calibration and does not replace the manufacturer certificate, a copy of which is supplied with the device. Recalibration is the responsibility of the customer quality system once the factory certificate expires.');
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); doc.setTextColor(INK[0], INK[1], INK[2]);
     var lines = doc.splitTextToSize(statement, USABLE);
     doc.text(lines, M, y + 3.5); y += lines.length * 3.8 + 10;
@@ -822,6 +880,40 @@
   });
   document.getElementById('tab-coc').addEventListener('input', refreshBar);
   $('#serials').addEventListener('input', refreshBar);
+  $('#cocConfirm').addEventListener('change', refreshBar);
+  $('#clearSerials').addEventListener('click', function () { $('#serials').value = ''; refreshBar(); });
+  document.querySelectorAll('#tab-coc button[data-pick]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var m = b.dataset.pick, pr = C.preset(m); if (!pr) return;
+      var set = function (n, v) { var i = document.querySelector('#tab-coc input[name="' + n + '"]'); if (i && v) i.value = v; };
+      set('model', m); set('manufacturer', pr.manufacturer); set('product', pr.product);
+      if (pr.factory) { set('factory_cert_no', pr.factory.certNo); set('factory_cert_date', pr.factory.certDate); }
+      $('#pickNote').textContent = 'اتملّت بيانات ' + pr.manufacturer + ' — راجع رقم الشهادة وصلاحيتها حسب الدفعة اللي عندك';
+      saveCoc(); refreshBar();
+    });
+  });
+  $('#serialXlsx').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f || !window.XLSX) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var wb = XLSX.read(new Uint8Array(r.result), { type: 'array' });
+        var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' });
+        var out = [], headerSkipped = false;
+        rows.forEach(function (row) {
+          var v = String((row && row[0]) == null ? '' : row[0]).trim();
+          if (!v) return;
+          if (!headerSkipped && /^(serial|serial\s*no|serials|id|mac|سيريال|الرقم التسلسلي)$/i.test(v)) { headerSkipped = true; return; }
+          out.push(v);
+        });
+        var cur = $('#serials').value.trim();
+        $('#serials').value = (cur ? cur + '\n' : '') + out.join('\n');
+        refreshBar();
+      } catch (err) { alert('الملف ما اتقراش: ' + err.message); }
+      e.target.value = '';
+    };
+    r.readAsArrayBuffer(f);
+  });
   (function buildModels() {
     var dl = $('#models'); Object.keys(C.PRESETS).forEach(function (m) { var o = document.createElement('option'); o.value = m; dl.appendChild(o); });
   })();
@@ -903,7 +995,7 @@
   }
   function readyItems() {
     if (S.tab === 'batch') return S.batch.filter(function (x) { return !x.errs.length; }).map(function (x) { return x.d; });
-    if (S.tab === 'coc') return cocItems().ok;
+    if (S.tab === 'coc') return $('#cocConfirm').checked ? cocItems().ok : [];
     var d = C.applyPreset(C.fromRow(singleRaw())), errs = C.validate(d);
     return errs.length ? [] : [C.evaluate(d)];
   }
@@ -912,9 +1004,13 @@
     if (S.tab === 'coc') {
       var r = cocItems();
       $('#serialCount').textContent = r.total ? (r.total + ' سيريال' + (r.bad ? ' — ' + r.bad + ' مش هيطلعوا' : '')) : '';
-      go.disabled = !libsOk || !r.ok.length;
+      var confirmed = $('#cocConfirm').checked;
+      go.disabled = !libsOk || !r.ok.length || !confirmed;
       go.textContent = r.ok.length ? 'توليد شهادات المطابقة (' + r.ok.length + ')' : 'توليد شهادات المطابقة';
-      st.textContent = !r.total ? 'الصق السيريالات.' : (r.errs.length ? 'ناقص: ' + r.errs.slice(0, 3).join('، ') : 'الرقم التالي: ' + C.certNo($('#cocPrefix').value, parseInt($('#cocNextNo').value, 10) || 1, 5));
+      st.textContent = !r.total ? 'الصق السيريالات أو ارفع إكسل.'
+        : (r.errs.length ? 'ناقص: ' + r.errs.slice(0, 3).join('، ')
+        : (!confirmed ? 'علّم على الإقرار تحت عشان الزرار يشتغل.'
+        : 'الرقم التالي: ' + C.certNo($('#cocPrefix').value, parseInt($('#cocNextNo').value, 10) || 1, 5)));
       return;
     }
     if (S.tab === 'batch') {
