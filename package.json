@@ -1,0 +1,23 @@
+{
+  "name": "repo",
+  "version": "1.0.0",
+  "description": "أداة ويب من **ملف واحد** لتقييم الموقع من الرسمة، توزيع الحساسات والجيت واي تلقائيًا، وإخراج الأعداد والرسمة وجداول التركيب والتوريد — بالعربي والإنجليزي.",
+  "main": "pdf.min.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mhmdsfwt371/sensor-displacment-tool.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mhmdsfwt371/sensor-displacment-tool/issues"
+  },
+  "homepage": "https://github.com/mhmdsfwt371/sensor-displacment-tool#readme"
+}

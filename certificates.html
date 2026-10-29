@@ -73,8 +73,10 @@
     <h2>إعدادات الإصدار</h2>
     <div class="grid">
       <div><label>اسم الجهة المصدرة</label><input type="text" id="issuer" class="ltr" value="AFAQY"></div>
-      <div><label>بادئة رقم الشهادة</label><input type="text" id="prefix" class="ltr" value="AFQ-CAL-2026-"></div>
-      <div><label>الرقم التالي (يتزود تلقائيًا بعد كل توليد)</label><input type="number" id="nextNo" class="ltr" value="1" min="1"></div>
+      <div><label>بادئة رقم شهادة المعايرة</label><input type="text" id="prefix" class="ltr" value="AFQ-CAL-2026-"></div>
+      <div><label>بادئة رقم شهادة المطابقة</label><input type="text" id="cocPrefix" class="ltr" value="AFQ-COC-2026-"></div>
+      <div><label>الرقم التالي لشهادات المعايرة</label><input type="number" id="nextNo" class="ltr" value="1" min="1"></div>
+      <div><label>الرقم التالي لشهادات المطابقة</label><input type="number" id="cocNextNo" class="ltr" value="1" min="1"></div>
       <div><label>صلاحية الشهادة بالشهور من تاريخ الفحص</label><input type="number" id="validity" class="ltr" value="24" min="1" max="36"></div>
       <div><label>مراجعة واعتماد (اسم، اختياري)</label><input type="text" id="reviewer" class="ltr" placeholder="Quality reviewer"></div>
       <div><label>سطر تحت اللوجو (نشاط الشركة)</label><input type="text" id="tagline" class="ltr" value="Temperature &amp; humidity monitoring"></div>
@@ -85,6 +87,7 @@
       <div><label>لوجو أفاقي (PNG أو JPG)</label><input type="file" id="logo" accept="image/png,image/jpeg"><span class="note" id="logoNote"></span></div>
       <div><label>لوجو الحساس (يظهر جنب جدول الجهاز)</label><input type="file" id="brand" accept="image/png,image/jpeg"><span class="note" id="brandNote"></span></div>
       <div><label>توقيع الفني (صورة PNG بخلفية شفافة)</label><input type="file" id="sign" accept="image/png,image/jpeg"><span class="note" id="signNote"></span></div>
+      <div><label>ختم الشركة (صورة PNG بخلفية شفافة)</label><input type="file" id="stamp" accept="image/png,image/jpeg"><span class="note" id="stampNote"></span></div>
     </div>
     <div style="margin-top:10px"><label>نص الإقرار على الشهادة (بالإنجليزي، سيبه فاضي للنص الافتراضي)</label><textarea id="statement" class="ltr" placeholder="Default statement will be used"></textarea></div>
     <p class="note">تاريخ الإصدار بيتحط تلقائيًا بتاريخ النهارده. تاريخ الفحص والصلاحية بيتحسبوا من تاريخ الفحص الفعلي اللي الفني كتبه، مش من تاريخ الطباعة. الإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع بتتحفظ على الجهاز ده. <button class="btn secondary" id="clearSaved" style="padding:3px 10px;font-size:12px">مسح المحفوظ</button></p>
@@ -93,6 +96,7 @@
   <div class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-tab="batch">دفعة من إكسل</button>
     <button role="tab" aria-selected="false" data-tab="single">حساس واحد</button>
+    <button role="tab" aria-selected="false" data-tab="coc">شهادات مطابقة — لستة سيريالات</button>
   </div>
 
   <section id="tab-batch">
@@ -137,6 +141,28 @@
     <h2 style="margin-top:16px">نقاط القياس</h2>
     <div class="points" id="points"></div>
     <p class="note">اكتب على الأقل نقطة واحدة كاملة: وصف، قراءة المرجع، قراءة الحساس، التفاوت المقبول. التفاوتات والأوصاف بتتملي لوحدها للموديلات المعروفة (من جداول شهادات المصنع)، والقراءات بتتكتب من الفحص كل مرة. بعد كل توليد السيريال والقراءات بيتمسحوا وباقي البيانات بتفضل.</p>
+  </section>
+
+  <section id="tab-coc" hidden>
+    <h2>شهادة مطابقة وتسليم — من لستة سيريالات</h2>
+    <p class="note" style="margin-bottom:10px">دي مش شهادة معايرة: دي ورقة بتصدرها أفاقي لكل حساس بتقول إنه اتورّد واتسلّم للعميل ده في الموقع ده، وبتشاور على شهادة معايرة المصنع برقمها وتاريخها وصلاحيتها. مافيهاش قراءات، فبتطلع من السيريالات على طول بضغطة زرار.</p>
+    <div style="margin-bottom:12px">
+      <label>السيريالات (كل واحد في سطر، أو مفصولين بفاصلة — المتكرر بيتشال لوحده)</label>
+      <textarea id="serials" class="ltr" style="min-height:120px" placeholder="2430392272&#10;2430392164&#10;2430392271"></textarea>
+      <span class="note" id="serialCount"></span>
+    </div>
+    <div class="grid" id="cocForm">
+      <div><label>الموديل</label><input type="text" class="ltr" name="model" list="models" placeholder="TAG07B"></div>
+      <div><label>الشركة المصنعة</label><input type="text" class="ltr" name="manufacturer"></div>
+      <div><label>وصف المنتج</label><input type="text" class="ltr" name="product"></div>
+      <div><label>العميل</label><input type="text" class="ltr" name="customer"></div>
+      <div><label>الموقع</label><input type="text" class="ltr" name="site"></div>
+      <div><label>تاريخ التسليم</label><input type="date" class="ltr" name="delivery_date"></div>
+      <div><label>رقم شهادة معايرة المصنع</label><input type="text" class="ltr" name="factory_cert_no" placeholder="TZ20243433562"></div>
+      <div><label>تاريخ شهادة المصنع</label><input type="date" class="ltr" name="factory_cert_date"></div>
+      <div><label>صلاحية شهادة المصنع</label><input type="date" class="ltr" name="factory_valid_until"></div>
+    </div>
+    <p class="note">البيانات دي بتتكتب مرة واحدة للدفعة كلها وبتتحفظ على الجهاز. السيريالات بس هي اللي بتتغير.</p>
   </section>
 
   <div class="links" id="links"></div>
@@ -349,6 +375,54 @@
   }
   function fileName(d) { return d.certNo.replace(/[^\w.-]+/g, '_') + '_' + d.serial.replace(/[^\w.-]+/g, '_') + '.pdf'; }
 
+  /* ---------- certificate of conformity: serial list only, no measurements ----------
+   * Every field here is copied from something that exists: the serial, the model preset,
+   * and the manufacturer's own factory certificate (number, date, validity).
+   * It states supply and conformity; it never states a measured value.
+   */
+  function fromSerials(list, common) {
+    var out = [], seen = {};
+    str(list).split(/[\s,;\n\r\t]+/).forEach(function (sn) {
+      sn = str(sn); if (!sn || seen[sn]) return; seen[sn] = true;
+      var d = {
+        serial: sn, model: str(common.model), manufacturer: str(common.manufacturer),
+        product: str(common.product) || 'Temperature & Humidity Sensor',
+        customer: str(common.customer), site: str(common.site),
+        deliveryDateObj: parseDate(common.delivery_date),
+        factory: { certNo: str(common.factory_cert_no), certDateObj: parseDate(common.factory_cert_date), validUntilObj: parseDate(common.factory_valid_until) }
+      };
+      var pr = preset(d.model);
+      if (pr) { d.model = presetKey(d.model); if (!d.manufacturer) d.manufacturer = pr.manufacturer; if (!common.product) d.product = pr.product; }
+      d.deliveryDate = fmtDate(d.deliveryDateObj);
+      d.factory.certDate = fmtDate(d.factory.certDateObj);
+      d.factory.validUntil = fmtDate(d.factory.validUntilObj);
+      out.push(d);
+    });
+    return out;
+  }
+  function validateCoc(d) {
+    var e = [];
+    if (!d.serial) e.push('السيريال ناقص');
+    if (!d.model) e.push('الموديل ناقص');
+    if (!d.customer) e.push('اسم العميل ناقص');
+    if (!d.site) e.push('الموقع ناقص');
+    if (!d.deliveryDateObj) e.push('تاريخ التسليم ناقص');
+    if (!d.factory.certNo) e.push('رقم شهادة المصنع ناقص');
+    if (!d.factory.validUntilObj) e.push('تاريخ انتهاء شهادة المصنع ناقص');
+    ['serial', 'model', 'manufacturer', 'product', 'customer', 'site'].forEach(function (k) {
+      if (d[k] && !isLatin(d[k])) e.push('حقل ' + k + ' لازم يكون بحروف لاتينية');
+    });
+    if (d.factory.certNo && !isLatin(d.factory.certNo)) e.push('رقم شهادة المصنع لازم يكون بحروف لاتينية');
+    return e;
+  }
+  function finalizeCoc(d, settings, n) {
+    d.certNo = certNo(settings.cocPrefix || settings.prefix, n, settings.pad);
+    d.issueDateObj = settings.issueDate || today();
+    d.issueDate = fmtDate(d.issueDateObj);
+    d.factoryStatus = (d.factory.validUntilObj && d.factory.validUntilObj >= today()) ? 'Valid' : 'Expired';
+    return d;
+  }
+
   /* ---------- PDF rendering (jsPDF + autoTable) ----------
    * Laid out like a factory calibration certificate: logo row, colour title band,
    * boxed identity row, framed sections, result row with signature, company footer.
@@ -501,7 +575,9 @@
     doc.rect(W - M - colW, y - 4, colW, 20);
     doc.setFontSize(7.4); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
     doc.text('Reviewed by (name and date)', M, y + 14);
-    doc.text('Company stamp', W - M - colW / 2, y + 14, { align: 'center' });
+    if (opts.stampDataUrl) {
+      try { doc.addImage(opts.stampDataUrl, opts.stampFormat || 'PNG', W - M - colW / 2 - 13, y - 2.5, 26, 17, undefined, 'FAST'); } catch (e) {}
+    } else { doc.text('Company stamp', W - M - colW / 2, y + 14, { align: 'center' }); }
     doc.setFontSize(9.5); doc.setTextColor(INK[0], INK[1], INK[2]);
     if (opts.reviewer) doc.text(opts.reviewer, M, y + 7);
 
@@ -518,10 +594,119 @@
     return doc;
   }
 
+  function renderCoc(doc, d, opts) {
+    opts = opts || {};
+    var at = opts.autoTable || function (doc_, o) { return doc_.autoTable(o); };
+    var W = 210, M = 14, USABLE = W - 2 * M;
+    var BAND = opts.bandColor || [20, 33, 61];
+    var INK = [17, 24, 39], GREY = [100, 110, 124], LINE = [150, 158, 170], FILL = [238, 241, 246];
+    var GREEN = [21, 115, 71], RED = [180, 35, 24];
+    var issuer = opts.issuerName || 'AFAQY';
+    var y = 12;
+
+    if (opts.logoDataUrl) {
+      try { doc.addImage(opts.logoDataUrl, opts.logoFormat || 'PNG', M, y, 46, 15, undefined, 'FAST'); }
+      catch (e) { doc.setFont('helvetica', 'bold'); doc.setFontSize(21); doc.setTextColor(BAND[0], BAND[1], BAND[2]); doc.text(issuer, M, y + 11); }
+    } else { doc.setFont('helvetica', 'bold'); doc.setFontSize(21); doc.setTextColor(BAND[0], BAND[1], BAND[2]); doc.text(issuer, M, y + 11); }
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text(opts.issuerTagline || 'Temperature & humidity monitoring', W - M, y + 6, { align: 'right' });
+    if (opts.issuerWeb) doc.text(opts.issuerWeb, W - M, y + 10.5, { align: 'right' });
+    y += 19;
+
+    doc.setFillColor(BAND[0], BAND[1], BAND[2]); doc.rect(M, y, USABLE, 13, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(255, 255, 255);
+    doc.text('Certificate of Conformity & Delivery', W / 2, y + 8.8, { align: 'center' });
+    y += 13;
+    doc.setFillColor(FILL[0], FILL[1], FILL[2]); doc.rect(M, y, USABLE, 6, 'F');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('Statement of supply issued by ' + issuer + ' - refers to the manufacturer factory calibration certificate identified below', W / 2, y + 4, { align: 'center' });
+    y += 10;
+
+    var baseStyles = { fontSize: 8.6, cellPadding: 1.9, textColor: INK, lineColor: LINE, lineWidth: 0.2, font: 'helvetica', valign: 'middle' };
+    var headStyles = { fillColor: FILL, textColor: BAND, fontStyle: 'bold', halign: 'center', lineColor: LINE, lineWidth: 0.2 };
+    var labelCol = { fontStyle: 'bold', fillColor: FILL, cellWidth: 30 };
+
+    at(doc, {
+      startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles,
+      columnStyles: { 0: labelCol, 1: { cellWidth: 51 }, 2: Object.assign({}, labelCol, { cellWidth: 31 }), 3: { cellWidth: 'auto' } },
+      body: [
+        ['Certificate No.', d.certNo, 'Issue date', d.issueDate],
+        ['Customer', d.customer, 'Delivery date', d.deliveryDate],
+        ['Site / location', d.site, 'Supplied by', issuer]
+      ]
+    });
+    y = doc.lastAutoTable.finalY + 5;
+
+    function heading(txt) { doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(BAND[0], BAND[1], BAND[2]); doc.text(txt, M, y); y += 1.5; }
+
+    heading('Product Information');
+    var brandW = opts.brandDataUrl ? 26 : 0;
+    at(doc, {
+      startY: y, margin: { left: M, right: M + brandW }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+      head: [['Product name', 'Model', 'Manufacturer', 'Serial / ID', 'Quantity']],
+      body: [[d.product, d.model, d.manufacturer || '-', d.serial, '1 pc']],
+      columnStyles: { 1: { halign: 'center' }, 4: { halign: 'center', cellWidth: 16 } }
+    });
+    if (opts.brandDataUrl) {
+      var bt = doc.lastAutoTable, bh = bt.finalY - y;
+      try {
+        doc.addImage(opts.brandDataUrl, opts.brandFormat || 'PNG', W - M - brandW + 2, y + 1, brandW - 4, Math.max(8, bh - 2), undefined, 'FAST');
+        doc.setFontSize(6); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+        doc.text('device brand', W - M - brandW / 2, bt.finalY + 2.6, { align: 'center' });
+      } catch (e) {}
+    }
+    y = doc.lastAutoTable.finalY + (opts.brandDataUrl ? 7 : 5);
+
+    heading('Manufacturer Calibration Reference');
+    var valid = d.factoryStatus === 'Valid';
+    at(doc, {
+      startY: y, margin: { left: M, right: M }, theme: 'grid', styles: baseStyles, headStyles: headStyles,
+      head: [['Calibrated by', 'Certificate No.', 'Certificate date', 'Valid until', 'Status on issue date']],
+      body: [[d.manufacturer || '-', d.factory.certNo, d.factory.certDate || '-', d.factory.validUntil, d.factoryStatus]],
+      columnStyles: { 1: { halign: 'center' }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center', fontStyle: 'bold' } },
+      didParseCell: function (data) { if (data.section === 'body' && data.column.index === 4) data.cell.styles.textColor = valid ? GREEN : RED; }
+    });
+    y = doc.lastAutoTable.finalY + 5;
+    if (!valid) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.4); doc.setTextColor(RED[0], RED[1], RED[2]);
+      var w = doc.splitTextToSize('The referenced factory calibration certificate is past its validity date. Recalibration is required before this device is relied upon for monitoring.', USABLE);
+      doc.text(w, M, y + 3); y += w.length * 4 + 3;
+    }
+
+    var statement = opts.cocStatement || (issuer + ' confirms that the device identified above was supplied by ' + issuer + ' and delivered to the customer and site stated on this certificate. The device was calibrated by its manufacturer before shipment, under the factory calibration certificate identified above, which covers this serial number and remains in force until the "Valid until" date shown. This document is a statement of supply and conformity issued by ' + issuer + '. It is not itself a calibration and does not replace the manufacturer certificate, a copy of which is supplied with the device. Recalibration is the responsibility of the customer quality system once the factory certificate expires.');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); doc.setTextColor(INK[0], INK[1], INK[2]);
+    var lines = doc.splitTextToSize(statement, USABLE);
+    doc.text(lines, M, y + 3.5); y += lines.length * 3.8 + 10;
+
+    doc.setDrawColor(LINE[0], LINE[1], LINE[2]); doc.setLineWidth(0.3);
+    var colW = USABLE / 2 - 6;
+    doc.line(M, y + 10, M + colW, y + 10);
+    doc.rect(W - M - colW, y - 4, colW, 20);
+    doc.setFontSize(7.4); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    doc.text('Issued by (name and date)', M, y + 14);
+    if (opts.signDataUrl) { try { doc.addImage(opts.signDataUrl, opts.signFormat || 'PNG', M + 2, y - 1, 34, 11, undefined, 'FAST'); } catch (e) {} }
+    if (opts.stampDataUrl) { try { doc.addImage(opts.stampDataUrl, opts.stampFormat || 'PNG', W - M - colW / 2 - 13, y - 2.5, 26, 17, undefined, 'FAST'); } catch (e) {} }
+    else { doc.text('Company stamp', W - M - colW / 2, y + 14, { align: 'center' }); }
+    doc.setFontSize(9.5); doc.setTextColor(INK[0], INK[1], INK[2]);
+    if (opts.reviewer && !opts.signDataUrl) doc.text(opts.reviewer, M, y + 7);
+
+    var fy = 276;
+    doc.setDrawColor(BAND[0], BAND[1], BAND[2]); doc.setLineWidth(0.6); doc.line(M, fy, W - M, fy);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.4); doc.setTextColor(BAND[0], BAND[1], BAND[2]);
+    doc.text(opts.issuerLegal || (issuer + ' Technology Co. Ltd.'), M, fy + 4.6);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.4); doc.setTextColor(GREY[0], GREY[1], GREY[2]);
+    if (opts.issuerAddress) doc.text(opts.issuerAddress, M, fy + 8.6);
+    if (opts.issuerContact) doc.text(opts.issuerContact, M, fy + 12.2);
+    doc.text(d.certNo + ' | ' + d.serial + ' | page 1 of 1', W - M, fy + 12.2, { align: 'right' });
+    doc.setTextColor(0, 0, 0);
+    return doc;
+  }
+
   return {
     POINT_SLOTS: POINT_SLOTS, COLUMNS: COLUMNS, GUIDE: GUIDE, SAMPLE_ROW: SAMPLE_ROW, PRESETS: PRESETS, preset: preset, applyPreset: applyPreset,
     pad: pad, str: str, num: num, isLatin: isLatin, fmtDate: fmtDate, parseDate: parseDate, addMonths: addMonths, today: today,
-    fromRow: fromRow, validate: validate, evaluate: evaluate, certNo: certNo, finalize: finalize, fileName: fileName, render: render
+    fromRow: fromRow, validate: validate, evaluate: evaluate, certNo: certNo, finalize: finalize, fileName: fileName, render: render,
+    fromSerials: fromSerials, validateCoc: validateCoc, finalizeCoc: finalizeCoc, renderCoc: renderCoc
   };
 });
 
@@ -531,7 +716,7 @@
   'use strict';
   var $ = function (s) { return document.querySelector(s); };
   var C = window.CertCore;
-  var S = { logoDataUrl: null, logoFormat: 'PNG', brandDataUrl: null, brandFormat: 'PNG', signDataUrl: null, signFormat: 'PNG', batch: [], tab: 'batch' };
+  var S = { logoDataUrl: null, logoFormat: 'PNG', brandDataUrl: null, brandFormat: 'PNG', signDataUrl: null, signFormat: 'PNG', stampDataUrl: null, stampFormat: 'PNG', batch: [], tab: 'batch' };
   var libsOk = !!(window.XLSX && window.jspdf && window.JSZip);
   if (!libsOk) $('#libAlert').hidden = false;
   var LS_SET = 'afqCert.settings', LS_STICKY = 'afqCert.sticky';
@@ -542,7 +727,7 @@
 
   /* ---------- settings ---------- */
   function settings() {
-    return { prefix: $('#prefix').value, pad: 5, validityMonths: parseInt($('#validity').value, 10) || 24, issueDate: C.today() };
+    return { prefix: $('#prefix').value, cocPrefix: $('#cocPrefix').value, pad: 5, validityMonths: parseInt($('#validity').value, 10) || 24, issueDate: C.today() };
   }
   function renderOpts() {
     return { issuerName: $('#issuer').value.trim() || 'AFAQY', reviewer: $('#reviewer').value.trim(),
@@ -551,9 +736,10 @@
       statement: $('#statement').value.trim() || undefined,
       logoDataUrl: S.logoDataUrl, logoFormat: S.logoFormat,
       brandDataUrl: S.brandDataUrl, brandFormat: S.brandFormat,
-      signDataUrl: S.signDataUrl, signFormat: S.signFormat };
+      signDataUrl: S.signDataUrl, signFormat: S.signFormat,
+      stampDataUrl: S.stampDataUrl, stampFormat: S.stampFormat };
   }
-  [['logo', 'logoDataUrl', 'logoFormat', '#logoNote'], ['brand', 'brandDataUrl', 'brandFormat', '#brandNote'], ['sign', 'signDataUrl', 'signFormat', '#signNote']]
+  [['logo', 'logoDataUrl', 'logoFormat', '#logoNote'], ['brand', 'brandDataUrl', 'brandFormat', '#brandNote'], ['sign', 'signDataUrl', 'signFormat', '#signNote'], ['stamp', 'stampDataUrl', 'stampFormat', '#stampNote']]
     .forEach(function (cfg) {
       $('#' + cfg[0]).addEventListener('change', function (e) {
         var f = e.target.files[0];
@@ -564,7 +750,7 @@
       });
     });
   function saveSettings() {
-    var o = {}; ['issuer', 'prefix', 'nextNo', 'validity', 'reviewer', 'tagline', 'web', 'legal', 'address', 'contact', 'statement'].forEach(function (k) { o[k] = $('#' + k).value; });
+    var o = {}; ['issuer', 'prefix', 'cocPrefix', 'nextNo', 'cocNextNo', 'validity', 'reviewer', 'tagline', 'web', 'legal', 'address', 'contact', 'statement'].forEach(function (k) { o[k] = $('#' + k).value; });
     o.logo = S.logoDataUrl; o.logoFormat = S.logoFormat;
     o.brand = S.brandDataUrl; o.brandFormat = S.brandFormat;
     o.sign = S.signDataUrl; o.signFormat = S.signFormat;
@@ -577,14 +763,17 @@
   }
   function restore() {
     var s = lsGet(LS_SET);
-    if (s) { ['issuer', 'prefix', 'nextNo', 'validity', 'reviewer', 'tagline', 'web', 'legal', 'address', 'contact', 'statement'].forEach(function (k) { if (s[k] != null && s[k] !== '') $('#' + k).value = s[k]; });
-      [['logo', 'logoDataUrl', 'logoFormat', '#logoNote'], ['brand', 'brandDataUrl', 'brandFormat', '#brandNote'], ['sign', 'signDataUrl', 'signFormat', '#signNote']]
+    if (s) { ['issuer', 'prefix', 'cocPrefix', 'nextNo', 'cocNextNo', 'validity', 'reviewer', 'tagline', 'web', 'legal', 'address', 'contact', 'statement'].forEach(function (k) { if (s[k] != null && s[k] !== '') $('#' + k).value = s[k]; });
+      [['logo', 'logoDataUrl', 'logoFormat', '#logoNote'], ['brand', 'brandDataUrl', 'brandFormat', '#brandNote'], ['sign', 'signDataUrl', 'signFormat', '#signNote'], ['stamp', 'stampDataUrl', 'stampFormat', '#stampNote']]
         .forEach(function (c) { if (s[c[0]]) { S[c[1]] = s[c[0]]; S[c[2]] = s[c[0] + 'Format'] || 'PNG'; $(c[3]).textContent = 'محفوظ'; } }); }
     var t = lsGet(LS_STICKY);
     if (t) Object.keys(t).forEach(function (n) { var i = document.querySelector('#tab-single input[name="' + n + '"]'); if (i && t[n] !== '') i.value = t[n]; });
     var cd = document.querySelector('#tab-single input[name="cal_date"]'); if (cd && !cd.value) cd.value = C.fmtDate(C.today());
+    var cc = lsGet(LS_COC);
+    if (cc) Object.keys(cc).forEach(function (n) { var i = document.querySelector('#tab-coc input[name="' + n + '"]'); if (i && cc[n] !== '') i.value = cc[n]; });
+    var dd = document.querySelector('#tab-coc input[name="delivery_date"]'); if (dd && !dd.value) dd.value = C.fmtDate(C.today());
   }
-  ['#issuer', '#prefix', '#nextNo', '#validity', '#reviewer', '#tagline', '#web', '#legal', '#address', '#contact', '#statement'].forEach(function (s) { $(s).addEventListener('change', saveSettings); });
+  ['#issuer', '#prefix', '#cocPrefix', '#nextNo', '#cocNextNo', '#validity', '#reviewer', '#tagline', '#web', '#legal', '#address', '#contact', '#statement'].forEach(function (s) { $(s).addEventListener('change', saveSettings); });
   $('#clearSaved').addEventListener('click', function () {
     if (!confirm('يتمسح كل المحفوظ على الجهاز ده (الإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع)؟')) return;
     try { localStorage.removeItem(LS_SET); localStorage.removeItem(LS_STICKY); } catch (e) {}
@@ -596,7 +785,7 @@
     b.addEventListener('click', function () {
       S.tab = b.dataset.tab;
       document.querySelectorAll('.tabs button').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
-      $('#tab-batch').hidden = S.tab !== 'batch'; $('#tab-single').hidden = S.tab !== 'single';
+      $('#tab-batch').hidden = S.tab !== 'batch'; $('#tab-single').hidden = S.tab !== 'single'; $('#tab-coc').hidden = S.tab !== 'coc';
       refreshBar();
     });
   });
@@ -617,6 +806,22 @@
   })();
   document.getElementById('tab-single').addEventListener('input', refreshBar);
   document.getElementById('tab-single').addEventListener('change', saveSticky);
+  var LS_COC = 'afqCert.coc';
+  var COC_FIELDS = ['model', 'manufacturer', 'product', 'customer', 'site', 'delivery_date', 'factory_cert_no', 'factory_cert_date', 'factory_valid_until'];
+  function cocRaw() { var o = {}; COC_FIELDS.forEach(function (n) { var i = document.querySelector('#tab-coc input[name="' + n + '"]'); o[n] = i ? i.value : ''; }); return o; }
+  function saveCoc() { lsSet(LS_COC, cocRaw()); }
+  document.getElementById('tab-coc').addEventListener('change', function (e) {
+    saveCoc();
+    if (e.target.name === 'model') {
+      var pr = C.preset(e.target.value); if (!pr) return;
+      [['manufacturer', pr.manufacturer], ['product', pr.product]].forEach(function (f) {
+        var i = document.querySelector('#tab-coc input[name="' + f[0] + '"]'); if (i && !i.value.trim()) i.value = f[1];
+      });
+      saveCoc(); refreshBar();
+    }
+  });
+  document.getElementById('tab-coc').addEventListener('input', refreshBar);
+  $('#serials').addEventListener('input', refreshBar);
   (function buildModels() {
     var dl = $('#models'); Object.keys(C.PRESETS).forEach(function (m) { var o = document.createElement('option'); o.value = m; dl.appendChild(o); });
   })();
@@ -690,13 +895,28 @@
   });
 
   /* ---------- generate ---------- */
+  function cocItems() {
+    var items = C.fromSerials($('#serials').value, cocRaw());
+    var ok = [], bad = 0;
+    items.forEach(function (d) { if (C.validateCoc(d).length) bad++; else ok.push(d); });
+    return { ok: ok, bad: bad, total: items.length, errs: items.length ? C.validateCoc(items[0]) : [] };
+  }
   function readyItems() {
     if (S.tab === 'batch') return S.batch.filter(function (x) { return !x.errs.length; }).map(function (x) { return x.d; });
+    if (S.tab === 'coc') return cocItems().ok;
     var d = C.applyPreset(C.fromRow(singleRaw())), errs = C.validate(d);
     return errs.length ? [] : [C.evaluate(d)];
   }
   function refreshBar() {
     var go = $('#go'), st = $('#barStatus');
+    if (S.tab === 'coc') {
+      var r = cocItems();
+      $('#serialCount').textContent = r.total ? (r.total + ' سيريال' + (r.bad ? ' — ' + r.bad + ' مش هيطلعوا' : '')) : '';
+      go.disabled = !libsOk || !r.ok.length;
+      go.textContent = r.ok.length ? 'توليد شهادات المطابقة (' + r.ok.length + ')' : 'توليد شهادات المطابقة';
+      st.textContent = !r.total ? 'الصق السيريالات.' : (r.errs.length ? 'ناقص: ' + r.errs.slice(0, 3).join('، ') : 'الرقم التالي: ' + C.certNo($('#cocPrefix').value, parseInt($('#cocNextNo').value, 10) || 1, 5));
+      return;
+    }
     if (S.tab === 'batch') {
       var n = readyItems().length;
       go.disabled = !libsOk || !n; go.textContent = n ? 'توليد الشهادات (' + n + ')' : 'توليد الشهادات';
@@ -711,14 +931,15 @@
 
   $('#go').addEventListener('click', function () {
     var items = readyItems(); if (!items.length) return;
-    var st = settings(), opts = renderOpts(), n = parseInt($('#nextNo').value, 10) || 1;
+    var st = settings(), opts = renderOpts(), isCoc = S.tab === 'coc';
+    var n = parseInt($(isCoc ? '#cocNextNo' : '#nextNo').value, 10) || 1;
     var docs = items.map(function (d) {
-      C.finalize(d, st, n++);
       var doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
-      C.render(doc, d, opts);
+      if (isCoc) { C.finalizeCoc(d, st, n++); C.renderCoc(doc, d, opts); }
+      else { C.finalize(d, st, n++); C.render(doc, d, opts); }
       return { name: C.fileName(d), blob: doc.output('blob'), d: d };
     });
-    $('#nextNo').value = n; saveSettings();
+    $(isCoc ? '#cocNextNo' : '#nextNo').value = n; saveSettings();
     if (S.tab === 'single') {
       document.querySelectorAll('#tab-single input[name="serial"], #tab-single input[name$="_ref"], #tab-single input[name$="_uut"]').forEach(function (i) { i.value = ''; });
       setTimeout(function () { refreshBar(); var i = document.querySelector('#tab-single input[name="serial"]'); if (i) i.focus(); }, 0);
@@ -730,7 +951,7 @@
     } else {
       var zip = new JSZip();
       docs.forEach(function (x) { zip.file(x.name, x.blob); addLink(x); });
-      var zipName = 'certificates_' + (docs[0].d.customer.replace(/[^\w-]+/g, '_') || 'batch') + '_' + C.fmtDate(C.today()) + '.zip';
+      var zipName = (isCoc ? 'conformity_' : 'certificates_') + (docs[0].d.customer.replace(/[^\w-]+/g, '_') || 'batch') + '_' + C.fmtDate(C.today()) + '.zip';
       zip.generateAsync({ type: 'blob' }).then(function (b) {
         download(b, zipName);
         $('#barStatus').textContent = 'اتولد ' + docs.length + ' شهادة من ' + docs[0].d.certNo + ' إلى ' + docs[docs.length - 1].d.certNo + ' في ' + zipName;
