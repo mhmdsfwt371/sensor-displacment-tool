@@ -774,7 +774,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.2";
+const VERSION="6.3";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -4051,6 +4051,9 @@ number and date; serials can be pasted or imported from an Excel column. The cer
 that manufacturer's own validation-point table and reference instruments, labelled as declared by the
 manufacturer rather than measured by AFAQY. Generation requires ticking the line confirming the serials are
 covered by the factory certificate named on the page.</p>
+<p>One scan covers a whole batch: attach the manufacturer's certificate PDF once and it is appended, unchanged,
+as a second page to every serial's file — so each sensor ends up with a complete file (its own AFAQY page plus
+the original factory certificate) without scanning a sheet per sensor.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
 certificate for a test that did not happen; validity is counted from the test date, not from the print
@@ -4295,6 +4298,9 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 والسيريالات بتتلزق أو بتترفع من عمود في إكسل. والشهادة ساعتها بتطبع كمان جدول نقاط التحقق وأجهزة المرجع
 بتاعة المصنع نفسه، مكتوب فوقه إنها نقاط أعلنها المصنع مش قياس عملته أفاقي. التوليد مربوط بالتعليم على
 سطر الإقرار إن السيريالات مغطاة بشهادة المصنع المذكورة.</p>
+<p>وسكان واحد بيكفّي الدفعة كلها: ترفق ملف شهادة المصنع PDF مرة واحدة، فبتتضاف زي ما هي من غير أي تعديل
+كصفحة تانية في ملف كل سيريال — فكل حساس بيطلع له ملف كامل (صفحة آفاقي بسيرياله + شهادة المصنع الأصلية)
+من غير ما تعمل سكان لكل ورقة لوحدها.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
 بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة

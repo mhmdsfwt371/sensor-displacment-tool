@@ -1,11 +1,12 @@
 /* Service worker — شبكة أولًا مع رجوع للذاكرة عشان الأداة تشتغل أوفلاين
    ومع ذلك تفضل قابلة للتحديث. غيّر SW_V مع كل إصدار. */
-const SW_V = "6.2";
+const SW_V = "6.3";
 const CACHE = "sensor-tool-" + SW_V;
 const CORE = ["./", "./index.html", "./certificates.html", "./three.min.js", "./manifest.json",
               "./icon-192.png", "./icon-512.png", "./icon-maskable.png",
               "./favicon.png", "./apple-touch-icon.png",
-              "./assets/afaqy-logo-ar.svg", "./assets/afaqy-logo-ar.png", "./assets/afaqy-logo.svg", "./assets/afaqy-logo.png"];
+              "./assets/afaqy-logo-ar.svg", "./assets/afaqy-logo-ar.png", "./assets/afaqy-logo.svg", "./assets/afaqy-logo.png",
+              "./lib/pdf-lib.min.js"];
 
 self.addEventListener("install", e => {
   self.skipWaiting();

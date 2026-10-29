@@ -8,6 +8,7 @@
 <script src="lib/jspdf.umd.min.js"></script>
 <script src="lib/jspdf.plugin.autotable.min.js"></script>
 <script src="lib/jszip.min.js"></script>
+<script src="lib/pdf-lib.min.js"></script>
 <style>
   :root{
     --paper:#F3F5F8; --panel:#FFFFFF; --ink:#101828; --muted:#5F6978; --navy:#14213D; --steel:#1B6F9A;
@@ -69,8 +70,14 @@
 <main>
   <div id="libAlert" class="alert" hidden>المكتبات ما اتحملتش (إكسل / PDF / ضغط). اتأكد إن مجلد lib موجود جنب الصفحة على السيرفر.</div>
 
-  <section>
-    <h2>إعدادات الإصدار</h2>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="batch">شهادة معايرة — دفعة من إكسل</button>
+    <button role="tab" aria-selected="false" data-tab="single">شهادة معايرة — حساس واحد</button>
+    <button role="tab" aria-selected="false" data-tab="coc">شهادة مطابقة — لستة سيريالات</button>
+  </div>
+
+  <details id="orgBox">
+    <summary><b>بيانات الشركة والإصدار</b> — بتتكتب مرة واحدة وبتتحفظ على الجهاز</summary>
     <div class="grid">
       <div><label>اسم الجهة المصدرة</label><input type="text" id="issuer" class="ltr" value="AFAQY"></div>
       <div><label>بادئة رقم شهادة المعايرة</label><input type="text" id="prefix" class="ltr" value="AFQ-CAL-2026-"></div>
@@ -90,14 +97,8 @@
       <div><label>ختم الشركة (صورة PNG بخلفية شفافة)</label><input type="file" id="stamp" accept="image/png,image/jpeg"><span class="note" id="stampNote"></span></div>
     </div>
     <div style="margin-top:10px"><label>نص الإقرار على الشهادة (بالإنجليزي، سيبه فاضي للنص الافتراضي)</label><textarea id="statement" class="ltr" placeholder="Default statement will be used"></textarea></div>
-    <p class="note">تاريخ الإصدار بيتحط تلقائيًا بتاريخ النهارده. تاريخ الفحص والصلاحية بيتحسبوا من تاريخ الفحص الفعلي اللي الفني كتبه، مش من تاريخ الطباعة. الإعدادات واللوجو والرقم التالي وبيانات الفني والمرجع بتتحفظ على الجهاز ده. <button class="btn secondary" id="clearSaved" style="padding:3px 10px;font-size:12px">مسح المحفوظ</button></p>
-  </section>
-
-  <div class="tabs" role="tablist">
-    <button role="tab" aria-selected="true" data-tab="batch">دفعة من إكسل</button>
-    <button role="tab" aria-selected="false" data-tab="single">حساس واحد</button>
-    <button role="tab" aria-selected="false" data-tab="coc">شهادات مطابقة — لستة سيريالات</button>
-  </div>
+    <p class="note">تاريخ الإصدار بتاريخ النهارده، والصلاحية بتتحسب من تاريخ الفحص الفعلي مش من تاريخ الطباعة. <button class="btn secondary" id="clearSaved" style="padding:3px 10px;font-size:12px">مسح المحفوظ</button></p>
+  </details>
 
   <section id="tab-batch">
     <h2>ملف الفحص الميداني</h2>
@@ -172,6 +173,12 @@
       <div><label>رقم شهادة معايرة المصنع</label><input type="text" class="ltr" name="factory_cert_no" placeholder="TZ20243433562"></div>
       <div><label>تاريخ شهادة المصنع</label><input type="date" class="ltr" name="factory_cert_date"></div>
       <div><label>صلاحية شهادة المصنع</label><input type="date" class="ltr" name="factory_valid_until"></div>
+    </div>
+    <div class="drop" style="margin-top:14px;text-align:right">
+      <b style="color:var(--ink)">ارفق شهادة المصنع (PDF) — سكان واحد يكفي للدفعة كلها</b>
+      <p class="note" style="margin:4px 0 8px">هتتضاف كصفحة تانية في ملف كل حساس، فكل سيريال بيطلع ملف كامل: صفحة أفاقي بسيرياله + شهادة المصنع الأصلية زي ما هي من غير أي تعديل. من غيرها الملف بيطلع صفحة واحدة.</p>
+      <input type="file" id="factoryPdf" accept="application/pdf">
+      <span class="note" id="factoryPdfNote"></span>
     </div>
     <p class="note">البيانات دي بتتكتب مرة واحدة للدفعة كلها وبتتحفظ على الجهاز. السيريالات بس هي اللي بتتغير.</p>
     <p style="margin-top:10px"><label style="display:flex;gap:8px;align-items:flex-start;color:var(--ink);font-size:13.5px">
@@ -287,7 +294,7 @@
   var PRESETS = {
     'TSTH1-B': { manufacturer: 'TOPFLYtech', product: 'BLE Temperature & Humidity Sensor',
       factory: {
-        certNo: 'T202410100270', certDate: '2025-10-02',
+        certNo: 'T202410100270', certDate: '2025-10-02', validUntil: '2027-07-12',
         env: 'air temperature 20.5 C, relative humidity 53.0 %',
         points: [['-20 C', '+/- 0.5 C'], ['0 C', '+/- 0.5 C'], ['40 C', '+/- 0.5 C'],
                  ['40 %RH', '+/- 3 %RH'], ['60 %RH', '+/- 3 %RH'], ['80 %RH', '+/- 3 %RH']],
@@ -298,7 +305,7 @@
                 RH1: { label: 'Ambient', tol: 3 }, RH2: { label: '', tol: 3 } } },
     'TAG07B': { manufacturer: 'TZONE Digital Technology', product: 'BLE Temperature & Humidity Sensor',
       factory: {
-        certNo: 'TZ20243433562', certDate: '2025-10-25',
+        certNo: 'TZ20243433562', certDate: '2025-10-25', validUntil: '2027-10-25',
         env: 'air temperature 20.5 C, relative humidity 53.0 %',
         points: [['-20 C', '+/- 0.8 C'], ['0 C', '+/- 0.7 C'], ['10 C', '+/- 0.5 C'], ['25 C', '+/- 0.3 C'],
                  ['30 %RH', '+/- 3 %RH'], ['50 %RH', '+/- 3 %RH'], ['70 %RH', '+/- 3 %RH']],
@@ -774,7 +781,7 @@
   'use strict';
   var $ = function (s) { return document.querySelector(s); };
   var C = window.CertCore;
-  var S = { logoDataUrl: null, logoFormat: 'PNG', brandDataUrl: null, brandFormat: 'PNG', signDataUrl: null, signFormat: 'PNG', stampDataUrl: null, stampFormat: 'PNG', batch: [], tab: 'batch' };
+  var S = { logoDataUrl: null, logoFormat: 'PNG', brandDataUrl: null, brandFormat: 'PNG', signDataUrl: null, signFormat: 'PNG', stampDataUrl: null, stampFormat: 'PNG', factoryPdf: null, batch: [], tab: 'batch' };
   var libsOk = !!(window.XLSX && window.jspdf && window.JSZip);
   if (!libsOk) $('#libAlert').hidden = false;
   var LS_SET = 'afqCert.settings', LS_STICKY = 'afqCert.sticky';
@@ -887,10 +894,18 @@
       var m = b.dataset.pick, pr = C.preset(m); if (!pr) return;
       var set = function (n, v) { var i = document.querySelector('#tab-coc input[name="' + n + '"]'); if (i && v) i.value = v; };
       set('model', m); set('manufacturer', pr.manufacturer); set('product', pr.product);
-      if (pr.factory) { set('factory_cert_no', pr.factory.certNo); set('factory_cert_date', pr.factory.certDate); }
+      if (pr.factory) { set('factory_cert_no', pr.factory.certNo); set('factory_cert_date', pr.factory.certDate); set('factory_valid_until', pr.factory.validUntil); }
       $('#pickNote').textContent = 'اتملّت بيانات ' + pr.manufacturer + ' — راجع رقم الشهادة وصلاحيتها حسب الدفعة اللي عندك';
       saveCoc(); refreshBar();
     });
+  });
+  $('#factoryPdf').addEventListener('change', function (e) {
+    var f = e.target.files[0];
+    if (!f) { S.factoryPdf = null; $('#factoryPdfNote').textContent = ''; return; }
+    var r = new FileReader();
+    r.onload = function () { S.factoryPdf = r.result; $('#factoryPdfNote').textContent = 'مرفقة: ' + f.name; };
+    r.onerror = function () { S.factoryPdf = null; $('#factoryPdfNote').textContent = 'الملف ما اتقراش'; };
+    r.readAsArrayBuffer(f);
   });
   $('#serialXlsx').addEventListener('change', function (e) {
     var f = e.target.files[0]; if (!f || !window.XLSX) return;
@@ -1033,13 +1048,33 @@
       var doc = new jspdf.jsPDF({ unit: 'mm', format: 'a4' });
       if (isCoc) { C.finalizeCoc(d, st, n++); C.renderCoc(doc, d, opts); }
       else { C.finalize(d, st, n++); C.render(doc, d, opts); }
-      return { name: C.fileName(d), blob: doc.output('blob'), d: d };
+      return { name: C.fileName(d), bytes: doc.output('arraybuffer'), d: d };
     });
     $(isCoc ? '#cocNextNo' : '#nextNo').value = n; saveSettings();
     if (S.tab === 'single') {
       document.querySelectorAll('#tab-single input[name="serial"], #tab-single input[name$="_ref"], #tab-single input[name$="_uut"]').forEach(function (i) { i.value = ''; });
       setTimeout(function () { refreshBar(); var i = document.querySelector('#tab-single input[name="serial"]'); if (i) i.focus(); }, 0);
     }
+    var attach = (isCoc && S.factoryPdf && window.PDFLib) ? S.factoryPdf : null;
+    $('#barStatus').textContent = attach ? 'بيجهّز الملفات ومعاها شهادة المصنع…' : 'بيجهّز الملفات…';
+    (attach ? mergeAll(docs, attach)
+            : Promise.resolve(docs.map(function (x) { x.blob = new Blob([x.bytes], { type: 'application/pdf' }); return x; })))
+      .then(finish, function (err) { $('#barStatus').textContent = 'مشكلة في إرفاق شهادة المصنع: ' + err.message; });
+    return;
+
+    function mergeAll(list, factoryBytes) {
+      return Promise.all(list.map(function (x) {
+        return PDFLib.PDFDocument.load(x.bytes)
+          .then(function (own) {
+            return PDFLib.PDFDocument.load(factoryBytes)
+              .then(function (fac) { return own.copyPages(fac, fac.getPageIndices()); })
+              .then(function (pages) { pages.forEach(function (pg) { own.addPage(pg); }); return own.save(); });
+          })
+          .then(function (bytes) { x.blob = new Blob([bytes], { type: 'application/pdf' }); return x; });
+      }));
+    }
+
+    function finish(docs) {
     var links = $('#links'); links.innerHTML = '';
     if (docs.length === 1) {
       download(docs[0].blob, docs[0].name); addLink(docs[0]);
@@ -1055,6 +1090,7 @@
     }
     function addLink(x) {
       var a = document.createElement('a'); a.href = URL.createObjectURL(x.blob); a.target = '_blank'; a.textContent = x.name; links.appendChild(a);
+    }
     }
   });
 
