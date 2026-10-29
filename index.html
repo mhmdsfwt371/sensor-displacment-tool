@@ -774,7 +774,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.4";
+const VERSION="6.5";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -4060,7 +4060,9 @@ column, press Generate. Each serial gets its own PDF with today's date, two-year
 number (AFQ-TZ/TF-year-station-number); the ZIP also holds a register CSV of every serial and its number.
 Each workstation sets its own station code so several people can issue at the same time without number clashes.
 The signature cell is the AFAQY authorized signatory, and a line states the copy is issued by AFAQY on behalf
-of the manufacturer.</p>
+of the manufacturer. Each maker has its own technician signature: picking TZONE or TOPFLYtech opens an upload box
+right under the button for that line's technician (image and printed name), saved on the device; the name is
+printed under the signature and recorded in the register.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
 certificate for a test that did not happen; validity is counted from the test date, not from the print
@@ -4312,7 +4314,9 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 المصنع للموزّع: اختار المصنع، والصق السيريالات أو ارفع عمود إكسل، واضغط توليد. كل سيريال بيطلع PDF لوحده
 بتاريخ النهارده وصلاحية سنتين ورقم من تسلسل آفاقي (AFQ-TZ/TF-السنة-كود الجهاز-الرقم)، والملف المضغوط فيه
 كمان كشف إكسل بكل سيريال ورقم شهادته. كل جهاز بياخد كود مختلف فأكتر من حد يطلّعوا في نفس الوقت من غير
-ما الأرقام تتكرر. خانة الإمضاء للمفوّض من آفاقي، وسطر صغير بيقول إن النسخة صادرة من آفاقي بالنيابة عن المصنع.</p>
+ما الأرقام تتكرر. خانة الإمضاء للمفوّض من آفاقي، وسطر صغير بيقول إن النسخة صادرة من آفاقي بالنيابة عن المصنع.
+ولكل مصنع إمضاء فنيه: لما تختار تي زون أو توب فلاي بيفتح تحت الزرار على طول مربع ترفع فيه إمضاء الفني
+المسؤول عن الخط ده واسمه، وبيتحفظوا على الجهاز؛ والاسم بيتكتب تحت الإمضاء وبيتسجّل في الكشف.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
 بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة
