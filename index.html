@@ -176,7 +176,9 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
   overflow-x:auto;scrollbar-width:none}
 .trow::-webkit-scrollbar{display:none}
 .trow>button{flex:1 0 auto}
-.trow>.sep,.trow>.kindsel{flex:0 0 auto}
+.trow>.sep,.trow>.kindsel,.trow>.symgrp{flex:0 0 auto}
+.symgrp{display:inline-flex;gap:2px;align-items:stretch}
+.symgrp button{min-width:30px;font-weight:700;font-size:15px!important;padding:6px 8px!important}
 .trow+.trow{border-top:1px solid var(--line);background:rgba(0,0,0,.10)}
 .tools button{padding:8px 10px;font-size:12.5px;border:1px solid transparent;background:transparent;
   white-space:nowrap;border-radius:8px}
@@ -737,6 +739,8 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
         <button id="btnCover" class="on" data-i="tCover">التغطية</button>
         <button id="btnRange" class="on" data-i="tRange">مدى الجيت واي</button>
         <button id="btnNums" class="on" data-i="tNums">الأرقام</button>
+        <button id="btnSplit" data-i="tSplit">يمين / يسار</button>
+        <span class="symgrp"><button id="btnSymM" type="button" data-i="tSymM" title="">−</button><button id="btnSymP" type="button" data-i="tSymP" title="">+</button></span>
         <button id="btnFit" data-i="tFit">ضبط</button>
       </div>
     </div>
@@ -781,7 +785,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.6";
+const VERSION="6.7";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -906,6 +910,7 @@ tPan:"تحريك",tEdit:"تعديل",tCal:"معايرة",tPoly:"مضلع",tRect:
 tCam:"كاميرا",tRdr:"ريدر RFID",tAnt:"أنتنا",tPc:"كمبيوتر",tRtr:"راوتر",
 dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",dvRtr:"راوتر",
 pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
+tSplit:"يمين / يسار",tSymM:"−",tSymP:"+",sideR:"يمين",sideL:"يسار",
 tUndo:"تراجع",tCover:"التغطية",tNums:"الأرقام",tFit:"ضبط",
 tNearWall:"دوس على حائط أو ضلع غرفة",aDrawOnly:"الحائط والباب للرسم من الصفر — مش فوق صورة",
 dbDone:"خلاص",dbCancel:"إلغاء",
@@ -1073,6 +1078,7 @@ tPan:"Pan",tEdit:"Edit",tCal:"Scale",tPoly:"Polygon",tRect:"Rectangle",tWand:"Ma
 tCam:"Camera",tRdr:"RFID Reader",tAnt:"Antenna",tPc:"PC",tRtr:"Router",
 dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
 pDevName:"Label for this device (leave empty to go back to automatic numbering):",
+tSplit:"Right / Left",tSymM:"−",tSymP:"+",sideR:"Right",sideL:"Left",
 tUndo:"Undo",tCover:"Coverage",tNums:"Labels",tFit:"Fit",
 tNearWall:"Click on a wall or room edge",aDrawOnly:"Wall and door are for drawing from scratch — not over an image",
 dbDone:"Done",dbCancel:"Cancel",
@@ -1233,9 +1239,10 @@ function schedAS(){clearTimeout(asT);
   asT=setTimeout(()=>{try{P.lang=L;
     localStorage.setItem(AS_KEY,JSON.stringify({t:Date.now(),p:P}));}catch(e){}},700);}
 function stateNow(){const q=pl();
-  return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,v:devs(q),sc:q.scale});}
+  return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,v:devs(q),sp:q.split||null,sc:q.scale});}
 function applyState(s){const o=JSON.parse(s),q=pl();
-  q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.devices=o.v||[];q.scale=o.sc;}
+  q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.devices=o.v||[];q.split=o.sp||null;q.scale=o.sc;
+  if(window.btnSplit)btnSplit.classList.toggle("on",!!(q.split&&q.split.on));}
 /* ================================================================
    الخريطة الحرارية — القراءات والمدى والإحصاءات
    P.hm = { data:{zoneName:[{t:ms,c:temp,h:hum}]}, on:false }
@@ -1634,8 +1641,26 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.fillStyle="#1f63d6";g.fill();
     g.strokeStyle="#ffffff";g.lineWidth=Math.max(gsz*.12,.8/k);g.stroke();
     powerIcon(g,gw.x+gsz*.95,gw.y-gsz*.75,gsz*.62,k);});
-  const dsz=symR*2.5;
+  const dsz=symR*1.9;
   devs(q).forEach(v=>devIcon(g,v.t,v.x,v.y,dsz,k));
+  if(q.split&&q.split.on){const bb=contentBox(q)||(devs(q).length?bbox(devs(q)):null);
+    if(bb){const x=q.split.x,y0=bb.minY-14/k,y1=bb.maxY+14/k;
+      g.save();g.setLineDash([9/k,6/k]);g.lineWidth=1.6/k;
+      g.strokeStyle=pr?"rgba(17,24,39,.45)":"rgba(255,196,77,.85)";
+      g.beginPath();g.moveTo(x,y0);g.lineTo(x,y1);g.stroke();g.setLineDash([]);
+      const cf=Math.max(11/k,symR*1.1);g.font="700 "+cf+'px "Segoe UI",Tahoma,sans-serif';
+      g.textBaseline="middle";g.lineWidth=cf*.3;g.strokeStyle="rgba(255,255,255,.92)";g.lineJoin="round";
+      g.fillStyle=pr?"#111827":"#b45309";
+      const cy=y0+14/k+cf*1.1,cx=14/k;
+      g.textAlign="left";g.strokeText(t("sideR"),x+cx,cy);g.fillText(t("sideR"),x+cx,cy);
+      g.textAlign="right";g.strokeText(t("sideL"),x-cx,cy);g.fillText(t("sideL"),x-cx,cy);
+      if(!pr&&!clean){const h=splitHandle(q,k),hr=9/k;
+        g.beginPath();g.arc(h.x,h.y,hr,0,7);g.fillStyle="#ffc44d";g.fill();
+        g.strokeStyle="#111827";g.lineWidth=1.4/k;g.beginPath();
+        g.moveTo(h.x-hr*.55,h.y);g.lineTo(h.x+hr*.55,h.y);
+        g.moveTo(h.x-hr*.55,h.y);g.lineTo(h.x-hr*.25,h.y-hr*.3);g.moveTo(h.x-hr*.55,h.y);g.lineTo(h.x-hr*.25,h.y+hr*.3);
+        g.moveTo(h.x+hr*.55,h.y);g.lineTo(h.x+hr*.25,h.y-hr*.3);g.moveTo(h.x+hr*.55,h.y);g.lineTo(h.x+hr*.25,h.y+hr*.3);g.stroke();}
+      g.textBaseline="alphabetic";g.restore();}}
   if(U.showNums){
     const fs=Math.max(symR*1.6,8/k);
     g.textAlign="center";g.textBaseline="middle";
@@ -1645,7 +1670,8 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
       g.strokeText(s.code,s.x,y);g.fillStyle="#a0141a";g.fillText(s.code,s.x,y);});
     q.gateways.forEach(gw=>{if(!gw.code)return;const y=gw.y-gsz*.6-fs*.7;
       g.strokeText(gw.code,gw.x,y);g.fillStyle="#123c86";g.fillText(gw.code,gw.x,y);});
-    devs(q).forEach(v=>{if(!v.code)return;const y=v.y-dsz*.62-fs*.7;
+    const fd=fs*.78;g.font="600 "+fd+'px "Segoe UI",Tahoma,sans-serif';g.lineWidth=fd*.32;
+    devs(q).forEach(v=>{if(!v.code)return;const y=v.y-dsz*.55-fd*.62;
       g.strokeText(v.code,v.x,y);g.fillStyle=DEVK[v.t].c;g.fillText(v.code,v.x,y);});
     g.textBaseline="alphabetic";}
 
@@ -2940,6 +2966,7 @@ function selBBox(q,s){
   if(s.kind==="sensor")A.push(s.s);
   if(s.kind==="gate")A.push(s.g);
   if(s.kind==="dev")A.push(s.v);
+  if(s.kind==="split")A.push(splitHandle(q,V.k));
   if(s.kind==="wall"||s.kind==="wend"){A.push({x:s.w.x1,y:s.w.y1});A.push({x:s.w.x2,y:s.w.y2});}
   if(s.kind==="door"){A.push({x:s.d.x1,y:s.d.y1});A.push({x:s.d.x2,y:s.d.y2});}
   return A.length?bbox(A):null;}
@@ -2948,6 +2975,7 @@ function hitTest(q,w){
   for(let i=q.sensors.length-1;i>=0;i--)if(dist(q.sensors[i],w)<sy)return{kind:"sensor",s:q.sensors[i]};
   for(let i=q.gateways.length-1;i>=0;i--)if(dist(q.gateways[i],w)<sy*1.2)return{kind:"gate",g:q.gateways[i]};
   const DV=devs(q);for(let i=DV.length-1;i>=0;i--)if(dist(DV[i],w)<sy*1.4)return{kind:"dev",v:DV[i]};
+  if(q.split&&q.split.on){const h=splitHandle(q,V.k);if(dist(h,w)<Math.max(r,14/V.k))return{kind:"split",p:h};}
   for(const z of q.zones)for(let i=0;i<z.pts.length;i++)
     if(dist(z.pts[i],w)<r)return{kind:"vertex",z,i};
   for(const wl of q.walls){
@@ -2968,6 +2996,7 @@ function delSel(){
   else if(s.kind==="sensor")q.sensors=q.sensors.filter(x=>x!==s.s);
   else if(s.kind==="gate")q.gateways=q.gateways.filter(x=>x!==s.g);
   else if(s.kind==="dev")q.devices=devs(q).filter(x=>x!==s.v);
+  else if(s.kind==="split"){q.split.on=false;btnSplit.classList.remove("on");}
   else if(s.kind==="wall"||s.kind==="wend")q.walls=q.walls.filter(x=>x!==s.w);
   else if(s.kind==="door")q.doors=q.doors.filter(x=>x!==s.d);
   U.sel=null;U.drag=null;refresh();}
@@ -2983,7 +3012,8 @@ function dragMove(w,free){
     devs(q).forEach(v=>{if(v.zoneId===d.h.z.id){v.x+=dx;v.y+=dy;}});}
   else if(d.kind==="sensor"){d.h.s.x=w.x;d.h.s.y=w.y;}
   else if(d.kind==="gate"){d.h.g.x=w.x;d.h.g.y=w.y;}
-  else if(d.kind==="dev"){d.h.v.x=w.x;d.h.v.y=w.y;}
+  else if(d.kind==="dev"){d.h.v.x=w.x;d.h.v.y=w.y;if(q.split&&q.split.on)renumber();}
+  else if(d.kind==="split"){q.split.x=w.x;renumber();}
   else if(d.kind==="wend"){const wl=d.h.w;
     const np=snapPt(q,w,null,free,{wall:wl,end:d.h.end});
     if(d.h.end===1){wl.x1=np.x;wl.y1=np.y;}else{wl.x2=np.x;wl.y2=np.y;}}
@@ -3151,9 +3181,24 @@ function renumber(){
     q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>{n++;s.code=ar(zi+1)+"-"+ar(n);});});
   q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).forEach((s,i)=>s.code=t("orphan")+"-"+ar(i+1));
   q.gateways.forEach((g,i)=>{g.code=t("gwPrefix")+ar(i+1);});
-  const cnt={};devs(q).forEach(v=>{cnt[v.t]=(cnt[v.t]||0)+1;
-    v.code=(v.name&&v.name.trim())?v.name.trim():t(DEVK[v.t].lab)+" "+ar(cnt[v.t]);});
+  const lab=(v,n)=>{v.code=(v.name&&v.name.trim())?v.name.trim():t(DEVK[v.t].lab)+" "+ar(n);};
+  if(q.split&&q.split.on){
+    const b=contentBox(q)||bbox(devs(q).length?devs(q):[{x:0,y:0},{x:1,y:1}]);
+    const tol=Math.max(1,(b.maxY-b.minY)*.03);
+    /* ترتيب القراءة: من فوق لتحت، وفي نفس الصف من اليمين للشمال */
+    const order=(a,c)=>Math.abs(a.y-c.y)>tol?a.y-c.y:c.x-a.x;
+    [true,false].forEach(right=>{const side=devs(q).filter(v=>(v.x>=q.split.x)===right);
+      const byT={};side.forEach(v=>{(byT[v.t]=byT[v.t]||[]).push(v);});
+      Object.keys(byT).forEach(k=>byT[k].sort(order).forEach((v,i)=>{lab(v,i+1);v.side=right?"R":"L";}));});}
+  else{const cnt={};devs(q).forEach(v=>{cnt[v.t]=(cnt[v.t]||0)+1;lab(v,cnt[v.t]);delete v.side;});}
   legendDev(q);}
+function splitToggle(){const q=pl();snap();
+  if(q.split&&q.split.on){q.split.on=false;}
+  else{const b=contentBox(q)||(devs(q).length?bbox(devs(q)):null);
+    q.split={on:true,x:q.split&&q.split.x!=null?q.split.x:(b?(b.minX+b.maxX)/2:0)};}
+  btnSplit.classList.toggle("on",!!(q.split&&q.split.on));refresh();}
+function splitHandle(q,k){const b=contentBox(q)||(devs(q).length?bbox(devs(q)):{minY:0});
+  return{x:q.split.x,y:b.minY-36/k};}
 function legendDev(q){const el=document.getElementById("lgDev");if(!el)return;
   const have={};devs(q).forEach(v=>{have[v.t]=1;});
   el.innerHTML=Object.keys(DEVT).filter(k=>have[DEVT[k].k]).map(k=>
@@ -3200,7 +3245,7 @@ function issues(){
 
 /* ================= الواجهة ================= */
 function refresh(){try{renderDev();}catch(e){}
-renumber();renderZones();renderResults();renderIssues();render();
+renumber();if(window.btnSplit)btnSplit.classList.toggle("on",!!(pl().split&&pl().split.on));renderZones();renderResults();renderIssues();render();
   fbUndo.disabled=!U.undo.length;fbRedo.disabled=!U.redo.length;
   btnUndo.disabled=!U.undo.length;syncMap();renderHm();}
 function renderZones(){
@@ -4193,6 +4238,10 @@ With <b>Edit</b> you drag a device anywhere, delete it with the red ×, or renam
 double-click) — leave the name empty to go back to the automatic number. Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
+<p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
+own, per type, in reading order (top to bottom, then right to left). Drag the yellow ↔ handle above the divider
+with Edit to move the split; press the button again to go back to one count for the whole plan. The <b>−</b> and
+<b>+</b> buttons next to it make every symbol on the plan smaller or larger.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
 certificate for a test that did not happen; validity is counted from the test date, not from the print
@@ -4455,6 +4504,10 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 بتسحب الجهاز لأي مكان، أو تمسحه بالـ × الأحمر، أو تسمّيه بالقلم ✎ الأزرق (أو دبل كليك) — ولو سيبت الاسم فاضي
 بيرجع للرقم الأوتوماتيكي. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
+<p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
+القراءة (من فوق لتحت، وفي نفس الصف من اليمين للشمال). عشان تحرك الخط اسحب الدايرة الصفرا ↔ اللي فوقه بأداة
+تعديل؛ ولو دوست على الزرار تاني بيرجع عدّ واحد للرسمة كلها. وزرارين <b>−</b> و<b>+</b> جنبه بيصغّروا أو يكبّروا
+كل الرموز على الرسمة.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
 بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة
@@ -4721,6 +4774,12 @@ document.getElementById("btnRange").onclick=e=>{U.showRange=!U.showRange;
   e.currentTarget.classList.toggle("on",U.showRange);render();};
 document.getElementById("btnNums").onclick=e=>{U.showNums=!U.showNums;
   e.currentTarget.classList.toggle("on",U.showNums);render();};
+document.getElementById("btnSplit").onclick=splitToggle;
+function symStep(d){P.cfg.sym=Math.min(2,Math.max(.3,Math.round(((P.cfg.sym||.6)+d)*10)/10));
+  rngSym.value=Math.round(P.cfg.sym*10);
+  lblSym.textContent=ar(P.cfg.sym.toFixed(1)).replace(".",L==="ar"?"٫":".");render();}
+document.getElementById("btnSymM").onclick=()=>symStep(-.1);
+document.getElementById("btnSymP").onclick=()=>symStep(.1);
 document.getElementById("btnPng").onclick=()=>{LOG("evExport",t("bPng"));const q=pl();
   const c=exportSheet(q,2000,opCust.checked);
   if(!c){alert(t("aNoPlan"));return;}
