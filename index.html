@@ -178,6 +178,8 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .trow>button{flex:1 0 auto}
 .trow>.sep,.trow>.kindsel,.trow>.symgrp{flex:0 0 auto}
 .symgrp{display:inline-flex;gap:2px;align-items:stretch}
+.item .r.wh{gap:6px;align-items:center}
+.item .r.wh input{width:74px;flex:0 0 auto;direction:ltr;text-align:center}
 #devTip{position:fixed;z-index:70;pointer-events:none;display:none;max-width:290px;
   background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;
   padding:9px 11px;font-size:12.5px;line-height:1.6;box-shadow:0 8px 22px rgba(0,0,0,.35)}
@@ -822,7 +824,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.12";
+const VERSION="6.13";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -951,6 +953,7 @@ tCam:"كاميرا",tRdr:"ريدر RFID",tAnt:"أنتنا",tPc:"كمبيوتر",
 dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",dvRtr:"راوتر",
 pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
 tSplit:"يمين / يسار",tSymM:"−",tSymP:"+",sideR:"يمين",sideL:"يسار",
+whLbl:"المقاس",whW:"العرض",whH:"الطول",whCal:"المقياس اتظبط من مقاس الغرفة دي",
 dfLabel:"الرقم على الرسمة",dfLabelHint:"سيبه فاضي عشان يفضل الترقيم الأوتوماتيكي",dfName:"الاسم",dfSn:"السيريال",
 dfSave:"حفظ",dfCancel:"إلغاء",dfIpWarn:"شكل العنوان ده مش IP عادي — اتأكد منه",dfTitle:"بيانات",
 tipEmpty:"مافيش بيانات لسه — اختاره بأداة تعديل ودوس ✎",tipSide:"الناحية",
@@ -1125,6 +1128,7 @@ tCam:"Camera",tRdr:"RFID Reader",tAnt:"Antenna",tPc:"PC",tRtr:"Router",
 dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
 pDevName:"Label for this device (leave empty to go back to automatic numbering):",
 tSplit:"Right / Left",tSymM:"−",tSymP:"+",sideR:"Right",sideL:"Left",
+whLbl:"Size",whW:"Width",whH:"Length",whCal:"Scale set from this room's size",
 dfLabel:"Label on the plan",dfLabelHint:"Leave empty to keep the automatic number",dfName:"Name",dfSn:"Serial",
 dfSave:"Save",dfCancel:"Cancel",dfIpWarn:"This does not look like a regular IP address — please check it",dfTitle:"Details",
 tipEmpty:"No details yet — select it with Edit and press ✎",tipSide:"Side",
@@ -1654,19 +1658,22 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
   g.direction=L==="ar"?"rtl":"ltr";
   zs.forEach(z=>{if(z.pts.length<2)return;
     const c=centroid(z.pts);g.textAlign="center";
+    const zb=bbox(z.pts),zf=pr?Math.max(13/k,Math.min(zb.maxX-zb.minX,zb.maxY-zb.minY)*.035):13/k,zk=zf/(13/k);
+    const halo=s=>{if(!pr)return;g.save();g.lineWidth=zf*.32;g.strokeStyle="rgba(255,255,255,.9)";g.lineJoin="round";
+      g.strokeText(s.t,s.x,s.y);g.restore();};
     g.fillStyle="#1a2733";
-    g.font="700 "+(13/k)+'px "Segoe UI",Tahoma,sans-serif';
-    g.fillText(z.name,c.x,c.y);
+    g.font="700 "+zf+'px "Segoe UI",Tahoma,sans-serif';
+    halo({t:z.name,x:c.x,y:c.y});g.fillStyle="#1a2733";g.fillText(z.name,c.x,c.y);
     const hz=(P.hm&&P.hm.on)?hmState(z):null;
     if(hz){g.fillStyle=hz.status==="ok"?"#137a44":hz.status==="warn"?"#8a6400":"#a11a12";
       g.font="700 "+(11.5/k)+'px "Segoe UI",Tahoma,sans-serif';
       g.fillText(fmt1(hz.tMin)+" / "+fmt1(hz.tMed)+" / "+fmt1(hz.tMax)+" °",c.x,c.y+15/k);
       if(hz.viol)g.fillText("⚠ "+ar(hz.viol),c.x,c.y+29/k);}
     else if(sc>0){const d=q.drawn?null:rectDims(z,sc);
-      g.fillStyle="#5d6f80";
-      g.font=(11/k)+'px "Segoe UI",Tahoma,sans-serif';
-      g.fillText(d?(nice(d.w)+" × "+nice(d.h)+" "+t("unitM")):(fmt(polyArea(z.pts)/(sc*sc))+" "+t("unitM2")),c.x,c.y+15/k);
-      if(d)g.fillText(fmt(d.w*d.h)+" "+t("unitM2"),c.x,c.y+28/k);}});
+      g.font=(pr?"600 ":"")+(11*zk/k)+'px "Segoe UI",Tahoma,sans-serif';
+      const l1=d?(nice(d.w)+" × "+nice(d.h)+" "+t("unitM")):(fmt(polyArea(z.pts)/(sc*sc))+" "+t("unitM2"));
+      halo({t:l1,x:c.x,y:c.y+15*zk/k});g.fillStyle="#5d6f80";g.fillText(l1,c.x,c.y+15*zk/k);
+      if(d){const l2=fmt(d.w*d.h)+" "+t("unitM2");halo({t:l2,x:c.x,y:c.y+28*zk/k});g.fillStyle="#5d6f80";g.fillText(l2,c.x,c.y+28*zk/k);}}});
 
   if(U.showCover&&sc>0&&!clean){const R=Math.sqrt(P.cfg.cov/Math.PI)*sc;
     g.fillStyle="rgba(224,43,43,.09)";g.strokeStyle="rgba(224,43,43,.32)";g.lineWidth=1/k;
@@ -3040,8 +3047,11 @@ function closePoly(){if(U.draft.length>=3)addZone(U.draft.slice());U.draft=[];U.
 function addZone(p){snap();const q=pl();
   const kd=U.newKind||"room";
   const n=q.zones.filter(z=>zKind(z)===kd).length+1;
-  q.zones.push({id:SEQ++,name:t("kd_"+kd)+" "+ar(n),pts:p,kind:kd,
-    color:kd==="corr"?"#7d8ea0":kd==="fridge"?"#00b3c8":ZC[q.zones.length%ZC.length]});
+  const nz={id:SEQ++,name:t("kd_"+kd)+" "+ar(n),pts:p,kind:kd,
+    color:kd==="corr"?"#7d8ea0":kd==="fridge"?"#00b3c8":ZC[q.zones.length%ZC.length]};
+  q.zones.push(nz);
+  const free=o=>!q.zones.some(z=>z.id===o.zoneId);
+  q.sensors.concat(q.gateways,devs(q)).forEach(o=>{if(free(o)&&inPoly(o,p))o.zoneId=nz.id;});
   refresh();if(!IMG[q.id]&&q.zones.length===1)fitView();}
 function ensureDraw(q){
   if(IMG[q.id]){toast(t("aDrawOnly"));return false;}
@@ -3444,15 +3454,36 @@ function renderZones(){
         (zKind(z)===k?' selected':'')+'>'+t("kd_"+k)+'</option>').join("")+'</select>'+
       '<span class="meta">'+ar(fmt(st.a))+' '+t("unitM2")+'</span>'+
       (z.fixed>0?'<button class="rs">'+t("resetAuto")+'</button>':'<span class="meta">'+t("auto")+'</span>')+
-      '<span class="cnt"><button class="mn">−</button><b>'+ar(st.n)+'</b><button class="pl">+</button></span></div>';
+      '<span class="cnt"><button class="mn">−</button><b>'+ar(st.n)+'</b><button class="pl">+</button></span></div>'+
+      (isRect(z)?'<div class="r wh"><span class="meta">'+t("whLbl")+'</span>'+
+        '<input class="w" type="number" min="0.1" step="0.01" inputmode="decimal" placeholder="'+t("whW")+'" value="'+(q.scale>0?r2((bbox(z.pts).maxX-bbox(z.pts).minX)/q.scale):"")+'">'+
+        '<span class="meta">×</span>'+
+        '<input class="h" type="number" min="0.1" step="0.01" inputmode="decimal" placeholder="'+t("whH")+'" value="'+(q.scale>0?r2((bbox(z.pts).maxY-bbox(z.pts).minY)/q.scale):"")+'">'+
+        '<span class="meta">'+t("unitM")+'</span></div>':'');
     d.querySelector("input").oninput=e=>{z.name=e.target.value;render();schedAS();};
     d.querySelector(".kd").onchange=e=>setKind(z,e.target.value);
     d.querySelector(".mn").onclick=()=>setZoneCount(z,st.n-1);
     d.querySelector(".pl").onclick=()=>setZoneCount(z,st.n+1);
     const rs=d.querySelector(".rs");if(rs)rs.onclick=()=>zoneAuto(z);
+    const iw=d.querySelector("input.w"),ih=d.querySelector("input.h");
+    if(iw){const row=iw.parentNode,go=()=>setRectSize(z,+iw.value,+ih.value);
+      row.addEventListener("focusout",e=>{if(!row.contains(e.relatedTarget))go();});
+      [iw,ih].forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();i.blur();if(document.activeElement!==i)go();}}));}
     d.querySelector(".x").onclick=()=>{snap();q.zones=q.zones.filter(x=>x!==z);
       q.sensors=q.sensors.filter(s=>s.zoneId!==z.id);gwPlan(q);refresh();};
     Lst.appendChild(d);});}
+function r2(x){return Math.round(x*100)/100;}
+function isRect(z){if(!z||z.pts.length!==4)return false;const b=bbox(z.pts);
+  const A=(b.maxX-b.minX)*(b.maxY-b.minY);return A>0&&Math.abs(polyArea(z.pts)-A)<=A*.002;}
+/* مقاس مظبوط بالمتر لغرفة مستطيلة: لو الرسمة لسه من غير مقياس، المقياس بيتحسب من الغرفة دي نفسها */
+function setRectSize(z,W,H){const q=pl();if(!(W>0)&&!(H>0))return;
+  const b=bbox(z.pts),pw=b.maxX-b.minX,ph=b.maxY-b.minY;
+  if(q.scale>0&&(!(W>0)||Math.abs(W-pw/q.scale)<.005)&&(!(H>0)||Math.abs(H-ph/q.scale)<.005))return;
+  snap();
+  if(q.scale<=0){q.scale=W>0?pw/W:ph/H;toast(t("whCal"));}
+  const nw=W>0?W*q.scale:pw,nh=H>0?H*q.scale:ph;
+  z.pts=[{x:b.minX,y:b.minY},{x:b.minX+nw,y:b.minY},{x:b.minX+nw,y:b.minY+nh},{x:b.minX,y:b.minY+nh}];
+  refresh();}
 function renderResults(){
   const q=pl(),tt=projTot();
   kSensors.textContent=ar(tt.sensors);kGates.textContent=ar(tt.gates);kArea.textContent=ar(fmt(tt.area));
@@ -4420,7 +4451,12 @@ with the mouse shows those details in a popup; on a phone they show under the se
 the same details; a gateway you add details to is pinned, so automatic gateway planning keeps it in place.
 All those details are exported: the PDF ends with a <b>device register</b> table (type, label, name, IP, serial,
 side, room), and <b>Save → Device register — Excel</b> downloads the same table as a filterable .xlsx with a
-summary sheet of counts per type. Devices move with their room, are
+summary sheet of counts per type.</p>
+<p><b>Exact room size.</b> Every rectangular room in the Rooms list has <b>width × length</b> boxes in metres.
+Type the real size (for example 12 and 10) and the rectangle snaps to it. If the plan has no scale yet, that same
+entry sets the scale from the room, so a drawing becomes measured in one step and the total area is right
+(12 × 10 = 120 m²). Devices and sensors already inside a new room are assigned to it, and in the PDF the room
+name, size and area are printed large enough to read on big drawings. Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
@@ -4693,7 +4729,11 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 بيتثبّت، فالتوزيع الأوتوماتيكي للجيت واي ما يشيلوش ولا يحركه.
 وكل البيانات دي بتطلع في التصدير: ملف الـ PDF في آخره صفحة <b>سجل الأجهزة</b> (النوع، الرقم، الاسم، الـ IP،
 السيريال، الناحية، الغرفة)، ومن <b>حفظ ← سجل الأجهزة — إكسل</b> بينزل نفس الجدول ملف إكسل بفلتر، ومعاه
-ورقة ملخص بعدد كل نوع. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+ورقة ملخص بعدد كل نوع.</p>
+<p><b>مقاس الغرفة بالظبط.</b> أي غرفة مستطيلة في قائمة «الغرف» تحتها خانتين <b>العرض × الطول</b> بالمتر. تكتب
+المقاس الحقيقي (مثلًا ١٢ و١٠) والمستطيل بيتظبط عليه. ولو الرسمة لسه من غير مقياس، نفس الخطوة دي بتحسب المقياس
+من الغرفة، فالرسمة بتبقى متقاسة في خطوة واحدة والمساحة الإجمالية صح (١٢ × ١٠ = ١٢٠ م٢). والأجهزة والحساسات
+اللي جوه الغرفة الجديدة بتتبعها لوحدها، وفي الـ PDF اسم الغرفة ومقاسها ومساحتها بيتكتبوا بحجم مقروء على الرسومات الكبيرة. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
 الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط، بأداة تعديل اسحبه من أي
