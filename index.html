@@ -727,6 +727,12 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
         <button data-t="sensor" data-i="tSensor">حساس</button>
         <button data-t="gate" data-i="tGate">جيت واي</button>
         <span class="sep"></span>
+        <button data-t="dcam" data-i="tCam">كاميرا</button>
+        <button data-t="drdr" data-i="tRdr">ريدر RFID</button>
+        <button data-t="dant" data-i="tAnt">أنتنا</button>
+        <button data-t="dpc" data-i="tPc">كمبيوتر</button>
+        <button data-t="drtr" data-i="tRtr">راوتر</button>
+        <span class="sep"></span>
         <button id="btnUndo" data-i="tUndo">تراجع</button>
         <button id="btnCover" class="on" data-i="tCover">التغطية</button>
         <button id="btnRange" class="on" data-i="tRange">مدى الجيت واي</button>
@@ -750,6 +756,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
       <span><i style="background:#e02b2b"></i><span data-i="lgSensor">حساس</span></span>
       <span><i class="sq" style="background:#1f63d6"></i><span data-i="lgGate">جيت واي</span></span>
       <span><i style="background:#f5a300"></i><span data-i="lgPower">كهرباء</span></span>
+      <span id="lgDev" style="display:contents"></span>
     </div>
   </main>
   <button class="mapfab" id="mapFab"><span data-i="bOpenMap">افتح الرسمة</span><em id="fabMeta"></em></button>
@@ -774,7 +781,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.5";
+const VERSION="6.6";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -896,6 +903,9 @@ bCsvCount:"جدول الأعداد",bCsvInst:"جدول التركيب",fImgOut:"
 bPng:"حفظ صورة الرسمة",
 hImgOut:"الصورة بتطلع ورقة كاملة: اسم المشروع والشركة والتاريخ فوق، الرسمة في النص، ومفتاح الرموز والأعداد تحت.",
 tPan:"تحريك",tEdit:"تعديل",tCal:"معايرة",tPoly:"مضلع",tRect:"مستطيل",tWand:"غرفة بضغطة",tWall:"حائط",tDoor:"باب",tSensor:"حساس",tGate:"جيت واي",
+tCam:"كاميرا",tRdr:"ريدر RFID",tAnt:"أنتنا",tPc:"كمبيوتر",tRtr:"راوتر",
+dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",dvRtr:"راوتر",
+pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
 tUndo:"تراجع",tCover:"التغطية",tNums:"الأرقام",tFit:"ضبط",
 tNearWall:"دوس على حائط أو ضلع غرفة",aDrawOnly:"الحائط والباب للرسم من الصفر — مش فوق صورة",
 dbDone:"خلاص",dbCancel:"إلغاء",
@@ -1060,6 +1070,9 @@ bCsvCount:"Counts sheet",bCsvInst:"Install sheet",fImgOut:"Image ready to email 
 bPng:"Save Drawing Image",
 hImgOut:"The image comes out as a full sheet: project, company and date on top, the drawing in the middle, symbol key and counts below.",
 tPan:"Pan",tEdit:"Edit",tCal:"Scale",tPoly:"Polygon",tRect:"Rectangle",tWand:"Magic Room",tWall:"Wall",tDoor:"Door",tSensor:"Sensor",tGate:"Gateway",
+tCam:"Camera",tRdr:"RFID Reader",tAnt:"Antenna",tPc:"PC",tRtr:"Router",
+dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
+pDevName:"Label for this device (leave empty to go back to automatic numbering):",
 tUndo:"Undo",tCover:"Coverage",tNums:"Labels",tFit:"Fit",
 tNearWall:"Click on a wall or room edge",aDrawOnly:"Wall and door are for drawing from scratch — not over an image",
 dbDone:"Done",dbCancel:"Cancel",
@@ -1165,7 +1178,16 @@ function relabel(){
 let SEQ=1;
 const ZC=["#5b93ff","#a879ff","#4dd6a0","#ffb648","#ff7d9c","#4fc9e8"];
 function newPlan(){return{id:SEQ++,name:"plan",imgData:null,imgW:0,imgH:0,
-  scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[]};}
+  scale:0,drawn:false,text:"",clean:null,zones:[],sensors:[],gateways:[],walls:[],doors:[],devices:[]};}
+/* أجهزة إضافية على الرسمة: كاميرا، ريدر RFID، أنتنا، كمبيوتر، راوتر */
+const DEVT={
+  dcam:{k:"cam",c:"#475569",lab:"dvCam",hf:.85},
+  drdr:{k:"rdr",c:"#7c3aed",lab:"dvRdr",hm:1.3},
+  dant:{k:"ant",c:"#0d9488",lab:"dvAnt",hf:.92},
+  dpc:{k:"pc",c:"#c026d3",lab:"dvPc",hm:.9},
+  drtr:{k:"rtr",c:"#16a34a",lab:"dvRtr",hm:2}};
+const DEVK={};Object.keys(DEVT).forEach(t=>{DEVK[DEVT[t].k]=DEVT[t];});
+function devs(q){return q.devices||(q.devices=[]);}
 function newProject(){return{v:2,appV:VERSION,lang:"ar",name:"",ref:"",client:"",cloudId:"",log:[],
   cfg:{sensor:"tg08",cov:25,minPer:1,gw:"gsm",gwRange:50,gwMode:"room",h3:6,bat:1,brk:1,psu:1,spare:5,sym:.6},
   plans:[newPlan()],cur:0};}
@@ -1211,9 +1233,9 @@ function schedAS(){clearTimeout(asT);
   asT=setTimeout(()=>{try{P.lang=L;
     localStorage.setItem(AS_KEY,JSON.stringify({t:Date.now(),p:P}));}catch(e){}},700);}
 function stateNow(){const q=pl();
-  return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,sc:q.scale});}
+  return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,v:devs(q),sc:q.scale});}
 function applyState(s){const o=JSON.parse(s),q=pl();
-  q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.scale=o.sc;}
+  q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.devices=o.v||[];q.scale=o.sc;}
 /* ================================================================
    الخريطة الحرارية — القراءات والمدى والإحصاءات
    P.hm = { data:{zoneName:[{t:ms,c:temp,h:hum}]}, on:false }
@@ -1612,6 +1634,8 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.fillStyle="#1f63d6";g.fill();
     g.strokeStyle="#ffffff";g.lineWidth=Math.max(gsz*.12,.8/k);g.stroke();
     powerIcon(g,gw.x+gsz*.95,gw.y-gsz*.75,gsz*.62,k);});
+  const dsz=symR*2.5;
+  devs(q).forEach(v=>devIcon(g,v.t,v.x,v.y,dsz,k));
   if(U.showNums){
     const fs=Math.max(symR*1.6,8/k);
     g.textAlign="center";g.textBaseline="middle";
@@ -1621,6 +1645,8 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
       g.strokeText(s.code,s.x,y);g.fillStyle="#a0141a";g.fillText(s.code,s.x,y);});
     q.gateways.forEach(gw=>{if(!gw.code)return;const y=gw.y-gsz*.6-fs*.7;
       g.strokeText(gw.code,gw.x,y);g.fillStyle="#123c86";g.fillText(gw.code,gw.x,y);});
+    devs(q).forEach(v=>{if(!v.code)return;const y=v.y-dsz*.62-fs*.7;
+      g.strokeText(v.code,v.x,y);g.fillStyle=DEVK[v.t].c;g.fillText(v.code,v.x,y);});
     g.textBaseline="alphabetic";}
 
   if(pr&&sc>0&&b){const y=b.maxY+30,x=b.minX,Ln=5*sc;
@@ -1631,6 +1657,41 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.textAlign="left";g.textBaseline="middle";
     g.fillText(t("scaleBar"),x+Ln+6/k,y);g.textBaseline="alphabetic";}}
 
+/* رمز الجهاز: لوحة ملونة بحافة بيضا وجواها رسمة بيضا تميّز النوع */
+function rrect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);
+  g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function devIcon(g,ty,x,y,s,k){
+  const D=DEVK[ty];if(!D)return;const u=s/2,lw=Math.max(s*.08,.8/k);
+  g.save();g.lineJoin="round";g.lineCap="round";
+  rrect(g,x-u,y-u,s,s,s*.22);g.fillStyle=D.c;g.fill();
+  g.strokeStyle="#ffffff";g.lineWidth=lw;g.stroke();
+  g.fillStyle="#ffffff";g.strokeStyle="#ffffff";g.lineWidth=Math.max(s*.075,.6/k);
+  if(ty==="cam"){                      /* كاميرا فيديو: جسم + عدسة */
+    rrect(g,x-.6*u,y-.3*u,.8*u,.6*u,.1*u);g.fill();
+    g.beginPath();g.moveTo(x+.22*u,y-.12*u);g.lineTo(x+.62*u,y-.36*u);
+    g.lineTo(x+.62*u,y+.36*u);g.lineTo(x+.22*u,y+.12*u);g.closePath();g.fill();
+    g.beginPath();g.arc(x-.2*u,y,.14*u,0,7);g.fillStyle=D.c;g.fill();}
+  else if(ty==="rdr"){                 /* ريدر RFID: نقطة وموجات */
+    const cx=x-.42*u,cy=y+.42*u;
+    g.beginPath();g.arc(cx,cy,.13*u,0,7);g.fill();
+    [.42,.7,.98].forEach(rr=>{g.beginPath();g.arc(cx,cy,rr*u,-Math.PI/2+.12,-.12);g.stroke();});}
+  else if(ty==="ant"){                 /* أنتنا: صاري وإشارات للجنبين */
+    g.beginPath();g.moveTo(x,y+.62*u);g.lineTo(x,y-.18*u);g.stroke();
+    g.beginPath();g.moveTo(x-.32*u,y+.62*u);g.lineTo(x+.32*u,y+.62*u);g.stroke();
+    g.beginPath();g.arc(x,y-.3*u,.12*u,0,7);g.fill();
+    [.34,.58].forEach(rr=>{g.beginPath();g.arc(x,y-.3*u,rr*u,-.75,.75);g.stroke();
+      g.beginPath();g.arc(x,y-.3*u,rr*u,Math.PI-.75,Math.PI+.75);g.stroke();});}
+  else if(ty==="pc"){                  /* كمبيوتر: شاشة وقاعدة */
+    rrect(g,x-.62*u,y-.55*u,1.24*u,.82*u,.08*u);g.fill();
+    g.fillStyle="#38bdf8";g.fillRect(x-.48*u,y-.42*u,.96*u,.56*u);g.fillStyle="#ffffff";
+    g.fillRect(x-.09*u,y+.27*u,.18*u,.22*u);
+    g.beginPath();g.moveTo(x-.36*u,y+.55*u);g.lineTo(x+.36*u,y+.55*u);g.stroke();}
+  else if(ty==="rtr"){                 /* راوتر: صندوق بإريالين ولمبات */
+    rrect(g,x-.64*u,y-.02*u,1.28*u,.52*u,.1*u);g.fill();
+    g.beginPath();g.moveTo(x-.4*u,y-.02*u);g.lineTo(x-.56*u,y-.62*u);
+    g.moveTo(x+.4*u,y-.02*u);g.lineTo(x+.56*u,y-.62*u);g.stroke();
+    g.fillStyle=D.c;[-.32,0,.32].forEach(dx=>{g.beginPath();g.arc(x+dx*u,y+.24*u,.08*u,0,7);g.fill();});}
+  g.restore();}
 function powerIcon(g,x,y,r,k){
   g.beginPath();g.arc(x,y,r,0,7);
   g.fillStyle="#f5a300";g.fill();
@@ -1803,7 +1864,29 @@ function t3build(q){
       const ant=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.5),
         new THREE.MeshStandardMaterial({color:0xcfe0ff}));
       ant.position.set(pm.x+.12,H*.9+.4,pm.z);T3.root.add(ant);});
-  });}
+  });
+  /* الأجهزة الإضافية على ارتفاعاتها */
+  devs(q).forEach(v=>{
+    const D=DEVK[v.t];if(!D)return;
+    const zz=q.zones.find(z=>z.id===v.zoneId),H=zz?h3Of(zz):(P.cfg.h3||6);
+    const y0=D.hf?H*D.hf:Math.min(D.hm,H*.9),pm=M(v),col=parseInt(D.c.slice(1),16),S=1.8;
+    const grp=new THREE.Group();grp.position.set(pm.x,y0,pm.z);grp.scale.setScalar(S);T3.root.add(grp);
+    const put=(geo,c,x,y,z)=>{const me=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:c,roughness:.45}));
+      me.position.set(x,y,z);me.castShadow=true;grp.add(me);return me;};
+    let top=.2;
+    if(v.t==="cam"){put(new THREE.BoxGeometry(.36,.18,.2),col,0,0,0);
+      const ln=put(new THREE.CylinderGeometry(.07,.07,.1,16),0x0b1220,.22,0,0);ln.rotation.z=Math.PI/2;}
+    else if(v.t==="rdr"){put(new THREE.BoxGeometry(.14,.22,.05),col,0,0,0);}
+    else if(v.t==="ant"){put(new THREE.CylinderGeometry(.02,.03,.9,10),col,0,-.45,0);
+      put(new THREE.SphereGeometry(.07,14,10),col,0,0,0);top=.15;}
+    else if(v.t==="pc"){put(new THREE.BoxGeometry(.52,.34,.04),col,0,.17,0);
+      put(new THREE.BoxGeometry(.46,.28,.01),0x38bdf8,0,.17,.025);
+      put(new THREE.BoxGeometry(.05,.12,.05),col,0,-.06,0);top=.4;}
+    else if(v.t==="rtr"){put(new THREE.BoxGeometry(.32,.06,.2),col,0,0,0);
+      put(new THREE.CylinderGeometry(.012,.012,.26),0xe5e7eb,-.12,.16,0);
+      put(new THREE.CylinderGeometry(.012,.012,.26),0xe5e7eb,.12,.16,0);top=.35;}
+    if(v.code){const sp=t3chip([{t:v.code,c:"#e5e7eb"}]);
+      sp.position.set(pm.x,y0+top*S+.4,pm.z);sp.scale.set(sp.userData.asp*.62,.62,1);T3.root.add(sp);}});}
 function t3fit(){
   if(!T3.ok||!T3.center)return;
   const r=cv3.getBoundingClientRect();
@@ -2102,6 +2185,12 @@ function paint3D(g,q,o){const PR=!!o.pr;
       g.fillStyle="#1f63d6";g.fillRect(pp.x-5,pp.y-5,10,10);
       g.strokeStyle="#cfe0ff";g.lineWidth=1;g.strokeRect(pp.x-5,pp.y-5,10,10);});
   });
+  devs(q).forEach(v=>{const D=DEVK[v.t];if(!D)return;
+    const zz=q.zones.find(z=>z.id===v.zoneId),H=zz?h3Of(zz):(P.cfg.h3||6);
+    const y0=D.hf?H*D.hf:Math.min(D.hm,H*.9),pmt=m(v),pp=pr3(pmt.x,pmt.y,y0,o);
+    devIcon(g,v.t,pp.x,pp.y,13,1);
+    if(v.code){g.fillStyle=PR?"#1f2937":"#e5e7eb";g.font='9px "Segoe UI",Tahoma,sans-serif';
+      g.textAlign="left";g.fillText(v.code,pp.x+9,pp.y-6);g.textAlign="center";}});
   /* مقياس */
   const s0=pr3(0,0,0,o),s1=pr3(5,0,0,o);
   g.strokeStyle=PR?"#5d7688":"#8ea1b4";g.lineWidth=2;
@@ -2185,7 +2274,7 @@ function render(){
       ctx.lineTo(s.w.x2,s.w.y2);ctx.stroke();}
     if(s.kind==="door"){ctx.beginPath();ctx.moveTo(s.d.x1,s.d.y1);ctx.lineTo(s.d.x2,s.d.y2);ctx.stroke();}
     ctx.setLineDash([]);
-    const pt=s.kind==="vertex"?s.z.pts[s.i]:s.kind==="sensor"?s.s:s.kind==="gate"?s.g:null;
+    const pt=s.kind==="vertex"?s.z.pts[s.i]:s.kind==="sensor"?s.s:s.kind==="gate"?s.g:s.kind==="dev"?s.v:null;
     if(pt){const rr=(U.drag?15:11)/k;
       ctx.beginPath();ctx.arc(pt.x,pt.y,rr,0,7);ctx.stroke();
       if(U.drag){ctx.beginPath();ctx.arc(pt.x,pt.y,rr+5/k,0,7);
@@ -2202,7 +2291,13 @@ function render(){
       const a2=R2*.38;
       ctx.beginPath();ctx.moveTo(bx-a2,by-a2);ctx.lineTo(bx+a2,by+a2);
       ctx.moveTo(bx+a2,by-a2);ctx.lineTo(bx-a2,by+a2);ctx.stroke();
-      U.delBtn={x:bx,y:by,r:R2};}}
+      U.delBtn={x:bx,y:by,r:R2};
+      U.renBtn=null;
+      if(U.sel.kind==="dev"){const ry=Math.min(by+R2*2.5,r.height-R2-4);
+        ctx.beginPath();ctx.arc(bx,ry,R2,0,7);ctx.fillStyle="#1f63d6";ctx.fill();
+        ctx.fillStyle="#fff";ctx.font="700 "+Math.round(R2*1.15)+'px "Segoe UI",Tahoma,sans-serif';
+        ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("✎",bx,ry+.5);ctx.textBaseline="alphabetic";
+        U.renBtn={x:bx,y:ry,r:R2};}}}
   draftBar.classList.toggle("on",
     (U.tool==="poly"&&U.draft.length>0)||(U.tool==="wall"&&!!U.wlast));
   document.getElementById("emptyMsg").style.display=(IMG[q.id]||q.zones.length)?"none":"grid";
@@ -2639,6 +2734,9 @@ cv.addEventListener("pointerdown",e=>{
   const p=pos(e),w=toWorld(p.x,p.y),q=pl();
   if(U.tool==="edit"){
     if(U.sel&&U.delBtn&&Math.hypot(p.x-U.delBtn.x,p.y-U.delBtn.y)<U.delBtn.r+8){delSel();return;}
+    if(U.sel&&U.sel.kind==="dev"&&U.renBtn&&Math.hypot(p.x-U.renBtn.x,p.y-U.renBtn.y)<U.renBtn.r+8){
+      const dv=U.sel.v,nv=prompt(t("pDevName"),dv.name||dv.code||"");
+      if(nv!==null){snap();dv.name=nv.trim();refresh();}return;}
     const h=hitTest(q,w);
     if(h){
       const same=U.sel&&U.sel.kind==="zone"&&h.kind==="zone"&&U.sel.z===h.z;
@@ -2667,6 +2765,12 @@ cv.addEventListener("pointerdown",e=>{
     if(!ensureDraw(q))return;
     doorAt(q,w);return;}
   if(U.tool==="wand"){wandAt(w.x,w.y);return;}
+  if(DEVT[U.tool]){snap();const ty=DEVT[U.tool].k,L0=devs(q);
+    const hit=L0.find(v=>v.t===ty&&dist(v,w)<Math.max(14/V.k,symRad(q,V.k,false)*1.4));
+    if(hit)q.devices=L0.filter(v=>v!==hit);
+    else{const z=q.zones.find(z=>inPoly(w,z.pts));
+      L0.push({id:SEQ++,t:ty,x:w.x,y:w.y,zoneId:z?z.id:null,name:""});}
+    refresh();return;}
   if(U.tool==="sensor"){snap();
     const hit=q.sensors.find(s=>dist(s,w)<12/V.k);
     if(hit)q.sensors=q.sensors.filter(s=>s!==hit);
@@ -2758,8 +2862,11 @@ cv.addEventListener("pointerup",e=>{if(V3.on){v3up(e);return;}endP(e);});cv.addE
 cv.addEventListener("wheel",e=>{e.preventDefault();
   if(V3.on){V3.z=Math.min(3,Math.max(.4,V3.z*(e.deltaY<0?1.1:1/1.1)));render();return;}
   const p=pos(e);zoomAt(p.x,p.y,e.deltaY<0?1.12:1/1.12);},{passive:false});
-cv.addEventListener("dblclick",()=>{if(U.tool==="poly")closePoly();
-  if(U.tool==="wall"){U.wlast=U.wnow=null;render();}});
+cv.addEventListener("dblclick",e=>{if(U.tool==="poly")closePoly();
+  if(U.tool==="wall"){U.wlast=U.wnow=null;render();}
+  if(U.tool==="edit"&&!V3.on){const p=pos(e),h=hitTest(pl(),toWorld(p.x,p.y));
+    if(h&&h.kind==="dev"){U.drag=null;const v=prompt(t("pDevName"),h.v.name||h.v.code||"");
+      if(v!==null){snap();h.v.name=v.trim();refresh();}}}});
 window.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&manual.classList.contains("on")){closeManual();return;}
   if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT")return;
@@ -2832,6 +2939,7 @@ function selBBox(q,s){
   if(s.kind==="vertex")A.push(s.z.pts[s.i]);
   if(s.kind==="sensor")A.push(s.s);
   if(s.kind==="gate")A.push(s.g);
+  if(s.kind==="dev")A.push(s.v);
   if(s.kind==="wall"||s.kind==="wend"){A.push({x:s.w.x1,y:s.w.y1});A.push({x:s.w.x2,y:s.w.y2});}
   if(s.kind==="door"){A.push({x:s.d.x1,y:s.d.y1});A.push({x:s.d.x2,y:s.d.y2});}
   return A.length?bbox(A):null;}
@@ -2839,6 +2947,7 @@ function hitTest(q,w){
   const r=(COARSE?24:14)/V.k,sy=Math.max(r,symRad(q,V.k,false)*1.6);
   for(let i=q.sensors.length-1;i>=0;i--)if(dist(q.sensors[i],w)<sy)return{kind:"sensor",s:q.sensors[i]};
   for(let i=q.gateways.length-1;i>=0;i--)if(dist(q.gateways[i],w)<sy*1.2)return{kind:"gate",g:q.gateways[i]};
+  const DV=devs(q);for(let i=DV.length-1;i>=0;i--)if(dist(DV[i],w)<sy*1.4)return{kind:"dev",v:DV[i]};
   for(const z of q.zones)for(let i=0;i<z.pts.length;i++)
     if(dist(z.pts[i],w)<r)return{kind:"vertex",z,i};
   for(const wl of q.walls){
@@ -2858,6 +2967,7 @@ function delSel(){
   else if(s.kind==="vertex"&&s.z.pts.length>3)s.z.pts.splice(s.i,1);
   else if(s.kind==="sensor")q.sensors=q.sensors.filter(x=>x!==s.s);
   else if(s.kind==="gate")q.gateways=q.gateways.filter(x=>x!==s.g);
+  else if(s.kind==="dev")q.devices=devs(q).filter(x=>x!==s.v);
   else if(s.kind==="wall"||s.kind==="wend")q.walls=q.walls.filter(x=>x!==s.w);
   else if(s.kind==="door")q.doors=q.doors.filter(x=>x!==s.d);
   U.sel=null;U.drag=null;refresh();}
@@ -2869,9 +2979,11 @@ function dragMove(w,free){
     const np=snapPt(q,w,null,free,p0);p0.x=np.x;p0.y=np.y;}
   else if(d.kind==="zone"){d.h.z.pts.forEach(p=>{p.x+=dx;p.y+=dy;});
     q.sensors.forEach(s=>{if(s.zoneId===d.h.z.id){s.x+=dx;s.y+=dy;}});
-    q.gateways.forEach(g=>{if(g.zoneId===d.h.z.id){g.x+=dx;g.y+=dy;}});}
+    q.gateways.forEach(g=>{if(g.zoneId===d.h.z.id){g.x+=dx;g.y+=dy;}});
+    devs(q).forEach(v=>{if(v.zoneId===d.h.z.id){v.x+=dx;v.y+=dy;}});}
   else if(d.kind==="sensor"){d.h.s.x=w.x;d.h.s.y=w.y;}
   else if(d.kind==="gate"){d.h.g.x=w.x;d.h.g.y=w.y;}
+  else if(d.kind==="dev"){d.h.v.x=w.x;d.h.v.y=w.y;}
   else if(d.kind==="wend"){const wl=d.h.w;
     const np=snapPt(q,w,null,free,{wall:wl,end:d.h.end});
     if(d.h.end===1){wl.x1=np.x;wl.y1=np.y;}else{wl.x2=np.x;wl.y2=np.y;}}
@@ -2890,6 +3002,7 @@ function dragEnd(){
     if(!z&&s.zoneId){const old=q.zones.find(x=>x.id===s.zoneId);
       if(old){const np=nearest(samplePoly(old.pts,6),s);s.x=np.x;s.y=np.y;z=old;}}
     s.zoneId=z?z.id:null;}
+  if(d&&d.kind==="dev"){const v=d.h.v,z=q.zones.find(z=>inPoly(v,z.pts));v.zoneId=z?z.id:null;}
   refresh();}
 function askScale(){const px=dist(U.calib[0],U.calib[1]);
   const v=prompt(t("pScale"),"10");
@@ -3037,7 +3150,14 @@ function renumber(){
   q.zones.forEach((z,zi)=>{let n=0;
     q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>{n++;s.code=ar(zi+1)+"-"+ar(n);});});
   q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).forEach((s,i)=>s.code=t("orphan")+"-"+ar(i+1));
-  q.gateways.forEach((g,i)=>{g.code=t("gwPrefix")+ar(i+1);});}
+  q.gateways.forEach((g,i)=>{g.code=t("gwPrefix")+ar(i+1);});
+  const cnt={};devs(q).forEach(v=>{cnt[v.t]=(cnt[v.t]||0)+1;
+    v.code=(v.name&&v.name.trim())?v.name.trim():t(DEVK[v.t].lab)+" "+ar(cnt[v.t]);});
+  legendDev(q);}
+function legendDev(q){const el=document.getElementById("lgDev");if(!el)return;
+  const have={};devs(q).forEach(v=>{have[v.t]=1;});
+  el.innerHTML=Object.keys(DEVT).filter(k=>have[DEVT[k].k]).map(k=>
+    '<span><i class="sq" style="background:'+DEVT[k].c+'"></i><span>'+t(DEVT[k].lab)+'</span></span>').join("");}
 function instRows(){
   const q=pl(),out=[];
   q.zones.forEach(z=>{const b=bbox(z.pts);
@@ -3600,7 +3720,8 @@ function applyProject(o){
   SEQ=1;P.plans.forEach(q=>{SEQ=Math.max(SEQ,q.id+1);
     q.zones.forEach(z=>SEQ=Math.max(SEQ,z.id+1));
     q.sensors.forEach(s=>SEQ=Math.max(SEQ,s.id+1));
-    q.gateways.forEach(g=>SEQ=Math.max(SEQ,g.id+1));});
+    q.gateways.forEach(g=>SEQ=Math.max(SEQ,g.id+1));
+    devs(q).forEach(v=>SEQ=Math.max(SEQ,v.id+1));});
   if(P.lang&&P.lang!==L){L=P.lang;applyLang();}
   loadCfg();
   const q=pl();txtPlan.value=q.text||"";
@@ -4063,6 +4184,15 @@ The signature cell is the AFAQY authorized signatory, and a line states the copy
 of the manufacturer. Each maker has its own technician signature: picking TZONE or TOPFLYtech opens an upload box
 right under the button for that line's technician (image and printed name), saved on the device; the name is
 printed under the signature and recorded in the register.</p>
+
+<h3>16. More devices on the plan</h3>
+<p>Next to Sensor and Gateway the toolbar has <b>Camera</b>, <b>RFID Reader</b>, <b>Antenna</b>, <b>PC</b> and
+<b>Router</b>. Pick one and click the plan to drop it; click the same spot with the same tool to remove it.
+Each type is numbered on its own (Camera 1, Camera 2, Reader 1…) and the numbers show while <b>Numbers</b> is on.
+With <b>Edit</b> you drag a device anywhere, delete it with the red ×, or rename it with the blue ✎ (or a
+double-click) — leave the name empty to go back to the automatic number. Devices move with their room, are
+saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
+and the legend lists only the types on the plan.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
 certificate for a test that did not happen; validity is counted from the test date, not from the print
@@ -4317,6 +4447,14 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 ما الأرقام تتكرر. خانة الإمضاء للمفوّض من آفاقي، وسطر صغير بيقول إن النسخة صادرة من آفاقي بالنيابة عن المصنع.
 ولكل مصنع إمضاء فنيه: لما تختار تي زون أو توب فلاي بيفتح تحت الزرار على طول مربع ترفع فيه إمضاء الفني
 المسؤول عن الخط ده واسمه، وبيتحفظوا على الجهاز؛ والاسم بيتكتب تحت الإمضاء وبيتسجّل في الكشف.</p>
+
+<h3>١٦. أجهزة تانية على الرسمة</h3>
+<p>جنب «حساس» و«جيت واي» في شريط الأدوات بقى فيه <b>كاميرا</b> و<b>ريدر RFID</b> و<b>أنتنا</b> و<b>كمبيوتر</b>
+و<b>راوتر</b>. تختار واحد وتدوس على الرسمة فيتحط؛ ولو دوست على نفس المكان بنفس الأداة بيتشال. كل نوع
+بيترقّم لوحده (كاميرا ١، كاميرا ٢، ريدر ١…) والأرقام بتظهر طول ما زرار <b>الأرقام</b> شغال. بأداة <b>تعديل</b>
+بتسحب الجهاز لأي مكان، أو تمسحه بالـ × الأحمر، أو تسمّيه بالقلم ✎ الأزرق (أو دبل كليك) — ولو سيبت الاسم فاضي
+بيرجع للرقم الأوتوماتيكي. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
 بتتحسب من تاريخ الفحص مش من تاريخ الطباعة، والشهادة مكتوب عليها بوضوح إنها معايرة داخلية غير معتمدة
