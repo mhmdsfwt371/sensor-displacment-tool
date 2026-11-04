@@ -821,7 +821,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.10";
+const VERSION="6.11";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -2361,7 +2361,7 @@ function render(){
       ctx.moveTo(bx+a2,by-a2);ctx.lineTo(bx-a2,by+a2);ctx.stroke();
       U.delBtn={x:bx,y:by,r:R2};
       U.renBtn=null;
-      if(U.sel.kind==="dev"){const ry=Math.min(by+R2*2.5,r.height-R2-4);
+      if(infoOf(U.sel)){const ry=Math.min(by+R2*2.5,r.height-R2-4);
         ctx.beginPath();ctx.arc(bx,ry,R2,0,7);ctx.fillStyle="#1f63d6";ctx.fill();
         ctx.fillStyle="#fff";ctx.font="700 "+Math.round(R2*1.15)+'px "Segoe UI",Tahoma,sans-serif';
         ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("✎",bx,ry+.5);ctx.textBaseline="alphabetic";
@@ -2803,8 +2803,8 @@ cv.addEventListener("pointerdown",e=>{
   const p=pos(e),w=toWorld(p.x,p.y),q=pl();
   if(U.tool==="edit"){
     if(U.sel&&U.delBtn&&Math.hypot(p.x-U.delBtn.x,p.y-U.delBtn.y)<U.delBtn.r+8){delSel();return;}
-    if(U.sel&&U.sel.kind==="dev"&&U.renBtn&&Math.hypot(p.x-U.renBtn.x,p.y-U.renBtn.y)<U.renBtn.r+8){
-      openDevForm(U.sel.v);return;}
+    if(infoOf(U.sel)&&U.renBtn&&Math.hypot(p.x-U.renBtn.x,p.y-U.renBtn.y)<U.renBtn.r+8){
+      openDevForm(infoOf(U.sel));return;}
     const h=hitTest(q,w);
     if(h){
       const same=U.sel&&U.sel.kind==="zone"&&h.kind==="zone"&&U.sel.z===h.z;
@@ -2933,7 +2933,7 @@ cv.addEventListener("wheel",e=>{e.preventDefault();
 cv.addEventListener("dblclick",e=>{if(U.tool==="poly")closePoly();
   if(U.tool==="wall"){U.wlast=U.wnow=null;render();}
   if(U.tool==="edit"&&!V3.on){const p=pos(e),h=hitTest(pl(),toWorld(p.x,p.y));
-    if(h&&h.kind==="dev"){U.drag=null;openDevForm(h.v);}}});
+    if(h&&infoOf(h)){U.drag=null;openDevForm(infoOf(h));}}});
 window.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&manual.classList.contains("on")){closeManual();return;}
   if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT")return;
@@ -3224,7 +3224,7 @@ function renumber(){
   q.zones.forEach((z,zi)=>{let n=0;
     q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>{n++;s.code=ar(zi+1)+"-"+ar(n);});});
   q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).forEach((s,i)=>s.code=t("orphan")+"-"+ar(i+1));
-  q.gateways.forEach((g,i)=>{g.code=t("gwPrefix")+ar(i+1);});
+  q.gateways.forEach((g,i)=>{g.code=(g.label&&g.label.trim())?g.label.trim():t("gwPrefix")+ar(i+1);});
   devs(q).forEach(v=>{if(v.label===undefined){v.label=v.name||"";}});   /* ملفات ٦٫٦–٦٫٨: الاسم كان هو الرقم المكتوب */
   const lab=(v,n)=>{v.code=(v.label&&v.label.trim())?v.label.trim():t(DEVK[v.t].lab)+" "+ar(n);};
   if(q.split&&q.split.on){
@@ -3244,18 +3244,23 @@ function splitHandle(q,k){const b=contentBox(q)||(devs(q).length?bbox(devs(q)):{
   return{x:q.split.x,y:b.minY-36/k};}
 const IPV4=/^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}(:\d{1,5})?$/;
 function escH(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
-function devTipHtml(v){const D=DEVK[v.t],rows=[];
+function infoOf(sel){return !sel?null:sel.kind==="dev"?sel.v:sel.kind==="gate"?sel.g:null;}
+function infoMeta(o){const D=o&&o.t?DEVK[o.t]:null;
+  return D?{c:D.c,lab:t(D.lab)}:{c:"#1f63d6",lab:t("lgGate")};}
+function devTipHtml(v){const D=infoMeta(v),rows=[];
   const add=(k,val,cls)=>{if(val&&String(val).trim())rows.push('<div class="tr"><span class="tk">'+k+'</span><span class="'+cls+'"'+(cls==="tn"?' dir="auto"':'')+'>'+escH(String(val).trim())+'</span></div>');};
   add(t("dfName"),v.name,"tn");add("IP",v.ip,"tv");add(t("dfSn"),v.sn,"tv");
   if(v.side)add(t("tipSide"),t(v.side==="R"?"sideR":"sideL"),"tn");
-  return '<div class="th"><i style="background:'+D.c+'"></i><span>'+escH(v.code||t(D.lab))+'</span></div>'+
+  return '<div class="th"><i style="background:'+D.c+'"></i><span>'+escH(v.code||D.lab)+'</span></div>'+
     (rows.length?rows.join(""):'<div class="te">'+t("tipEmpty")+'</div>');}
 function devAt(q,w){const r=Math.max((COARSE?22:12)/V.k,symRad(q,V.k,false)*1.4),L=devs(q);
-  for(let i=L.length-1;i>=0;i--)if(dist(L[i],w)<r)return L[i];return null;}
+  for(let i=L.length-1;i>=0;i--)if(dist(L[i],w)<r)return L[i];
+  for(let i=q.gateways.length-1;i>=0;i--)if(dist(q.gateways[i],w)<r)return q.gateways[i];
+  return null;}
 function updTip(cx,cy){const el=document.getElementById("devTip");if(!el)return;
   let v=U.tipHover,ax=cx,ay=cy;
-  if(!v&&U.tool==="edit"&&U.sel&&U.sel.kind==="dev"&&!U.drag&&!V3.on&&devForm.hidden){
-    v=U.sel.v;const rc=cv.getBoundingClientRect();ax=rc.left+v.x*V.k+V.x;ay=rc.top+v.y*V.k+V.y+symRad(pl(),V.k,false)*V.k*1.4;}
+  if(!v&&U.tool==="edit"&&infoOf(U.sel)&&!U.drag&&!V3.on&&devForm.hidden){
+    v=infoOf(U.sel);const rc=cv.getBoundingClientRect();ax=rc.left+v.x*V.k+V.x;ay=rc.top+v.y*V.k+V.y+symRad(pl(),V.k,false)*V.k*1.4;}
   if(!v||V3.on){el.style.display="none";return;}
   el.innerHTML=devTipHtml(v);el.style.display="block";el.dir=L==="ar"?"rtl":"ltr";
   const w=el.offsetWidth,h=el.offsetHeight;let x=ax+14,y=ay+14;
@@ -3269,15 +3274,16 @@ cv.addEventListener("pointermove",e=>{
     cv.style.cursor=h&&h.kind==="split"?"ew-resize":"default";}});
 cv.addEventListener("pointerleave",()=>{U.tipHover=null;updTip();});
 let DF=null;
-function openDevForm(v){DF=v;const D=DEVK[v.t];U.tipHover=null;
-  dfTitle.textContent=t("dfTitle")+" — "+(v.code||t(D.lab));
+function openDevForm(v){DF=v;const D=infoMeta(v);U.tipHover=null;
+  dfTitle.textContent=t("dfTitle")+" — "+(v.code||D.lab);
   dfLab.value=v.label||"";dfName.value=v.name||"";dfIp.value=v.ip||"";dfSn.value=v.sn||"";
-  dfLab.placeholder=t(D.lab)+" "+ar(1);dfIpWarn.hidden=true;devForm.hidden=false;updTip();
+  dfLab.placeholder=v.t?D.lab+" "+ar(1):t("gwPrefix")+ar(1);dfIpWarn.hidden=true;devForm.hidden=false;updTip();
   setTimeout(()=>dfName.focus(),30);}
 function closeDevForm(){devForm.hidden=true;DF=null;render();}
 dfIp.addEventListener("input",()=>{const s=dfIp.value.trim();dfIpWarn.hidden=!s||IPV4.test(s);});
 dfSave.onclick=()=>{if(!DF)return;snap();
   DF.label=dfLab.value.trim();DF.name=dfName.value.trim();DF.ip=dfIp.value.trim();DF.sn=dfSn.value.trim();
+  if(!DF.t&&(DF.label||DF.name||DF.ip||DF.sn))DF.manual=true;
   devForm.hidden=true;DF=null;refresh();};
 dfCancel.onclick=closeDevForm;
 devForm.addEventListener("pointerdown",e=>{if(e.target===devForm)closeDevForm();});
@@ -4319,7 +4325,8 @@ printed under the signature and recorded in the register.</p>
 Each type is numbered on its own (Camera 1, Camera 2, Reader 1…) and the numbers show while <b>Numbers</b> is on.
 With <b>Edit</b> you drag a device anywhere, delete it with the red ×, or open its details with the blue ✎ (or a
 double-click): label on the plan (empty keeps the automatic number), name, IP and serial. Hovering any device
-with the mouse shows those details in a popup; on a phone they show under the selected device. Devices move with their room, are
+with the mouse shows those details in a popup; on a phone they show under the selected device. Gateways take
+the same details; a gateway you add details to is pinned, so automatic gateway planning keeps it in place. Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
@@ -4588,7 +4595,8 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 بيترقّم لوحده (كاميرا ١، كاميرا ٢، ريدر ١…) والأرقام بتظهر طول ما زرار <b>الأرقام</b> شغال. بأداة <b>تعديل</b>
 بتسحب الجهاز لأي مكان، أو تمسحه بالـ × الأحمر، أو تفتح بياناته بالقلم ✎ الأزرق (أو دبل كليك): الرقم على الرسمة
 (فاضي = الترقيم الأوتوماتيكي)، والاسم، والـ IP، والسيريال. ولما تقف بالماوس على أي جهاز البيانات دي بتظهر في
-بوب أب؛ وعلى الموبايل بتظهر تحت الجهاز لما تختاره. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+بوب أب؛ وعلى الموبايل بتظهر تحت الجهاز لما تختاره. والجيت واي ليه نفس البيانات؛ وأي جيت واي تكتب بياناته
+بيتثبّت، فالتوزيع الأوتوماتيكي للجيت واي ما يشيلوش ولا يحركه. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
 الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط، بأداة تعديل اسحبه من أي
