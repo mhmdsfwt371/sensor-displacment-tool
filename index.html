@@ -178,6 +178,29 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .trow>button{flex:1 0 auto}
 .trow>.sep,.trow>.kindsel,.trow>.symgrp{flex:0 0 auto}
 .symgrp{display:inline-flex;gap:2px;align-items:stretch}
+#devTip{position:fixed;z-index:70;pointer-events:none;display:none;max-width:290px;
+  background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;
+  padding:9px 11px;font-size:12.5px;line-height:1.6;box-shadow:0 8px 22px rgba(0,0,0,.35)}
+#devTip .th{display:flex;align-items:center;gap:7px;font-weight:700;margin-bottom:3px}
+#devTip .th i{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+#devTip .tr{display:flex;gap:8px;justify-content:space-between}
+#devTip .tk{color:var(--muted)}
+#devTip .tv{direction:ltr;unicode-bidi:isolate;font-family:Consolas,Menlo,monospace;font-size:12px}
+#devTip .tn{unicode-bidi:isolate}
+#devTip .te{color:var(--muted);font-size:11.5px}
+#devForm{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px}
+#devForm[hidden]{display:none}
+#devForm .dfCard{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;
+  width:min(360px,100%);padding:16px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+#devForm h3{margin:0 0 12px;font-size:15px}
+#devForm label{display:block;margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+#devForm input{display:block;width:100%;margin-top:4px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);
+  background:var(--field);color:var(--text);font:inherit;font-size:14px;box-sizing:border-box}
+#devForm .dfHint{margin:3px 0 0;font-size:11.5px;color:var(--muted)}
+#devForm .dfWarn{color:#f59e0b}
+#devForm .dfBtns{display:flex;gap:8px;margin-top:14px}
+#devForm .dfBtns button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);font:inherit;cursor:pointer}
+#devForm #dfSave{background:#1f63d6;border-color:#1f63d6;color:#fff}
 .symgrp button{min-width:30px;font-weight:700;font-size:15px!important;padding:6px 8px!important}
 .trow+.trow{border-top:1px solid var(--line);background:rgba(0,0,0,.10)}
 .tools button{padding:8px 10px;font-size:12.5px;border:1px solid transparent;background:transparent;
@@ -765,6 +788,19 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
   </main>
   <button class="mapfab" id="mapFab"><span data-i="bOpenMap">افتح الرسمة</span><em id="fabMeta"></em></button>
 </div>
+<div id="devTip" role="tooltip"></div>
+<div id="devForm" hidden>
+  <div class="dfCard" role="dialog" aria-modal="true" aria-labelledby="dfTitle">
+    <h3 id="dfTitle"></h3>
+    <label><span data-i="dfLabel">الرقم على الرسمة</span><input id="dfLab" type="text" autocomplete="off"></label>
+    <p class="dfHint" data-i="dfLabelHint">سيبه فاضي عشان يفضل الترقيم الأوتوماتيكي</p>
+    <label><span data-i="dfName">الاسم</span><input id="dfName" type="text" autocomplete="off"></label>
+    <label><span>IP</span><input id="dfIp" type="text" dir="ltr" inputmode="decimal" autocomplete="off" placeholder="192.168.1.10"></label>
+    <p class="dfHint dfWarn" id="dfIpWarn" data-i="dfIpWarn" hidden>شكل العنوان ده مش IP عادي — اتأكد منه</p>
+    <label><span data-i="dfSn">السيريال</span><input id="dfSn" type="text" dir="ltr" autocomplete="off"></label>
+    <div class="dfBtns"><button id="dfSave" type="button" data-i="dfSave">حفظ</button><button id="dfCancel" type="button" data-i="dfCancel">إلغاء</button></div>
+  </div>
+</div>
 <div id="print"></div>
 
 <div class="updbar" id="updBar">
@@ -785,7 +821,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.8";
+const VERSION="6.9";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -911,6 +947,9 @@ tCam:"كاميرا",tRdr:"ريدر RFID",tAnt:"أنتنا",tPc:"كمبيوتر",
 dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",dvRtr:"راوتر",
 pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
 tSplit:"يمين / يسار",tSymM:"−",tSymP:"+",sideR:"يمين",sideL:"يسار",
+dfLabel:"الرقم على الرسمة",dfLabelHint:"سيبه فاضي عشان يفضل الترقيم الأوتوماتيكي",dfName:"الاسم",dfSn:"السيريال",
+dfSave:"حفظ",dfCancel:"إلغاء",dfIpWarn:"شكل العنوان ده مش IP عادي — اتأكد منه",dfTitle:"بيانات",
+tipEmpty:"مافيش بيانات لسه — اختاره بأداة تعديل ودوس ✎",tipSide:"الناحية",
 tUndo:"تراجع",tCover:"التغطية",tNums:"الأرقام",tFit:"ضبط",
 tNearWall:"دوس على حائط أو ضلع غرفة",aDrawOnly:"الحائط والباب للرسم من الصفر — مش فوق صورة",
 dbDone:"خلاص",dbCancel:"إلغاء",
@@ -1079,6 +1118,9 @@ tCam:"Camera",tRdr:"RFID Reader",tAnt:"Antenna",tPc:"PC",tRtr:"Router",
 dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
 pDevName:"Label for this device (leave empty to go back to automatic numbering):",
 tSplit:"Right / Left",tSymM:"−",tSymP:"+",sideR:"Right",sideL:"Left",
+dfLabel:"Label on the plan",dfLabelHint:"Leave empty to keep the automatic number",dfName:"Name",dfSn:"Serial",
+dfSave:"Save",dfCancel:"Cancel",dfIpWarn:"This does not look like a regular IP address — please check it",dfTitle:"Details",
+tipEmpty:"No details yet — select it with Edit and press ✎",tipSide:"Side",
 tUndo:"Undo",tCover:"Coverage",tNums:"Labels",tFit:"Fit",
 tNearWall:"Click on a wall or room edge",aDrawOnly:"Wall and door are for drawing from scratch — not over an image",
 dbDone:"Done",dbCancel:"Cancel",
@@ -2324,6 +2366,7 @@ function render(){
         ctx.fillStyle="#fff";ctx.font="700 "+Math.round(R2*1.15)+'px "Segoe UI",Tahoma,sans-serif';
         ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("✎",bx,ry+.5);ctx.textBaseline="alphabetic";
         U.renBtn={x:bx,y:ry,r:R2};}}}
+  updTip();
   draftBar.classList.toggle("on",
     (U.tool==="poly"&&U.draft.length>0)||(U.tool==="wall"&&!!U.wlast));
   document.getElementById("emptyMsg").style.display=(IMG[q.id]||q.zones.length)?"none":"grid";
@@ -2761,8 +2804,7 @@ cv.addEventListener("pointerdown",e=>{
   if(U.tool==="edit"){
     if(U.sel&&U.delBtn&&Math.hypot(p.x-U.delBtn.x,p.y-U.delBtn.y)<U.delBtn.r+8){delSel();return;}
     if(U.sel&&U.sel.kind==="dev"&&U.renBtn&&Math.hypot(p.x-U.renBtn.x,p.y-U.renBtn.y)<U.renBtn.r+8){
-      const dv=U.sel.v,nv=prompt(t("pDevName"),dv.name||dv.code||"");
-      if(nv!==null){snap();dv.name=nv.trim();refresh();}return;}
+      openDevForm(U.sel.v);return;}
     const h=hitTest(q,w);
     if(h){
       const same=U.sel&&U.sel.kind==="zone"&&h.kind==="zone"&&U.sel.z===h.z;
@@ -2795,7 +2837,7 @@ cv.addEventListener("pointerdown",e=>{
     const hit=L0.find(v=>v.t===ty&&dist(v,w)<Math.max(14/V.k,symRad(q,V.k,false)*1.4));
     if(hit)q.devices=L0.filter(v=>v!==hit);
     else{const z=q.zones.find(z=>inPoly(w,z.pts));
-      L0.push({id:SEQ++,t:ty,x:w.x,y:w.y,zoneId:z?z.id:null,name:""});}
+      L0.push({id:SEQ++,t:ty,x:w.x,y:w.y,zoneId:z?z.id:null,label:"",name:"",ip:"",sn:""});}
     refresh();return;}
   if(U.tool==="sensor"){snap();
     const hit=q.sensors.find(s=>dist(s,w)<12/V.k);
@@ -2891,8 +2933,7 @@ cv.addEventListener("wheel",e=>{e.preventDefault();
 cv.addEventListener("dblclick",e=>{if(U.tool==="poly")closePoly();
   if(U.tool==="wall"){U.wlast=U.wnow=null;render();}
   if(U.tool==="edit"&&!V3.on){const p=pos(e),h=hitTest(pl(),toWorld(p.x,p.y));
-    if(h&&h.kind==="dev"){U.drag=null;const v=prompt(t("pDevName"),h.v.name||h.v.code||"");
-      if(v!==null){snap();h.v.name=v.trim();refresh();}}}});
+    if(h&&h.kind==="dev"){U.drag=null;openDevForm(h.v);}}});
 window.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&manual.classList.contains("on")){closeManual();return;}
   if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT")return;
@@ -3181,7 +3222,8 @@ function renumber(){
     q.sensors.filter(s=>s.zoneId===z.id).forEach(s=>{n++;s.code=ar(zi+1)+"-"+ar(n);});});
   q.sensors.filter(s=>!q.zones.some(z=>z.id===s.zoneId)).forEach((s,i)=>s.code=t("orphan")+"-"+ar(i+1));
   q.gateways.forEach((g,i)=>{g.code=t("gwPrefix")+ar(i+1);});
-  const lab=(v,n)=>{v.code=(v.name&&v.name.trim())?v.name.trim():t(DEVK[v.t].lab)+" "+ar(n);};
+  devs(q).forEach(v=>{if(v.label===undefined){v.label=v.name||"";}});   /* ملفات ٦٫٦–٦٫٨: الاسم كان هو الرقم المكتوب */
+  const lab=(v,n)=>{v.code=(v.label&&v.label.trim())?v.label.trim():t(DEVK[v.t].lab)+" "+ar(n);};
   if(q.split&&q.split.on){
     /* بترتيب الإضافة: أول جهاز اتحط في الناحية = ١، واللي بعده ٢… الجديد دايمًا بياخد الرقم اللي بعده */
     const order=(a,c)=>a.id-c.id;
@@ -3197,6 +3239,44 @@ function splitToggle(){const q=pl();snap();
   btnSplit.classList.toggle("on",!!(q.split&&q.split.on));refresh();}
 function splitHandle(q,k){const b=contentBox(q)||(devs(q).length?bbox(devs(q)):{minY:0});
   return{x:q.split.x,y:b.minY-36/k};}
+const IPV4=/^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}(:\d{1,5})?$/;
+function escH(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function devTipHtml(v){const D=DEVK[v.t],rows=[];
+  const add=(k,val,cls)=>{if(val&&String(val).trim())rows.push('<div class="tr"><span class="tk">'+k+'</span><span class="'+cls+'"'+(cls==="tn"?' dir="auto"':'')+'>'+escH(String(val).trim())+'</span></div>');};
+  add(t("dfName"),v.name,"tn");add("IP",v.ip,"tv");add(t("dfSn"),v.sn,"tv");
+  if(v.side)add(t("tipSide"),t(v.side==="R"?"sideR":"sideL"),"tn");
+  return '<div class="th"><i style="background:'+D.c+'"></i><span>'+escH(v.code||t(D.lab))+'</span></div>'+
+    (rows.length?rows.join(""):'<div class="te">'+t("tipEmpty")+'</div>');}
+function devAt(q,w){const r=Math.max((COARSE?22:12)/V.k,symRad(q,V.k,false)*1.4),L=devs(q);
+  for(let i=L.length-1;i>=0;i--)if(dist(L[i],w)<r)return L[i];return null;}
+function updTip(cx,cy){const el=document.getElementById("devTip");if(!el)return;
+  let v=U.tipHover,ax=cx,ay=cy;
+  if(!v&&U.tool==="edit"&&U.sel&&U.sel.kind==="dev"&&!U.drag&&!V3.on&&devForm.hidden){
+    v=U.sel.v;const rc=cv.getBoundingClientRect();ax=rc.left+v.x*V.k+V.x;ay=rc.top+v.y*V.k+V.y+symRad(pl(),V.k,false)*V.k*1.4;}
+  if(!v||V3.on){el.style.display="none";return;}
+  el.innerHTML=devTipHtml(v);el.style.display="block";el.dir=L==="ar"?"rtl":"ltr";
+  const w=el.offsetWidth,h=el.offsetHeight;let x=ax+14,y=ay+14;
+  if(x+w>innerWidth-8)x=ax-w-14;if(y+h>innerHeight-8)y=ay-h-14;
+  el.style.left=Math.max(8,x)+"px";el.style.top=Math.max(8,y)+"px";}
+cv.addEventListener("pointermove",e=>{
+  if(V3.on||e.pointerType!=="mouse"||e.buttons){if(U.tipHover){U.tipHover=null;updTip();}return;}
+  const r=cv.getBoundingClientRect(),v=devAt(pl(),toWorld(e.clientX-r.left,e.clientY-r.top));
+  U.tipHover=v;updTip(e.clientX,e.clientY);});
+cv.addEventListener("pointerleave",()=>{U.tipHover=null;updTip();});
+let DF=null;
+function openDevForm(v){DF=v;const D=DEVK[v.t];U.tipHover=null;
+  dfTitle.textContent=t("dfTitle")+" — "+(v.code||t(D.lab));
+  dfLab.value=v.label||"";dfName.value=v.name||"";dfIp.value=v.ip||"";dfSn.value=v.sn||"";
+  dfLab.placeholder=t(D.lab)+" "+ar(1);dfIpWarn.hidden=true;devForm.hidden=false;updTip();
+  setTimeout(()=>dfName.focus(),30);}
+function closeDevForm(){devForm.hidden=true;DF=null;render();}
+dfIp.addEventListener("input",()=>{const s=dfIp.value.trim();dfIpWarn.hidden=!s||IPV4.test(s);});
+dfSave.onclick=()=>{if(!DF)return;snap();
+  DF.label=dfLab.value.trim();DF.name=dfName.value.trim();DF.ip=dfIp.value.trim();DF.sn=dfSn.value.trim();
+  devForm.hidden=true;DF=null;refresh();};
+dfCancel.onclick=closeDevForm;
+devForm.addEventListener("pointerdown",e=>{if(e.target===devForm)closeDevForm();});
+devForm.addEventListener("keydown",e=>{if(e.key==="Escape")closeDevForm();if(e.key==="Enter"){e.preventDefault();dfSave.click();}});
 function legendDev(q){const el=document.getElementById("lgDev");if(!el)return;
   const have={};devs(q).forEach(v=>{have[v.t]=1;});
   el.innerHTML=Object.keys(DEVT).filter(k=>have[DEVT[k].k]).map(k=>
@@ -4232,8 +4312,9 @@ printed under the signature and recorded in the register.</p>
 <p>Next to Sensor and Gateway the toolbar has <b>Camera</b>, <b>RFID Reader</b>, <b>Antenna</b>, <b>PC</b> and
 <b>Router</b>. Pick one and click the plan to drop it; click the same spot with the same tool to remove it.
 Each type is numbered on its own (Camera 1, Camera 2, Reader 1…) and the numbers show while <b>Numbers</b> is on.
-With <b>Edit</b> you drag a device anywhere, delete it with the red ×, or rename it with the blue ✎ (or a
-double-click) — leave the name empty to go back to the automatic number. Devices move with their room, are
+With <b>Edit</b> you drag a device anywhere, delete it with the red ×, or open its details with the blue ✎ (or a
+double-click): label on the plan (empty keeps the automatic number), name, IP and serial. Hovering any device
+with the mouse shows those details in a popup; on a phone they show under the selected device. Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
@@ -4500,8 +4581,9 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 <p>جنب «حساس» و«جيت واي» في شريط الأدوات بقى فيه <b>كاميرا</b> و<b>ريدر RFID</b> و<b>أنتنا</b> و<b>كمبيوتر</b>
 و<b>راوتر</b>. تختار واحد وتدوس على الرسمة فيتحط؛ ولو دوست على نفس المكان بنفس الأداة بيتشال. كل نوع
 بيترقّم لوحده (كاميرا ١، كاميرا ٢، ريدر ١…) والأرقام بتظهر طول ما زرار <b>الأرقام</b> شغال. بأداة <b>تعديل</b>
-بتسحب الجهاز لأي مكان، أو تمسحه بالـ × الأحمر، أو تسمّيه بالقلم ✎ الأزرق (أو دبل كليك) — ولو سيبت الاسم فاضي
-بيرجع للرقم الأوتوماتيكي. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+بتسحب الجهاز لأي مكان، أو تمسحه بالـ × الأحمر، أو تفتح بياناته بالقلم ✎ الأزرق (أو دبل كليك): الرقم على الرسمة
+(فاضي = الترقيم الأوتوماتيكي)، والاسم، والـ IP، والسيريال. ولما تقف بالماوس على أي جهاز البيانات دي بتظهر في
+بوب أب؛ وعلى الموبايل بتظهر تحت الجهاز لما تختاره. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
 الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط اسحب الدايرة الصفرا ↔ اللي فوقه بأداة
