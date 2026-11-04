@@ -821,7 +821,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.9";
+const VERSION="6.10";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -3026,6 +3026,9 @@ function hitTest(q,w){
     if(dist(m,w)<Math.max(r,.5*q.scale))return{kind:"door",d};}
   for(const wl of q.walls){const pr=projSeg(w,{x:wl.x1,y:wl.y1},{x:wl.x2,y:wl.y2});
     if(pr.d<r)return{kind:"wall",w:wl};}
+  if(q.split&&q.split.on){const bb=contentBox(q)||(devs(q).length?bbox(devs(q)):null);
+    if(bb&&Math.abs(w.x-q.split.x)<(COARSE?14:8)/V.k&&w.y>bb.minY-44/V.k&&w.y<bb.maxY+20/V.k)
+      return{kind:"split",p:{x:q.split.x,y:w.y}};}
   let bz=null,ba=1e18;
   for(const z of q.zones)if(inPoly(w,z.pts)){const a=polyArea(z.pts);if(a<ba){ba=a;bz=z;}}
   return bz?{kind:"zone",z:bz}:null;}
@@ -3260,8 +3263,10 @@ function updTip(cx,cy){const el=document.getElementById("devTip");if(!el)return;
   el.style.left=Math.max(8,x)+"px";el.style.top=Math.max(8,y)+"px";}
 cv.addEventListener("pointermove",e=>{
   if(V3.on||e.pointerType!=="mouse"||e.buttons){if(U.tipHover){U.tipHover=null;updTip();}return;}
-  const r=cv.getBoundingClientRect(),v=devAt(pl(),toWorld(e.clientX-r.left,e.clientY-r.top));
-  U.tipHover=v;updTip(e.clientX,e.clientY);});
+  const r=cv.getBoundingClientRect(),wq=toWorld(e.clientX-r.left,e.clientY-r.top),q=pl(),v=devAt(q,wq);
+  U.tipHover=v;updTip(e.clientX,e.clientY);
+  if(U.tool==="edit"&&!U.drag&&!U.panLast){const h=!v&&q.split&&q.split.on?hitTest(q,wq):null;
+    cv.style.cursor=h&&h.kind==="split"?"ew-resize":"default";}});
 cv.addEventListener("pointerleave",()=>{U.tipHover=null;updTip();});
 let DF=null;
 function openDevForm(v){DF=v;const D=DEVK[v.t];U.tipHover=null;
@@ -4319,8 +4324,8 @@ saved in the project file, undo like everything else, appear in 3D at a typical 
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
 own, per type, in the order they were added — the first one placed on a side is 1 and a new one always takes the
-next number. Drag the yellow ↔ handle above the divider
-with Edit to move the split; press the button again to go back to one count for the whole plan. The <b>−</b> and
+next number. With Edit, drag the divider from anywhere along it (or by the yellow ↔ handle) to put the split exactly
+where you want — it does not have to be the middle; press the button again to go back to one count for the whole plan. The <b>−</b> and
 <b>+</b> buttons next to it make every symbol on the plan smaller or larger.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
 certificate, and readings at least at one point — is rejected with the reason shown. The tool never prints a
@@ -4586,8 +4591,8 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 بوب أب؛ وعلى الموبايل بتظهر تحت الجهاز لما تختاره. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
-الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط اسحب الدايرة الصفرا ↔ اللي فوقه بأداة
-تعديل؛ ولو دوست على الزرار تاني بيرجع عدّ واحد للرسمة كلها. وزرارين <b>−</b> و<b>+</b> جنبه بيصغّروا أو يكبّروا
+الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط، بأداة تعديل اسحبه من أي
+حتة فيه (أو من الدايرة الصفرا ↔ اللي فوقه) وحطه في المكان اللي إنت عايزه بالظبط — مش لازم في النص؛ ولو دوست على الزرار تاني بيرجع عدّ واحد للرسمة كلها. وزرارين <b>−</b> و<b>+</b> جنبه بيصغّروا أو يكبّروا
 كل الرموز على الرسمة.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
 نقطة واحدة على الأقل — بيترفض ويتكتب السبب. الأداة عمرها ما هتطبع شهادة لفحص ما حصلش؛ الصلاحية
