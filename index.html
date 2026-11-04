@@ -785,7 +785,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.7";
+const VERSION="6.8";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -3183,10 +3183,8 @@ function renumber(){
   q.gateways.forEach((g,i)=>{g.code=t("gwPrefix")+ar(i+1);});
   const lab=(v,n)=>{v.code=(v.name&&v.name.trim())?v.name.trim():t(DEVK[v.t].lab)+" "+ar(n);};
   if(q.split&&q.split.on){
-    const b=contentBox(q)||bbox(devs(q).length?devs(q):[{x:0,y:0},{x:1,y:1}]);
-    const tol=Math.max(1,(b.maxY-b.minY)*.03);
-    /* ترتيب القراءة: من فوق لتحت، وفي نفس الصف من اليمين للشمال */
-    const order=(a,c)=>Math.abs(a.y-c.y)>tol?a.y-c.y:c.x-a.x;
+    /* بترتيب الإضافة: أول جهاز اتحط في الناحية = ١، واللي بعده ٢… الجديد دايمًا بياخد الرقم اللي بعده */
+    const order=(a,c)=>a.id-c.id;
     [true,false].forEach(right=>{const side=devs(q).filter(v=>(v.x>=q.split.x)===right);
       const byT={};side.forEach(v=>{(byT[v.t]=byT[v.t]||[]).push(v);});
       Object.keys(byT).forEach(k=>byT[k].sort(order).forEach((v,i)=>{lab(v,i+1);v.side=right?"R":"L";}));});}
@@ -4239,7 +4237,8 @@ double-click) — leave the name empty to go back to the automatic number. Devic
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
-own, per type, in reading order (top to bottom, then right to left). Drag the yellow ↔ handle above the divider
+own, per type, in the order they were added — the first one placed on a side is 1 and a new one always takes the
+next number. Drag the yellow ↔ handle above the divider
 with Edit to move the split; press the button again to go back to one count for the whole plan. The <b>−</b> and
 <b>+</b> buttons next to it make every symbol on the plan smaller or larger.</p>
 <blockquote>A row without real test data — test date, technician, reference instrument with its own
@@ -4505,7 +4504,7 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 بيرجع للرقم الأوتوماتيكي. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
-القراءة (من فوق لتحت، وفي نفس الصف من اليمين للشمال). عشان تحرك الخط اسحب الدايرة الصفرا ↔ اللي فوقه بأداة
+الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط اسحب الدايرة الصفرا ↔ اللي فوقه بأداة
 تعديل؛ ولو دوست على الزرار تاني بيرجع عدّ واحد للرسمة كلها. وزرارين <b>−</b> و<b>+</b> جنبه بيصغّروا أو يكبّروا
 كل الرموز على الرسمة.</p>
 <blockquote>أي صف من غير بيانات فحص حقيقية — تاريخ الفحص، الفني، جهاز المرجع بشهادته، وقراءات عند
