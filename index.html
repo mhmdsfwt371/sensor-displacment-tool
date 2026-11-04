@@ -464,6 +464,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
           <div id="saveMenu">
             <button id="mnuPdf"><b data-i="mPdf">PDF — ملف للطباعة</b><i data-i="mPdfS">صفحتين: المسقط + المجسم</i></button>
             <button id="mnuPng"><b data-i="mPng">صورة PNG</b><i data-i="mPngS">للواتساب والعروض</i></button>
+            <button id="mnuXlsx"><b data-i="mXlsx">سجل الأجهزة — إكسل</b><i data-i="mXlsxS">الاسم والـ IP والسيريال لكل جهاز</i></button>
             <button id="mnuJson"><b data-i="mJson">ملف المشروع</b><i data-i="mJsonS">عشان تفتحه وتكمّل عليه</i></button>
           </div>
         </span>
@@ -821,7 +822,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.11";
+const VERSION="6.12";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -840,7 +841,10 @@ const ALLOW_OFFLINE=true;   // خلّيها false لو عايز الدخول إ�
 let L="ar";
 const DICT={
 ar:{
-appTitle:"توزيع الحساسات",mPdf:"PDF — ملف للطباعة",mPdfS:"صفحتين: المسقط + المجسم",
+appTitle:"توزيع الحساسات",mPdf:"PDF — ملف للطباعة",mPdfS:"المسقط + المجسم + سجل الأجهزة",
+mXlsx:"سجل الأجهزة — إكسل",mXlsxS:"الاسم والـ IP والسيريال لكل جهاز",
+rgTitle:"سجل الأجهزة",rgNo:"م",rgType:"النوع",rgLabel:"الرقم",rgName:"الاسم",rgSn:"السيريال",rgSide:"الناحية",rgRoom:"الغرفة",
+rgCount:"العدد",rgTotal:"الإجمالي",rgEmpty:"مافيش أجهزة على الرسمة لسه",rgPage:"صفحة",rgSum:"ملخص",rgDev:"الأجهزة",rgWait:"بيجهّز ملف الإكسل…",
 mPng:"صورة PNG",mPngS:"للواتساب والعروض",
 mJson:"ملف المشروع",mJsonS:"عشان تفتحه وتكمّل عليه",
 bCert:"شهادات",
@@ -1011,7 +1015,10 @@ aTooBig:"الملف كبير على السحابة — استعمل «تحويل
 aNoCloud:"السحابة مش متظبطة"
 },
 en:{
-appTitle:"Sensor Displacement",mPdf:"PDF — print file",mPdfS:"Two pages: plan + 3D",
+appTitle:"Sensor Displacement",mPdf:"PDF — print file",mPdfS:"Plan + 3D + device register",
+mXlsx:"Device register — Excel",mXlsxS:"Name, IP and serial of every device",
+rgTitle:"Device register",rgNo:"#",rgType:"Type",rgLabel:"Label",rgName:"Name",rgSn:"Serial",rgSide:"Side",rgRoom:"Room",
+rgCount:"Count",rgTotal:"Total",rgEmpty:"No devices on the plan yet",rgPage:"Page",rgSum:"Summary",rgDev:"Devices",rgWait:"Preparing the Excel file…",
 mPng:"PNG image",mPngS:"For WhatsApp and slides",
 mJson:"Project file",mJsonS:"To reopen and continue",
 bCert:"Certificates",
@@ -2591,6 +2598,90 @@ function buildPdf(cs,title,b64){
   parts.forEach(u=>{out.set(u,o2);o2+=u.length;});
   return out;}
 
+/* ================= سجل الأجهزة: صفحات في الـ PDF + ملف إكسل ================= */
+const REG_ORDER=["gate","cam","rdr","ant","pc","rtr"];
+function regRows(q){
+  const zn=id=>{const z=q.zones.find(z=>z.id===id);return z?(z.name||""):"";};
+  const sideOf=o=>q.split&&q.split.on?(o.x>=q.split.x?"R":"L"):"";
+  const rows=[];
+  q.gateways.forEach(g=>rows.push({k:"gate",o:g,c:"#1f63d6",type:t("lgGate"),label:g.code||"",
+    name:g.name||"",ip:g.ip||"",sn:g.sn||"",side:sideOf(g),room:zn(g.zoneId)}));
+  devs(q).forEach(v=>{const D=DEVK[v.t];if(!D)return;rows.push({k:v.t,o:v,c:D.c,type:t(D.lab),label:v.code||"",
+    name:v.name||"",ip:v.ip||"",sn:v.sn||"",side:v.side||sideOf(v),room:zn(v.zoneId)});});
+  const so={R:0,L:1,"":2};
+  rows.sort((a,b)=>REG_ORDER.indexOf(a.k)-REG_ORDER.indexOf(b.k)||so[a.side]-so[b.side]||a.o.id-b.o.id);
+  rows.forEach(r=>{r.sideTxt=r.side?t(r.side==="R"?"sideR":"sideL"):"";});
+  return rows;}
+function fitTxt(g,s,w){s=String(s||"");if(g.measureText(s).width<=w)return s;
+  while(s.length>1&&g.measureText(s+"…").width>w)s=s.slice(0,-1);return s+"…";}
+function regSheets(q){
+  const rows=regRows(q);if(!rows.length)return [];
+  const W=2400,H=1697,M=90,RH=46,HH=56,TOP=M+150,rtl=L==="ar";
+  const per=Math.floor((H-TOP-HH-M-40)/RH),pages=Math.ceil(rows.length/per),out=[];
+  /* عرض الأعمدة بالترتيب المنطقي: م، النوع، الرقم، الاسم، IP، السيريال، الناحية، الغرفة */
+  const cols=[{h:t("rgNo"),w:.05,f:(r,i)=>ar(i+1),a:"c"},{h:t("rgType"),w:.13,f:r=>r.type,a:"s",dot:1},
+    {h:t("rgLabel"),w:.11,f:r=>r.label,a:"c"},{h:t("rgName"),w:.2,f:r=>r.name,a:"s"},
+    {h:"IP",w:.15,f:r=>r.ip,a:"c",ltr:1},{h:t("rgSn"),w:.17,f:r=>r.sn,a:"c",ltr:1},
+    {h:t("rgSide"),w:.07,f:r=>r.sideTxt,a:"c"},{h:t("rgRoom"),w:.12,f:r=>r.room,a:"s"}];
+  const TW=W-M*2;let acc=0;cols.forEach(c=>{c.pw=c.w*TW;c.x0=rtl?W-M-acc-c.pw:M+acc;acc+=c.pw;});
+  const cnt={};rows.forEach(r=>{cnt[r.type]=(cnt[r.type]||0)+1;});
+  const sum=Object.keys(cnt).map(k=>k+" "+ar(cnt[k])).join("   ·   ");
+  for(let pg=0;pg<pages;pg++){
+    const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
+    g.fillStyle="#ffffff";g.fillRect(0,0,W,H);g.direction=rtl?"rtl":"ltr";
+    const font=(w,s)=>w+" "+s+'px "Segoe UI",Tahoma,Arial,sans-serif';
+    const xs=rtl?W-M:M,al=rtl?"right":"left";
+    g.fillStyle="#14213d";g.font=font(700,50);g.textAlign=al;g.textBaseline="alphabetic";
+    g.fillText(t("rgTitle")+(P.name?" — "+P.name:""),xs,M+46);
+    g.fillStyle="#5b6b7c";g.font=font(400,26);
+    const meta=[P.client,P.ref,today()].filter(Boolean).join("   ·   ");
+    g.fillText(meta,xs,M+92);g.fillText(sum+"   ·   "+t("rgTotal")+" "+ar(rows.length),xs,M+130);
+    let y=TOP;
+    g.fillStyle="#14213d";g.fillRect(M,y,TW,HH);
+    g.fillStyle="#ffffff";g.font=font(700,25);g.textBaseline="middle";
+    cols.forEach(cl=>{g.textAlign="center";g.direction=rtl?"rtl":"ltr";g.fillText(cl.h,cl.x0+cl.pw/2,y+HH/2);});
+    y+=HH;
+    const slice=rows.slice(pg*per,(pg+1)*per);
+    slice.forEach((r,ri)=>{const i=pg*per+ri;
+      if(ri%2){g.fillStyle="#f3f6fa";g.fillRect(M,y,TW,RH);}
+      g.strokeStyle="#dbe3ec";g.lineWidth=1.2;g.beginPath();g.moveTo(M,y+RH);g.lineTo(M+TW,y+RH);g.stroke();
+      g.font=font(400,24);
+      cols.forEach(cl=>{let s=cl.f(r,i)||"";const pad=14,inner=cl.pw-pad*2-(cl.dot?30:0);
+        g.direction=cl.ltr?"ltr":(rtl?"rtl":"ltr");s=fitTxt(g,s,inner);g.fillStyle="#16212c";
+        let tx,ta;
+        if(cl.a==="c"){tx=cl.x0+cl.pw/2;ta="center";}
+        else if(rtl){tx=cl.x0+cl.pw-pad-(cl.dot?30:0);ta="right";}
+        else{tx=cl.x0+pad+(cl.dot?30:0);ta="left";}
+        if(cl.dot){const dx=rtl?cl.x0+cl.pw-pad-18:cl.x0+pad;g.fillStyle=r.c;
+          rrect(g,dx,y+RH/2-9,18,18,4);g.fill();g.fillStyle="#16212c";}
+        g.textAlign=ta;g.fillText(s,tx,y+RH/2+1);});
+      y+=RH;});
+    g.strokeStyle="#14213d";g.lineWidth=2;g.strokeRect(M,TOP,TW,y-TOP);
+    g.fillStyle="#8a98a8";g.font=font(400,22);g.textBaseline="alphabetic";g.direction="ltr";
+    g.textAlign="left";g.fillText(BRAND.mark+" · "+BRAND.site+" · v"+VERSION,M,H-M/2);
+    g.textAlign="right";g.direction=rtl?"rtl":"ltr";g.fillText(t("rgPage")+" "+ar(pg+1)+" / "+ar(pages),W-M,H-M/2);
+    out.push(c);}
+  return out;}
+function needXLSX(){return window.XLSX?Promise.resolve():new Promise((res,rej)=>{
+  const s=document.createElement("script");s.src="lib/xlsx.full.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+function exportRegister(){LOG("evExport",t("mXlsx"));const q=pl(),rows=regRows(q);
+  if(!rows.length){alert(t("rgEmpty"));return;}
+  toast(t("rgWait"));
+  needXLSX().then(()=>{
+    const head=[t("rgNo"),t("rgType"),t("rgLabel"),t("rgName"),"IP",t("rgSn"),t("rgSide"),t("rgRoom")];
+    const data=[head].concat(rows.map((r,i)=>[i+1,r.type,r.label,r.name,r.ip,r.sn,r.sideTxt,r.room]));
+    const ws=XLSX.utils.aoa_to_sheet(data);
+    ws["!cols"]=[{wch:5},{wch:14},{wch:14},{wch:26},{wch:20},{wch:22},{wch:9},{wch:18}];
+    ws["!autofilter"]={ref:XLSX.utils.encode_range({s:{r:0,c:0},e:{r:data.length-1,c:head.length-1}})};
+    const cnt={};rows.forEach(r=>{cnt[r.type]=(cnt[r.type]||0)+1;});
+    const sumData=[[t("rgType"),t("rgCount")]].concat(Object.keys(cnt).map(k=>[k,cnt[k]])).concat([[t("rgTotal"),rows.length]]);
+    const ws2=XLSX.utils.aoa_to_sheet(sumData);ws2["!cols"]=[{wch:16},{wch:10}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,t("rgDev"));XLSX.utils.book_append_sheet(wb,ws2,t("rgSum"));
+    if(L==="ar")wb.Workbook={Views:[{RTL:true}]};
+    const nm=(P.name||t("filePlan"))+(P.ref?" - "+P.ref:"")+" - "+t("rgTitle")+".xlsx";
+    XLSX.writeFile(wb,nm);
+  }).catch(()=>alert(t("aFile")));}
 function dlBlob(b,name){const a=document.createElement("a");
   a.href=URL.createObjectURL(b);a.download=name;a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),6000);}
@@ -4326,7 +4417,10 @@ Each type is numbered on its own (Camera 1, Camera 2, Reader 1…) and the numbe
 With <b>Edit</b> you drag a device anywhere, delete it with the red ×, or open its details with the blue ✎ (or a
 double-click): label on the plan (empty keeps the automatic number), name, IP and serial. Hovering any device
 with the mouse shows those details in a popup; on a phone they show under the selected device. Gateways take
-the same details; a gateway you add details to is pinned, so automatic gateway planning keeps it in place. Devices move with their room, are
+the same details; a gateway you add details to is pinned, so automatic gateway planning keeps it in place.
+All those details are exported: the PDF ends with a <b>device register</b> table (type, label, name, IP, serial,
+side, room), and <b>Save → Device register — Excel</b> downloads the same table as a filterable .xlsx with a
+summary sheet of counts per type. Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
@@ -4596,7 +4690,10 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 بتسحب الجهاز لأي مكان، أو تمسحه بالـ × الأحمر، أو تفتح بياناته بالقلم ✎ الأزرق (أو دبل كليك): الرقم على الرسمة
 (فاضي = الترقيم الأوتوماتيكي)، والاسم، والـ IP، والسيريال. ولما تقف بالماوس على أي جهاز البيانات دي بتظهر في
 بوب أب؛ وعلى الموبايل بتظهر تحت الجهاز لما تختاره. والجيت واي ليه نفس البيانات؛ وأي جيت واي تكتب بياناته
-بيتثبّت، فالتوزيع الأوتوماتيكي للجيت واي ما يشيلوش ولا يحركه. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+بيتثبّت، فالتوزيع الأوتوماتيكي للجيت واي ما يشيلوش ولا يحركه.
+وكل البيانات دي بتطلع في التصدير: ملف الـ PDF في آخره صفحة <b>سجل الأجهزة</b> (النوع، الرقم، الاسم، الـ IP،
+السيريال، الناحية، الغرفة)، ومن <b>حفظ ← سجل الأجهزة — إكسل</b> بينزل نفس الجدول ملف إكسل بفلتر، ومعاه
+ورقة ملخص بعدد كل نوع. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
 الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط، بأداة تعديل اسحبه من أي
@@ -4804,6 +4901,7 @@ btnProGet.onclick=()=>{btnProGet.disabled=true;
 [hmFrom,hmTo].forEach(el=>el.onchange=()=>{
   const st=hmStore();st.per={from:hmFrom.value,to:hmTo.value};});
 mnuPdf.onclick =()=>{_sw.classList.remove("open");document.getElementById("btnPdf").click();};
+mnuXlsx.onclick=()=>{_sw.classList.remove("open");exportRegister();};
 mnuPng.onclick =()=>{_sw.classList.remove("open");document.getElementById("btnPng").click();};
 document.getElementById("btnNew").onclick=()=>{
   if(!confirm(t("cNew")))return;
@@ -5162,6 +5260,7 @@ document.getElementById("btnPdf").onclick=()=>{LOG("evExport","PDF");
   setTimeout(()=>{try{
     const pages=[c];
     try{if(q.zones.length)pages.push(sheet3D(q,2400,1500));}catch(e){}
+    try{regSheets(q).forEach(c=>pages.push(c));}catch(e){}
     const nm=(P.name||t("filePlan"))+(P.ref?" - "+P.ref:"");
     dlBlob(new Blob([buildPdf(pages,nm,prjB64())],{type:"application/pdf"}),nm+".pdf");
   }catch(e){alert(t("aFile"));}},40);};
