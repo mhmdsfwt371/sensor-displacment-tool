@@ -490,6 +490,11 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
         </div>
         <label data-i="fClient">اسم الشركة (العميل / الجهة)</label>
         <input type="text" id="pjClient" data-ph="phClient">
+        <label data-i="fSite">مقاس الجناح بالمتر — المساحة الإجمالية بتطلع منه</label>
+        <div class="row">
+          <div><input type="number" id="pjSiteW" min="0" step="0.01" inputmode="decimal" data-ph="phSiteW" dir="ltr"></div>
+          <div><input type="number" id="pjSiteH" min="0" step="0.01" inputmode="decimal" data-ph="phSiteH" dir="ltr"></div>
+        </div>
         <div class="brandlock">
           <img id="brandLogo" alt="AFAQY">
           <div><b id="brandName">آفاقي لتقنية المعلومات</b><em data-i="fBrandLock"></em></div>
@@ -824,7 +829,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.13";
+const VERSION="6.14";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -924,7 +929,8 @@ evNew:"مشروع جديد",evOpen:"فتح مشروع",evSave:"حفظ مشروع
 evRun:"توزيع تلقائي",evCount:"تعديل عدد غرفة",evKind:"تغيير نوع منطقة",evAuto:"رجوع للتلقائي",
 evPdf:"فتح ملف PDF",evScale:"ضبط المقياس",evExport:"تصدير مخرَج",evCfg:"تعديل المعايير",evPlan:"إدخال رسمة",
 evClear:"مسح التوزيع",evHm:"قراءات حرارة",evLang:"تبديل اللغة",
-unitM:"متر",unitArea:"إجمالي المساحة",unitSq:"م٢",
+unitM:"متر",unitArea:"إجمالي المساحة",unitSq:"م٢",unitSite:"مساحة الجناح",
+fSite:"مقاس الجناح بالمتر — المساحة الإجمالية بتطلع منه",phSiteW:"العرض (مثلًا 12)",phSiteH:"الطول (مثلًا 10)",
 kySensors:"الحساسات",kyGates:"الجيت واي",kyPower:"الكهرباء",
 shMeta:"{0} · تغطية {1} م٢ لكل حساس · جيت واي {2} بمدى {3} م · {4}",
 tRange:"مدى الجيت واي",
@@ -1099,7 +1105,8 @@ evNew:"New project",evOpen:"Open project",evSave:"Save project",evRestore:"Resto
 evRun:"Auto distribution",evCount:"Room count changed",evKind:"Zone type changed",evAuto:"Back to auto",
 evPdf:"PDF opened",evScale:"Scale set",evExport:"Output exported",evCfg:"Standards changed",evPlan:"Plan loaded",
 evClear:"Layout cleared",evHm:"Heat readings",evLang:"Language switched",
-unitM:"m",unitArea:"Total area",unitSq:"m²",
+unitM:"m",unitArea:"Total area",unitSq:"m²",unitSite:"Stand area",
+fSite:"Stand size in metres — the total area comes from it",phSiteW:"Width (e.g. 12)",phSiteH:"Length (e.g. 10)",
 kySensors:"Sensors",kyGates:"Gateways",kyPower:"Power",
 shMeta:"{0} · {1} m² coverage per sensor · {2} gateway, {3} m range · {4}",
 tRange:"Gateway range",
@@ -1697,7 +1704,7 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
     g.fillStyle="#1f63d6";g.fill();
     g.strokeStyle="#ffffff";g.lineWidth=Math.max(gsz*.12,.8/k);g.stroke();
     powerIcon(g,gw.x+gsz*.95,gw.y-gsz*.75,gsz*.62,k);});
-  const dsz=symR*1.9;
+  const dsz=symR*2.5;
   devs(q).forEach(v=>devIcon(g,v.t,v.x,v.y,dsz,k));
   if(q.split&&q.split.on){const bb=contentBox(q)||(devs(q).length?bbox(devs(q)):null);
     if(bb){const x=q.split.x,y0=bb.minY-14/k,y1=bb.maxY+14/k;
@@ -1726,7 +1733,7 @@ function paintWorld(g,k,pr,q,o){o=o||{};const clean=!!o.clean;
       g.strokeText(s.code,s.x,y);g.fillStyle="#a0141a";g.fillText(s.code,s.x,y);});
     q.gateways.forEach(gw=>{if(!gw.code)return;const y=gw.y-gsz*.6-fs*.7;
       g.strokeText(gw.code,gw.x,y);g.fillStyle="#123c86";g.fillText(gw.code,gw.x,y);});
-    const fd=fs*.78;g.font="600 "+fd+'px "Segoe UI",Tahoma,sans-serif';g.lineWidth=fd*.32;
+    const fd=fs*.9;g.font="600 "+fd+'px "Segoe UI",Tahoma,sans-serif';g.lineWidth=fd*.32;
     devs(q).forEach(v=>{if(!v.code)return;const y=v.y-dsz*.55-fd*.62;
       g.strokeText(v.code,v.x,y);g.fillStyle=DEVK[v.t].c;g.fillText(v.code,v.x,y);});
     g.textBaseline="alphabetic";}
@@ -2461,11 +2468,12 @@ function exportSheet(q,W,clean){
       g.fillText("— "+o.note,X1+dir*xVal,y);}});
   /* المساحة على الطرف التاني في أول صف */
   g.textAlign=A2;g.font="700 "+Math.round(fs*1.12)+FT;g.fillStyle="#111";
-  const aTxt=fmt(tt.area)+" "+t("unitSq");
+  const aTxt=fmt(tt.shown)+" "+t("unitSq");
   g.fillText(aTxt,X2,ky+rowH/2);
   const aW=g.measureText(aTxt).width;
   g.font=fs+FT;g.fillStyle="#111";
-  g.fillText(t("unitArea"),X2-dir*(aW+fs*.6),ky+rowH/2);
+  const aLab=tt.site?t("unitSite")+" ("+ar(nice(P.site.w))+" × "+ar(nice(P.site.h))+" "+t("unitM")+")":t("unitArea");
+  g.fillText(aLab,X2-dir*(aW+fs*.6),ky+rowH/2);
   /* سطر المعايير تحت خط رفيع */
   const my=ky+rows.length*rowH+Math.round(fs*.55);
   g.strokeStyle="#dfe6ee";g.lineWidth=Math.max(1,W*.0008);
@@ -3318,7 +3326,8 @@ function zoneStat(q,z){
     out,far:q.scale>0?far/q.scale:0};}
 function planTot(q){
   const area=q.scale>0?q.zones.reduce((s,z)=>s+polyArea(z.pts)/(q.scale*q.scale),0):0;
-  return{area,sensors:q.sensors.length,gates:q.gateways.length};}
+  const st=P.site||{},site=(st.w>0&&st.h>0)?st.w*st.h:0;
+  return{area,site,shown:site||area,sensors:q.sensors.length,gates:q.gateways.length};}
 function projTot(){return planTot(pl());}
 function renumber(){
   const q=pl();
@@ -3486,7 +3495,7 @@ function setRectSize(z,W,H){const q=pl();if(!(W>0)&&!(H>0))return;
   refresh();}
 function renderResults(){
   const q=pl(),tt=projTot();
-  kSensors.textContent=ar(tt.sensors);kGates.textContent=ar(tt.gates);kArea.textContent=ar(fmt(tt.area));
+  kSensors.textContent=ar(tt.sensors);kGates.textContent=ar(tt.gates);kArea.textContent=ar(fmt(tt.shown));
   let rows="";
   q.zones.forEach(z=>{const st=zoneStat(q,z);
     rows+='<tr><td>'+esc(z.name)+'</td><td class="n">'+ar(fmt(st.a))+'</td><td class="n">'+ar(st.n)+
@@ -4153,6 +4162,7 @@ function loadBrand(){
   tryLogo(BRAND.src[lang].slice(),lang);}
 function syncCfg(){
   P.name=pjName.value;P.ref=pjRef.value;P.client=pjClient.value;
+  P.site={w:Math.max(0,+pjSiteW.value||0),h:Math.max(0,+pjSiteH.value||0)};
   P.cfg.h3=Math.max(2,+inH3.value||6);P.cfg.sensor=selSensor.value;P.cfg.cov=+inCov.value||25;P.cfg.minPer=Math.max(1,+inMin.value||1);
   P.cfg.gw=selGw.value;P.cfg.gwRange=+inGwRange.value||50;P.cfg.gwMode=selGwMode.value;
   P.cfg.bat=+inBat.value||0;P.cfg.brk=+inBrk.value||0;P.cfg.psu=+inPsu.value||0;P.cfg.spare=+inSpare.value||0;
@@ -4161,6 +4171,7 @@ function syncCfg(){
   lblStr.textContent=ar(rngStr.value);schedAS();}
 function loadCfg(){
   pjName.value=P.name||"";pjRef.value=P.ref||"";pjClient.value=P.client||"";
+  pjSiteW.value=P.site&&P.site.w>0?P.site.w:"";pjSiteH.value=P.site&&P.site.h>0?P.site.h:"";
   selSensor.value=P.cfg.sensor;inCov.value=P.cfg.cov;inMin.value=P.cfg.minPer;
   selGw.value=P.cfg.gw;inGwRange.value=P.cfg.gwRange;
   if(!P.cfg.gwMode)P.cfg.gwMode=(P.cfg.perRoom===false)?"range":"room";
@@ -4169,7 +4180,7 @@ function loadCfg(){
   rngSym.value=Math.round((P.cfg.sym||.6)*10);
   lblSym.textContent=ar((P.cfg.sym||.6).toFixed(1)).replace(".",L==="ar"?"٫":".");
   lblStr.textContent=ar(rngStr.value);}
-["pjName","pjRef","pjClient","selSensor","inCov","inMin","selGw","inGwRange",
+["pjName","pjRef","pjClient","pjSiteW","pjSiteH","selSensor","inCov","inMin","selGw","inGwRange",
  "inBat","inBrk","inPsu","inSpare","rngSym","rngStr","selGwMode"].forEach(id=>{
   document.getElementById(id).addEventListener("input",()=>{syncCfg();renderResults();renderIssues();render();});});
 selGwMode.onchange=()=>{syncCfg();snap();gwPlan(pl());refresh();};
@@ -4456,7 +4467,10 @@ summary sheet of counts per type.</p>
 Type the real size (for example 12 and 10) and the rectangle snaps to it. If the plan has no scale yet, that same
 entry sets the scale from the room, so a drawing becomes measured in one step and the total area is right
 (12 × 10 = 120 m²). Devices and sensors already inside a new room are assigned to it, and in the PDF the room
-name, size and area are printed large enough to read on big drawings. Devices move with their room, are
+name, size and area are printed large enough to read on big drawings.</p>
+<p><b>Stand size.</b> In Project details, <b>stand size in metres</b> (width × length) sets the total area by itself:
+type 12 and 10 once and the totals and every PDF show <b>Stand area (12 × 10 m) 120 m²</b>, with no rectangle and
+no calibration needed. It is saved in the project file. Leave it empty to total the drawn rooms instead. Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
@@ -4733,7 +4747,10 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 <p><b>مقاس الغرفة بالظبط.</b> أي غرفة مستطيلة في قائمة «الغرف» تحتها خانتين <b>العرض × الطول</b> بالمتر. تكتب
 المقاس الحقيقي (مثلًا ١٢ و١٠) والمستطيل بيتظبط عليه. ولو الرسمة لسه من غير مقياس، نفس الخطوة دي بتحسب المقياس
 من الغرفة، فالرسمة بتبقى متقاسة في خطوة واحدة والمساحة الإجمالية صح (١٢ × ١٠ = ١٢٠ م٢). والأجهزة والحساسات
-اللي جوه الغرفة الجديدة بتتبعها لوحدها، وفي الـ PDF اسم الغرفة ومقاسها ومساحتها بيتكتبوا بحجم مقروء على الرسومات الكبيرة. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+اللي جوه الغرفة الجديدة بتتبعها لوحدها، وفي الـ PDF اسم الغرفة ومقاسها ومساحتها بيتكتبوا بحجم مقروء على الرسومات الكبيرة.</p>
+<p><b>مقاس الجناح.</b> في «بيانات المشروع» خانتين <b>مقاس الجناح بالمتر</b> (عرض × طول) والمساحة الإجمالية بتطلع منهم
+لوحدها: تكتب ١٢ و١٠ مرة واحدة، والأرقام وكل ملف PDF بيطلع فيهم <b>مساحة الجناح (١٢ × ١٠ متر) ١٢٠ م٢</b> — من غير
+مستطيل ولا معايرة. والمقاس بيتحفظ في ملف المشروع. ولو سيبتهم فاضيين المساحة بتتحسب من الغرف المرسومة. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
 الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط، بأداة تعديل اسحبه من أي
