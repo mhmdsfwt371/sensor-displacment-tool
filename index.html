@@ -178,6 +178,16 @@ canvas{display:block;width:100%;flex:1 1 auto;min-height:0;touch-action:none;cur
 .trow>button{flex:1 0 auto}
 .trow>.sep,.trow>.kindsel,.trow>.symgrp{flex:0 0 auto}
 .symgrp{display:inline-flex;gap:2px;align-items:stretch}
+#walkHud{position:absolute;inset:auto 0 0 0;pointer-events:none;z-index:6;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 10px 58px}
+#walkHud[hidden]{display:none}
+#walkHud .whint{pointer-events:none;background:rgba(8,14,21,.72);color:#e5edf5;font-size:12px;padding:6px 12px;border-radius:999px;text-align:center;max-width:94%}
+#walkHud .wpad{pointer-events:auto;display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:46px 46px;gap:6px;position:absolute;left:14px;bottom:118px;direction:ltr}
+#walkHud .wpad button{border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(8,14,21,.72);color:#fff;font-size:18px;touch-action:none;user-select:none}
+#walkHud .wpad button[data-k="up"]{grid-column:2;grid-row:1}
+#walkHud .wpad button[data-k="left"]{grid-column:1;grid-row:2}#walkHud .wpad button[data-k="down"]{grid-column:2;grid-row:2}#walkHud .wpad button[data-k="right"]{grid-column:3;grid-row:2}
+#walkHud .wpad .wv{position:absolute;width:46px;height:46px;left:166px}
+#walkHud .wpad .wv[data-k="rise"]{bottom:52px}#walkHud .wpad .wv[data-k="sink"]{bottom:0}
+#btnWalk.on{background:#1f63d6;color:#fff;border-color:#1f63d6}
 .item .r.wh{gap:6px;align-items:center}
 .item .r.wh input{width:74px;flex:0 0 auto;direction:ltr;text-align:center}
 #devTip{position:fixed;z-index:70;pointer-events:none;display:none;max-width:290px;
@@ -721,6 +731,14 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
     </div>
     <canvas id="cv"></canvas>
     <canvas id="cv3"></canvas>
+    <div id="walkHud" hidden>
+      <div class="whint" data-i="walkHint">اسحب عشان تبص حواليك · W/S أو ↑/↓ قدام وورا · A/D أو ←/→ يمين وشمال · Q/E تحت وفوق · Shift أسرع · دبل كليك على الأرض تروح هناك</div>
+      <div class="wpad">
+        <button data-k="up" aria-label="forward">▲</button>
+        <button data-k="left" aria-label="left">◀</button><button data-k="down" aria-label="back">▼</button><button data-k="right" aria-label="right">▶</button>
+        <button data-k="rise" class="wv" aria-label="up">⤒</button><button data-k="sink" class="wv" aria-label="down">⤓</button>
+      </div>
+    </div>
     <canvas id="dial3" width="184" height="184"></canvas>
     <div class="tools">
       <div class="trow">
@@ -732,12 +750,13 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
           <label class="v3lab"><span data-i="fRot">دوران</span>
             <input type="range" id="rngRot" min="0" max="360" value="35"></label>
           <label class="v3lab"><span data-i="fTilt">ميل</span>
-            <input type="range" id="rngTilt" min="25" max="85" value="55"></label>
+            <input type="range" id="rngTilt" min="2" max="100" value="55"></label>
           <span class="v3z"><button id="btnZ3m" type="button">−</button><button id="btnZ3p" type="button">+</button></span>
           <button id="btnDims" type="button" class="on" data-i="fDims">مقاسات</button>
           <label class="v3lab"><span data-i="fHgt">الارتفاع</span>
             <input type="number" id="inH3" min="2" max="20" step="0.5" value="6"> <span data-i="unitM">متر</span></label>
           <button id="btnV3r" type="button" data-i="bReset">إعادة</button>
+          <button id="btnWalk" type="button" data-i="bWalk">تجوّل جوه</button>
         </span>
         <span class="sep"></span>
         <button data-t="pan" data-i="tPan">تحريك</button>
@@ -829,7 +848,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="7.0";
+const VERSION="7.1";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -960,6 +979,8 @@ dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",d
 pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
 tSplit:"يمين / يسار",tSymM:"−",tSymP:"+",sideR:"يمين",sideL:"يسار",
 whLbl:"المقاس",whW:"العرض",whH:"الطول",whCal:"المقياس اتظبط من مقاس الغرفة دي",
+bWalk:"تجوّل جوه",bOrbit:"منظر عام",walkHint:"اسحب عشان تبص حواليك · W/S أو ↑/↓ قدام وورا · A/D أو ←/→ يمين وشمال · Q/E تحت وفوق · Shift أسرع · دبل كليك على الأرض تروح هناك",
+orbHint:"اسحب تلف ٣٦٠ · كليك يمين أو Shift+سحب تحرّك · العجلة تكبير · دبل كليك على الأرض تدخل تتمشى من هناك",
 smReplace:"عندك {0} غرفة مرسومة — أبدّلهم بالغرف اللي هتتكشف من الرسمة؟",smFound:"لقيت {0} غرفة و{1} حيطة",
 smFallback:"الرسمة مافيهاش حيطان واضحة — رجعت للطريقة القديمة",
 smScale:"الغرفة المتعلّمة بالأصفر — عرضها (من الشمال لليمين) كام متر حسب المقاسات المكتوبة على الرسمة؟",
@@ -1140,6 +1161,8 @@ dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
 pDevName:"Label for this device (leave empty to go back to automatic numbering):",
 tSplit:"Right / Left",tSymM:"−",tSymP:"+",sideR:"Right",sideL:"Left",
 whLbl:"Size",whW:"Width",whH:"Length",whCal:"Scale set from this room's size",
+bWalk:"Walk inside",bOrbit:"Overview",walkHint:"Drag to look around · W/S or ↑/↓ forward/back · A/D or ←/→ sideways · Q/E down/up · Shift faster · double-click the floor to go there",
+orbHint:"Drag to turn 360° · right-click or Shift+drag to move · wheel to zoom · double-click the floor to walk from there",
 smReplace:"You have {0} drawn rooms — replace them with the rooms detected on the drawing?",smFound:"Found {0} rooms and {1} walls",
 smFallback:"No clear walls on this drawing — used the previous method",
 smScale:"The room highlighted in yellow — how wide is it (left to right) in metres, from the dimensions printed on the drawing?",
@@ -1806,7 +1829,8 @@ function powerIcon(g,x,y,r,k){
    مطلوب في اشتراطات الهيئة: مخطط يوضح الطول والعرض والارتفاع
    ومواقع الحساسات على ارتفاعاتها
    ================================================================ */
-const V3={on:false,rot:35,tilt:.55,z:1,dims:true,_p:{}};
+const V3={on:false,rot:35,tilt:.55,z:1,dims:true,_p:{},px:0,pz:0,
+  walk:{on:false,x:0,y:1.6,z:0,yaw:0,pitch:0},keys:new Set()};
 function h3Of(z){const kd=zKind(z);
   if(z.h3>0)return z.h3;
   return kd==="fridge"?2.2:kd==="corr"?(P.cfg.h3||6):(P.cfg.h3||6);}
@@ -1879,6 +1903,11 @@ function t3build(q){
   const hm=(P.hm&&P.hm.on);
   const hasW=!!(q.walls&&q.walls.length&&q.walls.some(w=>w.auto));
   const Hw=P.cfg.h3||6;
+  T3.pick=[];T3.wallsM=[];T3.entry=null;T3.lbls=[];
+  (q.walls||[]).forEach(w=>{const a=M({x:w.x1,y:w.y1}),c=M({x:w.x2,y:w.y2});
+    T3.wallsM.push({ax:a.x,az:a.z,bx:c.x,bz:c.z,r:Math.max(.06,(w.th||.15*sc)/sc)/2+.22});});
+  if(q.outline){const o=q.outline,A=M({x:o.x0,y:o.y0}),C2=M({x:o.x1,y:o.y1});
+    T3.entry={x:(A.x+C2.x)/2,z:C2.z+1.4,yaw:Math.PI};}
   if(hasW){
     const wmat=new THREE.MeshStandardMaterial({color:0xeadfca,roughness:.85,metalness:0});
     if(q.outline){const o=q.outline,A=M({x:o.x0,y:o.y0}),C2=M({x:o.x1,y:o.y1});
@@ -1911,7 +1940,7 @@ function t3build(q){
         pts.concat([pts[0]]).map(p=>new THREE.Vector3(p.x,.1,p.z)));
       const ln=new THREE.Line(lg,new THREE.LineDashedMaterial({color:0x9db0c2,dashSize:.5,gapSize:.35}));
       ln.computeLineDistances();T3.root.add(ln);
-      const sp=t3chip([{t:z.name},{t:fmt(areaM)+" "+t("unitSq"),c:"#9db0c2"}]);
+      const sp=t3chip([{t:z.name},{t:fmt(areaM)+" "+t("unitSq"),c:"#9db0c2"}]);T3.lbls.push(sp);sp.visible=!V3.walk.on;
       sp.position.set(cen.x,.9,cen.z);sp.scale.set(sp.userData.asp*1.4,1.4,1);
       T3.root.add(sp);
       return;}
@@ -1937,7 +1966,7 @@ function t3build(q){
     const lines=[{t:z.name},{t:nice(H)+" "+t("unitM")+" · "+fmt(areaM)+" "+t("unitSq"),c:"#9db0c2"}];
     if(hx)lines.push({t:fmt1(hx.tMin)+" / "+fmt1(hx.tMax)+" °",
       c:hx.status==="ok"?"#5fd598":hx.status==="warn"?"#ffd056":"#ff8f85"});
-    const sp=t3chip(lines);
+    const sp=t3chip(lines);T3.lbls.push(sp);sp.visible=!V3.walk.on;
     sp.position.set(cen.x,H+1.1,cen.z);
     const scl=Math.max(1.2,R*.055);
     sp.scale.set(sp.userData.asp*scl,scl,1);T3.root.add(sp);
@@ -1978,14 +2007,16 @@ function t3build(q){
       box.position.set(pm.x,H*.9,pm.z);box.castShadow=true;T3.root.add(box);
       const ant=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.5),
         new THREE.MeshStandardMaterial({color:0xcfe0ff}));
-      ant.position.set(pm.x+.12,H*.9+.4,pm.z);T3.root.add(ant);});
+      ant.position.set(pm.x+.12,H*.9+.4,pm.z);T3.root.add(ant);
+      const pk=new THREE.Mesh(new THREE.SphereGeometry(.45,8,6),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+      pk.position.set(pm.x,H*.9,pm.z);pk.userData.ref=gw;T3.root.add(pk);T3.pick.push(pk);});
   });
   /* الأجهزة الإضافية على ارتفاعاتها */
   devs(q).forEach(v=>{
     const D=DEVK[v.t];if(!D)return;
     const zz=q.zones.find(z=>z.id===v.zoneId),H=zz?h3Of(zz):(P.cfg.h3||6);
     const y0=D.hf?H*D.hf:Math.min(D.hm,H*.9),pm=M(v),col=parseInt(D.c.slice(1),16),S=1.8;
-    const grp=new THREE.Group();grp.position.set(pm.x,y0,pm.z);grp.scale.setScalar(S);T3.root.add(grp);
+    const grp=new THREE.Group();grp.position.set(pm.x,y0,pm.z);grp.scale.setScalar(S);grp.userData.ref=v;T3.root.add(grp);T3.pick.push(grp);
     const put=(geo,c,x,y,z)=>{const me=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:c,roughness:.45}));
       me.position.set(x,y,z);me.castShadow=true;grp.add(me);return me;};
     let top=.2;
@@ -2007,13 +2038,16 @@ function t3fit(){
   const r=cv3.getBoundingClientRect();
   T3.ren.setSize(r.width,r.height,false);
   T3.cam.aspect=r.width/Math.max(1,r.height);T3.cam.updateProjectionMatrix();
-  const az=V3.rot*Math.PI/180,pol=(1-V3.tilt)*1.25+.15;
-  const d=T3.R*2.1/V3.z;
-  T3.cam.position.set(
-    T3.center.x+d*Math.sin(pol)*Math.sin(az),
-    d*Math.cos(pol),
-    T3.center.z+d*Math.sin(pol)*Math.cos(az));
-  T3.cam.lookAt(T3.center.x,T3.R*.12,T3.center.z);}
+  const Wk=V3.walk;
+  if(Wk.on){if(T3.cam.fov!==70){T3.cam.fov=70;T3.cam.updateProjectionMatrix();}
+    const cp=Math.cos(Wk.pitch);T3.cam.position.set(Wk.x,Wk.y,Wk.z);
+    T3.cam.lookAt(Wk.x+Math.sin(Wk.yaw)*cp,Wk.y+Math.sin(Wk.pitch),Wk.z+Math.cos(Wk.yaw)*cp);return;}
+  if(T3.cam.fov!==42){T3.cam.fov=42;T3.cam.updateProjectionMatrix();}
+  /* الميل من مستوى العين لحد فوق خالص، والهدف بيتحرك (سحب بكليك يمين) */
+  const az=V3.rot*Math.PI/180,pol=(1-V3.tilt)*1.42+.05;
+  const d=T3.R*2.1/V3.z,tx=T3.center.x+V3.px,tz=T3.center.z+V3.pz;
+  T3.cam.position.set(tx+d*Math.sin(pol)*Math.sin(az),Math.max(.3,d*Math.cos(pol)),tz+d*Math.sin(pol)*Math.cos(az));
+  T3.cam.lookAt(tx,T3.R*.12*V3.tilt,tz);}
 function t3render(){if(T3.ok)T3.ren.render(T3.scene,T3.cam);}
 /* ===== بوصلة الزاوية — قراءة حية + تحكم مباشر ===== */
 const dctx=dial3.getContext("2d");
@@ -2118,7 +2152,8 @@ dial3.addEventListener("dblclick",e=>{
   V3.rot=35;rngRot.value=35;v3draw();});
 
 function v3draw(){
-  if(V3.on&&T3.ok){if(T3.dims)T3.dims.visible=V3.dims;t3fit();t3render();}
+  if(V3.on&&T3.ok){if(T3.dims)T3.dims.visible=V3.dims&&!V3.walk.on;
+    (T3.lbls||[]).forEach(s=>{s.visible=!V3.walk.on;});t3fit();t3render();}
   else render();
   if(V3.on)dial3Draw();}
 /* صورة المجسم على أبيض — من المحرك ولو غايب من الرسم اليدوي */
@@ -3218,7 +3253,8 @@ function endP(e){pts.delete(e.pointerId);if(pts.size<2)U.pinch=null;
   cv3.addEventListener(ev,e=>{
     if(ev==="pointerdown"){V3._p[e.pointerId]={x:e.clientX,y:e.clientY};
       const ks=Object.keys(V3._p);
-      if(ks.length===1)V3._d={x:e.clientX,y:e.clientY,r:V3.rot,t:V3.tilt};
+      if(ks.length===1)V3._d={x:e.clientX,y:e.clientY,r:V3.rot,t:V3.tilt,pan:!V3.walk.on&&(e.button===2||e.button===1||e.shiftKey),
+        yaw:V3.walk.yaw,pitch:V3.walk.pitch,px:V3.px,pz:V3.pz};
       else{const a=V3._p[ks[0]],b2=V3._p[ks[1]];
         V3._pz={d:Math.hypot(a.x-b2.x,a.y-b2.y),z:V3.z};V3._d=null;}
       cv3.setPointerCapture(e.pointerId);}
@@ -3226,17 +3262,85 @@ function endP(e){pts.delete(e.pointerId);if(pts.size<2)U.pinch=null;
       pt.x=e.clientX;pt.y=e.clientY;
       const ks=Object.keys(V3._p);
       if(ks.length>=2&&V3._pz){const a=V3._p[ks[0]],b2=V3._p[ks[1]];
-        V3.z=Math.min(3,Math.max(.4,V3._pz.z*Math.hypot(a.x-b2.x,a.y-b2.y)/Math.max(1,V3._pz.d)));v3draw();}
-      else if(V3._d){
-        V3.rot=(V3._d.r+(e.clientX-V3._d.x)*.45+360)%360;
-        V3.tilt=Math.min(.85,Math.max(.25,V3._d.t+(e.clientY-V3._d.y)*.0035));
-        rngRot.value=Math.round(V3.rot);rngTilt.value=Math.round(V3.tilt*100);v3draw();}}
+        V3.z=Math.min(8,Math.max(.3,V3._pz.z*Math.hypot(a.x-b2.x,a.y-b2.y)/Math.max(1,V3._pz.d)));v3draw();}
+      else if(V3._d){const dx=e.clientX-V3._d.x,dy=e.clientY-V3._d.y;
+        if(V3.walk.on){V3.walk.yaw=V3._d.yaw-dx*.0055;
+          V3.walk.pitch=Math.max(-1.35,Math.min(1.35,V3._d.pitch+dy*.0045));v3draw();}
+        else if(V3._d.pan){const r=cv3.getBoundingClientRect(),az=V3.rot*Math.PI/180,k=T3.R*2.6/V3.z/Math.max(200,r.height);
+          V3.px=V3._d.px-(dx*Math.cos(az)+dy*Math.sin(az))*k;V3.pz=V3._d.pz-(-dx*Math.sin(az)+dy*Math.cos(az))*k;v3draw();}
+        else{V3.rot=(V3._d.r+dx*.45+360)%360;
+          V3.tilt=Math.min(1,Math.max(.02,V3._d.t+dy*.0035));
+          rngRot.value=Math.round(V3.rot);rngTilt.value=Math.round(V3.tilt*100);v3draw();}}}
     else{delete V3._p[e.pointerId];V3._pz=null;
       const ks=Object.keys(V3._p);
       V3._d=ks.length===1?{x:V3._p[ks[0]].x,y:V3._p[ks[0]].y,r:V3.rot,t:V3.tilt}:null;}
   },{passive:false}));
 cv3.addEventListener("wheel",e=>{e.preventDefault();
-  V3.z=Math.min(3,Math.max(.4,V3.z*(e.deltaY<0?1.1:1/1.1)));v3draw();},{passive:false});
+  if(V3.walk.on){walkStep(e.deltaY<0?.6:-.6,0);return;}
+  V3.z=Math.min(8,Math.max(.3,V3.z*(e.deltaY<0?1.1:1/1.1)));v3draw();},{passive:false});
+cv3.addEventListener("contextmenu",e=>e.preventDefault());
+/* ===== تجوّل جوه المجسم: كاميرا بارتفاع العين، ومشي بيصطدم بالحيطان ويعدّي من الأبواب ===== */
+function walkWallHit(x,z){const L2=T3.wallsM||[];
+  for(const w of L2){const vx=w.bx-w.ax,vz=w.bz-w.az,l2=vx*vx+vz*vz||1;
+    let u=((x-w.ax)*vx+(z-w.az)*vz)/l2;u=Math.max(0,Math.min(1,u));
+    const dx=x-(w.ax+vx*u),dz=z-(w.az+vz*u);if(dx*dx+dz*dz<w.r*w.r)return true;}
+  return false;}
+function walkMoveTo(nx,nz){const W2=V3.walk;
+  if(!walkWallHit(nx,nz)){W2.x=nx;W2.z=nz;}
+  else if(!walkWallHit(nx,W2.z))W2.x=nx;
+  else if(!walkWallHit(W2.x,nz))W2.z=nz;}
+function walkStep(fwd,side){const W2=V3.walk,s=Math.sin(W2.yaw),c=Math.cos(W2.yaw);
+  walkMoveTo(W2.x+s*fwd-c*side,W2.z+c*fwd+s*side);v3draw();}
+function walkSet(on,at){const W2=V3.walk;
+  if(on){if(!T3.ok||!T3.center){toast(t("v3Need"));return;}
+    const eh=1.6;
+    if(at){W2.x=at.x;W2.z=at.z;W2.yaw=V3.rot*Math.PI/180+Math.PI;}
+    else if(T3.entry){W2.x=T3.entry.x;W2.z=T3.entry.z;W2.yaw=T3.entry.yaw;}
+    else{W2.x=T3.center.x;W2.z=T3.center.z+T3.R*.9;W2.yaw=Math.PI;}
+    W2.y=eh;W2.pitch=-.05;}
+  W2.on=!!on;btnWalk.classList.toggle("on",W2.on);btnWalk.textContent=t(W2.on?"bOrbit":"bWalk");
+  if(T3.scene){if(T3._bg===undefined)T3._bg=T3.scene.background||null;
+    T3.scene.background=W2.on?new THREE.Color(0x2a3746):T3._bg;}
+  walkHud.hidden=!W2.on;cv3.style.cursor=W2.on?"grab":"";V3.keys.clear();v3draw();}
+btnWalk.onclick=()=>walkSet(!V3.walk.on);
+let walkRAF=0,walkT=0;
+function walkLoop(ts){const K=V3.keys;
+  if(!V3.on||!V3.walk.on||!K.size){walkRAF=0;walkT=0;return;}
+  const dt=walkT?Math.min(.25,(ts-walkT)/1000):0;walkT=ts;   /* سرعة حقيقية حتى على جهاز بطيء */
+  const sp=(K.has("run")?3.6:1.5)*dt;
+  const f=(K.has("up")?1:0)-(K.has("down")?1:0),sd=(K.has("right")?1:0)-(K.has("left")?1:0);
+  if(f||sd)walkStep(f*sp,sd*sp);
+  const vy=(K.has("rise")?1:0)-(K.has("sink")?1:0);
+  if(vy){V3.walk.y=Math.max(.4,Math.min((P.cfg.h3||6)+6,V3.walk.y+vy*1.2*dt));v3draw();}
+  walkRAF=requestAnimationFrame(walkLoop);}
+function walkKick(){if(!walkRAF)walkRAF=requestAnimationFrame(walkLoop);}
+const WKEY={KeyW:"up",ArrowUp:"up",KeyS:"down",ArrowDown:"down",KeyA:"left",ArrowLeft:"left",KeyD:"right",ArrowRight:"right",
+  KeyE:"rise",PageUp:"rise",KeyQ:"sink",PageDown:"sink",ShiftLeft:"run",ShiftRight:"run"};
+addEventListener("keydown",e=>{if(!V3.on||!V3.walk.on)return;const tg=e.target&&e.target.tagName;
+  if(tg==="INPUT"||tg==="TEXTAREA"||tg==="SELECT")return;const k=WKEY[e.code];if(!k)return;
+  e.preventDefault();V3.keys.add(k);walkKick();});
+addEventListener("keyup",e=>{const k=WKEY[e.code];if(k)V3.keys.delete(k);});
+addEventListener("blur",()=>V3.keys.clear());
+walkHud.querySelectorAll("button[data-k]").forEach(b=>{const k=b.dataset.k;
+  b.addEventListener("pointerdown",e=>{e.preventDefault();V3.keys.add(k);walkKick();});
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>b.addEventListener(ev,()=>V3.keys.delete(k)));});
+/* دبل كليك على الأرض: في المنظر العام بيدخلك تتمشى من النقطة دي، وجوه بيوديك هناك */
+function floorAt(cx,cy){const r=cv3.getBoundingClientRect(),
+  v=new THREE.Vector2((cx-r.left)/r.width*2-1,-(cy-r.top)/r.height*2+1),rc=new THREE.Raycaster();
+  rc.setFromCamera(v,T3.cam);const o=rc.ray.origin,dv=rc.ray.direction;if(Math.abs(dv.y)<1e-4)return null;
+  const tt=-o.y/dv.y;return tt>0?{x:o.x+dv.x*tt,z:o.z+dv.z*tt}:null;}
+cv3.addEventListener("dblclick",e=>{if(!T3.ok)return;const f=floorAt(e.clientX,e.clientY);if(!f)return;
+  if(walkWallHit(f.x,f.z))return;
+  if(V3.walk.on){V3.walk.x=f.x;V3.walk.z=f.z;v3draw();}else walkSet(true,f);});
+/* بيانات الجهاز بالماوس في الـ 3D */
+cv3.addEventListener("pointermove",e=>{if(!T3.ok||e.pointerType!=="mouse"||e.buttons||!T3.pick||!T3.pick.length){
+    if(U.tipHover&&V3.on){U.tipHover=null;updTip();}return;}
+  const r=cv3.getBoundingClientRect(),rc=new THREE.Raycaster();
+  rc.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),T3.cam);
+  const hit=rc.intersectObjects(T3.pick,true)[0];let o=hit&&hit.object;
+  while(o&&!o.userData.ref)o=o.parent;
+  U.tipHover=o?o.userData.ref:null;updTip(e.clientX,e.clientY);});
+cv3.addEventListener("pointerleave",()=>{if(V3.on){U.tipHover=null;updTip();}});
 
 const v3up=e=>{delete V3._p[e.pointerId];V3._pz=null;
   const ks=Object.keys(V3._p);
@@ -3580,7 +3684,7 @@ function updTip(cx,cy){const el=document.getElementById("devTip");if(!el)return;
   let v=U.tipHover,ax=cx,ay=cy;
   if(!v&&U.tool==="edit"&&infoOf(U.sel)&&!U.drag&&!V3.on&&devForm.hidden){
     v=infoOf(U.sel);const rc=cv.getBoundingClientRect();ax=rc.left+v.x*V.k+V.x;ay=rc.top+v.y*V.k+V.y+symRad(pl(),V.k,false)*V.k*1.4;}
-  if(!v||V3.on){el.style.display="none";return;}
+  if(!v||(V3.on&&!U.tipHover)){el.style.display="none";return;}
   el.innerHTML=devTipHtml(v);el.style.display="block";el.dir=L==="ar"?"rtl":"ltr";
   const w=el.offsetWidth,h=el.offsetHeight;let x=ax+14,y=ay+14;
   if(x+w>innerWidth-8)x=ax-w-14;if(y+h>innerHeight-8)y=ay-h-14;
@@ -4685,7 +4789,13 @@ finds the real walls first — neutral grey lines of a consistent thickness — 
 and page frames. It closes door openings using real walls only, takes rooms only inside the building outline, and
 straightens them into clean rectangles. If the plan has no scale, it highlights the largest room and asks its width
 from the printed dimensions. The 3D is then built from the detected walls: solid, with their real thickness and the
-doorways left open, on a base plate. Set the wall height in the 3D bar (3 m suits an exhibition stand). Devices move with their room, are
+doorways left open, on a base plate. Set the wall height in the 3D bar (3 m suits an exhibition stand).</p>
+<p><b>Moving around in 3D.</b> Overview: drag to turn a full 360°, drag up and down from eye level to straight down,
+right-click or Shift+drag to move across the plan, wheel or pinch to zoom in close. <b>Walk inside</b> puts you at the
+entrance at eye height (1.6 m): drag to look around and up or down, W/S or ↑/↓ to walk, A/D or ←/→ to step sideways,
+Q/E to go down or up, Shift to go faster; on a phone use the on-screen pad. Walls stop you and doorways let you
+through. Double-click the floor to go to that spot (from the overview, it starts the walk there). Hovering a device
+or gateway in 3D shows its name, IP and serial. Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
@@ -4970,7 +5080,13 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 الحيطان الحقيقية الأول — خطوط رمادي بسمك ثابت — وبتتجاهل خطوط المقاسات والكلام والعفش وإطار الصفحة. وبتقفل فتحات
 الأبواب من الحيطان الحقيقية بس، وبتطلّع الغرف جوه حدود المبنى بس، وبتعدّلها مستطيلات نضيفة. ولو الرسمة من غير مقياس،
 بتعلّم أكبر غرفة بالأصفر وتسألك عن عرضها من المقاسات المكتوبة. والـ 3D بيتبني من الحيطان المكتشفة: صلبة بسمكها
-الحقيقي والأبواب مفتوحة، فوق قاعدة. ظبّط ارتفاع الحيطان من شريط الـ 3D (٣ متر مناسب لجناح معرض). الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+الحقيقي والأبواب مفتوحة، فوق قاعدة. ظبّط ارتفاع الحيطان من شريط الـ 3D (٣ متر مناسب لجناح معرض).</p>
+<p><b>الحركة في الـ 3D.</b> المنظر العام: اسحب تلف ٣٦٠ درجة، واسحب فوق وتحت من مستوى العين لحد فوق خالص، وكليك يمين
+أو Shift+سحب تحرّك على الرسمة، والعجلة أو قرص صباعين للتكبير لحد ما تقرّب جدًا. <b>تجوّل جوه</b> بيحطك عند المدخل
+بارتفاع العين (١٫٦ متر): اسحب تبص حواليك وفوق وتحت، وW/S أو ↑/↓ تمشي، وA/D أو ←/→ تتحرك يمين وشمال، وQ/E تنزل
+وتطلع، وShift أسرع؛ وعلى الموبايل استعمل الأسهم اللي على الشاشة. الحيطان بتوقفك والأبواب بتعدّيك. ودبل كليك على
+الأرض بيوديك هناك (ومن المنظر العام بيبدأ التجوّل من النقطة دي). ولما تقف بالماوس على جهاز أو جيت واي في الـ 3D
+بيظهر اسمه والـ IP والسيريال. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
 الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط، بأداة تعديل اسحبه من أي
@@ -5466,15 +5582,15 @@ document.querySelectorAll("#segView button").forEach(b=>b.onclick=()=>{
   V3.on=on;
   document.querySelectorAll("#segView button").forEach(x=>x.classList.toggle("on",x===b));
   document.body.classList.toggle("view3",on);
-  if(!on)document.body.classList.remove("v3gl");
-  if(on)LOG("evView","3D");
+  if(!on){document.body.classList.remove("v3gl");if(V3.walk.on)walkSet(false);}
+  if(on){LOG("evView","3D");if(!V3._hinted){V3._hinted=1;setTimeout(()=>toast(t("orbHint")),400);}}
   render();});
 rngRot.oninput=()=>{V3.rot=+rngRot.value;v3draw();};
 rngTilt.oninput=()=>{V3.tilt=+rngTilt.value/100;v3draw();};
-btnZ3p.onclick=()=>{V3.z=Math.min(3,V3.z*1.18);v3draw();};
-btnZ3m.onclick=()=>{V3.z=Math.max(.4,V3.z/1.18);v3draw();};
+btnZ3p.onclick=()=>{if(V3.walk.on){walkStep(1.2,0);return;}V3.z=Math.min(8,V3.z*1.18);v3draw();};
+btnZ3m.onclick=()=>{if(V3.walk.on){walkStep(-1.2,0);return;}V3.z=Math.max(.3,V3.z/1.18);v3draw();};
 btnDims.onclick=()=>{V3.dims=!V3.dims;btnDims.classList.toggle("on",V3.dims);v3draw();};
-btnV3r.onclick=()=>{V3.rot=35;V3.tilt=.55;V3.z=1;V3.dims=true;
+btnV3r.onclick=()=>{if(V3.walk.on)walkSet(false);V3.rot=35;V3.tilt=.55;V3.z=1;V3.px=0;V3.pz=0;V3.dims=true;
   rngRot.value=35;rngTilt.value=55;btnDims.classList.add("on");v3draw();};
 inH3.onchange=()=>{P.cfg.h3=Math.max(2,+inH3.value||6);render();schedAS();};
 
