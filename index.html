@@ -829,7 +829,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="6.14";
+const VERSION="7.0";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -960,6 +960,10 @@ dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",d
 pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
 tSplit:"يمين / يسار",tSymM:"−",tSymP:"+",sideR:"يمين",sideL:"يسار",
 whLbl:"المقاس",whW:"العرض",whH:"الطول",whCal:"المقياس اتظبط من مقاس الغرفة دي",
+smReplace:"عندك {0} غرفة مرسومة — أبدّلهم بالغرف اللي هتتكشف من الرسمة؟",smFound:"لقيت {0} غرفة و{1} حيطة",
+smFallback:"الرسمة مافيهاش حيطان واضحة — رجعت للطريقة القديمة",
+smScale:"الغرفة المتعلّمة بالأصفر — عرضها (من الشمال لليمين) كام متر حسب المقاسات المكتوبة على الرسمة؟",
+smNoScale:"من غير مقياس الأبعاد مش هتبقى صح — اكتب مقاس أي غرفة تحت «الغرف»",
 dfLabel:"الرقم على الرسمة",dfLabelHint:"سيبه فاضي عشان يفضل الترقيم الأوتوماتيكي",dfName:"الاسم",dfSn:"السيريال",
 dfSave:"حفظ",dfCancel:"إلغاء",dfIpWarn:"شكل العنوان ده مش IP عادي — اتأكد منه",dfTitle:"بيانات",
 tipEmpty:"مافيش بيانات لسه — اختاره بأداة تعديل ودوس ✎",tipSide:"الناحية",
@@ -1136,6 +1140,10 @@ dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
 pDevName:"Label for this device (leave empty to go back to automatic numbering):",
 tSplit:"Right / Left",tSymM:"−",tSymP:"+",sideR:"Right",sideL:"Left",
 whLbl:"Size",whW:"Width",whH:"Length",whCal:"Scale set from this room's size",
+smReplace:"You have {0} drawn rooms — replace them with the rooms detected on the drawing?",smFound:"Found {0} rooms and {1} walls",
+smFallback:"No clear walls on this drawing — used the previous method",
+smScale:"The room highlighted in yellow — how wide is it (left to right) in metres, from the dimensions printed on the drawing?",
+smNoScale:"Without a scale the sizes will be wrong — type any room's size under Rooms",
 dfLabel:"Label on the plan",dfLabelHint:"Leave empty to keep the automatic number",dfName:"Name",dfSn:"Serial",
 dfSave:"Save",dfCancel:"Cancel",dfIpWarn:"This does not look like a regular IP address — please check it",dfTitle:"Details",
 tipEmpty:"No details yet — select it with Edit and press ✎",tipSide:"Side",
@@ -1299,9 +1307,9 @@ function schedAS(){clearTimeout(asT);
   asT=setTimeout(()=>{try{P.lang=L;
     localStorage.setItem(AS_KEY,JSON.stringify({t:Date.now(),p:P}));}catch(e){}},700);}
 function stateNow(){const q=pl();
-  return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,v:devs(q),sp:q.split||null,sc:q.scale});}
+  return JSON.stringify({z:q.zones,s:q.sensors,g:q.gateways,w:q.walls,d:q.doors,v:devs(q),sp:q.split||null,ol:q.outline||null,sc:q.scale});}
 function applyState(s){const o=JSON.parse(s),q=pl();
-  q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.devices=o.v||[];q.split=o.sp||null;q.scale=o.sc;
+  q.zones=o.z;q.sensors=o.s;q.gateways=o.g;q.walls=o.w;q.doors=o.d;q.devices=o.v||[];q.split=o.sp||null;q.outline=o.ol||null;q.scale=o.sc;
   if(window.btnSplit)btnSplit.classList.toggle("on",!!(q.split&&q.split.on));}
 /* ================================================================
    الخريطة الحرارية — القراءات والمدى والإحصاءات
@@ -1848,7 +1856,10 @@ function t3ensure(){
 function t3build(q){
   if(!T3.ok)return;
   t3dispose(T3.root);T3.root.clear();
-  const sc=q.scale>0?q.scale:30,b=contentBox(q);if(!b)return;
+  const sc=q.scale>0?q.scale:30;
+  /* لو المبنى اتكشف من الرسمة، الكاميرا بتتظبط على المبنى نفسه مش على الصفحة كلها */
+  const ol=(q.outline&&q.walls&&q.walls.some(w=>w.auto))?q.outline:null,pad=ol?sc*.8:0;
+  const b=ol?{minX:ol.x0-pad,minY:ol.y0-pad,maxX:ol.x1+pad,maxY:ol.y1+pad}:contentBox(q);if(!b)return;
   const ox=b.minX,oy=b.minY;
   const M=p=>({x:(p.x-ox)/sc,z:(p.y-oy)/sc});
   const W=(b.maxX-ox)/sc,D=(b.maxY-oy)/sc,R=Math.max(W,D,6);
@@ -1866,8 +1877,22 @@ function t3build(q){
   const sh=T3.sun.shadow.camera;sh.left=-R*1.2;sh.right=R*1.2;sh.top=R*1.2;sh.bottom=-R*1.2;sh.far=R*5;
   T3.dims=new THREE.Group();T3.dims.visible=V3.dims;T3.root.add(T3.dims);
   const hm=(P.hm&&P.hm.on);
+  const hasW=!!(q.walls&&q.walls.length&&q.walls.some(w=>w.auto));
+  const Hw=P.cfg.h3||6;
+  if(hasW){
+    const wmat=new THREE.MeshStandardMaterial({color:0xeadfca,roughness:.85,metalness:0});
+    if(q.outline){const o=q.outline,A=M({x:o.x0,y:o.y0}),C2=M({x:o.x1,y:o.y1});
+      const base=new THREE.Mesh(new THREE.BoxGeometry(C2.x-A.x+.5,.1,C2.z-A.z+.5),
+        new THREE.MeshStandardMaterial({color:0xd8cbb0,roughness:.9}));
+      base.position.set((A.x+C2.x)/2,.05,(A.z+C2.z)/2);base.receiveShadow=true;T3.root.add(base);}
+    q.walls.forEach(w=>{const a=M({x:w.x1,y:w.y1}),c=M({x:w.x2,y:w.y2});
+      const len=Math.hypot(c.x-a.x,c.z-a.z);if(len<.05)return;
+      const th=Math.max(.06,(w.th||.15*sc)/sc);
+      const me=new THREE.Mesh(new THREE.BoxGeometry(len+th,Hw,th),wmat);
+      me.position.set((a.x+c.x)/2,Hw/2+.1,(a.z+c.z)/2);me.rotation.y=-Math.atan2(c.z-a.z,c.x-a.x);
+      me.castShadow=true;me.receiveShadow=true;T3.root.add(me);});}
   q.zones.forEach(z=>{
-    const kd=zKind(z),H=h3Of(z),pts=z.pts.map(M);
+    const kd=zKind(z),H=hasW?Hw:h3Of(z),pts=z.pts.map(M);
     const hx=hm?hmState(z):null;
     const colHex=hx?(hx.status==="ok"?"#22a55f":hx.status==="warn"?"#e2a500":"#d92d20")
       :kd==="fridge"?"#00b3c8":kd==="corr"?"#7d8ea0":(z.color||"#5b93ff");
@@ -1877,9 +1902,9 @@ function t3build(q){
     /* أرضية الغرفة — بلاطة بسمك */
     const shp=new THREE.Shape(pts.map(p=>new THREE.Vector2(p.x,p.z)));
     const fl=new THREE.Mesh(new THREE.ExtrudeGeometry(shp,{depth:.08,bevelEnabled:false}),
-      new THREE.MeshStandardMaterial({color:col.clone().multiplyScalar(kd==="corr"?.9:.55),
+      new THREE.MeshStandardMaterial({color:hasW?new THREE.Color(0xf1e9da).lerp(col,.22):col.clone().multiplyScalar(kd==="corr"?.9:.55),
         roughness:.9,transparent:kd==="corr",opacity:kd==="corr"?.5:1}));
-    fl.rotation.x=Math.PI/2;fl.position.y=.08;fl.receiveShadow=true;
+    fl.rotation.x=Math.PI/2;fl.position.y=hasW?.19:.08;fl.receiveShadow=true;
     T3.root.add(fl);
     if(kd==="corr"){
       const lg=new THREE.BufferGeometry().setFromPoints(
@@ -1890,7 +1915,8 @@ function t3build(q){
       sp.position.set(cen.x,.9,cen.z);sp.scale.set(sp.userData.asp*1.4,1.4,1);
       T3.root.add(sp);
       return;}
-    /* جدران بسمك حقيقي شفافة + أعمدة أركان صلبة */
+    /* جدران بسمك حقيقي شفافة + أعمدة أركان صلبة — بس لو مافيش حيطان حقيقية مكتشفة */
+    if(!hasW){
     const wm=new THREE.MeshStandardMaterial({color:col,transparent:true,opacity:.30,
       roughness:.55,metalness:.05,depthWrite:false,side:THREE.DoubleSide});
     for(let i=0;i<pts.length;i++){
@@ -1906,7 +1932,7 @@ function t3build(q){
     /* إطار السقف */
     const tg=new THREE.BufferGeometry().setFromPoints(
       pts.concat([pts[0]]).map(p=>new THREE.Vector3(p.x,H,p.z)));
-    T3.root.add(new THREE.Line(tg,new THREE.LineBasicMaterial({color:col})));
+    T3.root.add(new THREE.Line(tg,new THREE.LineBasicMaterial({color:col})));}
     /* شريحة الاسم */
     const lines=[{t:z.name},{t:nice(H)+" "+t("unitM")+" · "+fmt(areaM)+" "+t("unitSq"),c:"#9db0c2"}];
     if(hx)lines.push({t:fmt1(hx.tMin)+" / "+fmt1(hx.tMax)+" °",
@@ -2849,6 +2875,189 @@ function wandAt(wx,wy){
   const poly=regionPoly(m,rg);
   if(!poly||poly.length<3){toast(t("tNoShape"));return;}
   addZone(poly.map(p=>({x:p[0]*m.sc,y:p[1]*m.sc})));toast(t("tPicked"));}
+/* ================= اكتشاف ذكي: الحيطان الأول، وبعدين الغرف =================
+   الدروس من النسخة القديمة:
+   ١) مش كل خط غامق حيطة — خطوط المقاسات والكلام والعفش والأسهم كانت ٥٨٪ من اللي اتحسب حيطان.
+      الحيطة هنا: لون رمادي محايد + سُمك ثابت (أسمك من الخطوط الرفيعة) + شكل طولي.
+   ٢) مش كل جيب مقفول غرفة — الغرف بتتحسب جوه حدود المبنى بس، وبعد قفل فتحات الأبواب.
+   ٣) الغرفة شكلها مستطيل أو زوايا قايمة — الحواف بتتعدل بدل ما تفضل مسننة.
+   ٤) الـ 3D بيتبني من الحيطان الحقيقية (صلبة بسمكها) مش صناديق شفافة حوالين كل غرفة. */
+function smartDetect(q){
+  const img=IMG[q.id];if(!img)return null;
+  const MAXD=1600,f=Math.min(1,MAXD/Math.max(q.imgW,q.imgH));
+  const W=Math.max(8,Math.round(q.imgW*f)),H=Math.max(8,Math.round(q.imgH*f)),N=W*H;
+  const cv0=document.createElement("canvas");cv0.width=W;cv0.height=H;
+  const g0=cv0.getContext("2d",{willReadFrequently:true});
+  g0.fillStyle="#fff";g0.fillRect(0,0,W,H);g0.drawImage(img,0,0,W,H);
+  const px=g0.getImageData(0,0,W,H).data;
+
+  /* ١ — رمادي محايد بس (الأحمر والبرتقالي والأسود الغامق برا) */
+  const tryBand=(lo,hi)=>{const m=new Uint8Array(N);
+    for(let i=0,j=0;i<N;i++,j+=4){const r=px[j],gg=px[j+1],b=px[j+2];
+      const mx=Math.max(r,gg,b),mn=Math.min(r,gg,b),l=(r+gg+b)/3;
+      if(mx-mn<30&&l>=lo&&l<hi)m[i]=1;}
+    return m;};
+
+  /* سُمك الحيطة: عرض المقطع الأفقي، بوزن طول الخط الرأسي اللي هو جزء منه —
+     فالحيطان الطويلة تكسب، وخطوط العفش والسلالم القصيرة (الأكتر عددًا) ما تتحسبش حيطان.
+     الغلطة القديمة: «أكتر طول متكرر» طلع ٣ بكسل (خطوط عفش) بدل ٦ (الحيطان) في السكرين شوت. */
+  const thickOf=m=>{const h=new Float64Array(80);let n=0;
+    const vext=(x,y)=>{let a=y,b=y;while(a>0&&m[(a-1)*W+x]&&y-a<400)a--;while(b<H-1&&m[(b+1)*W+x]&&b-y<400)b++;return b-a+1;};
+    for(let y=0;y<H;y+=3){let r=0;const o=y*W;
+      for(let x=0;x<=W;x++){const v=x<W&&m[o+x];if(v)r++;else{
+        if(r>=3&&r<80){const e=vext(x-1-(r>>1),y);if(e>=r*4){h[r]+=e;n++;}}r=0;}}}
+    let best=0,bi=0;for(let i=3;i<80;i++){const s=h[i]+(h[i-1]||0)*.5+(h[i+1]||0)*.5;if(s>best){best=s;bi=i;}}
+    return{t:bi,n};};
+
+  /* فتح/قفل بمربع منفصل للمحورين — O(N) */
+  const pass=(src,r,dil,horiz)=>{const out=new Uint8Array(N),L=horiz?W:H,S=horiz?H:W,win=2*r+1;
+    for(let s=0;s<S;s++){let c=0;const idx=k=>horiz?s*W+k:k*W+s;
+      for(let k=0;k<Math.min(r,L);k++)c+=src[idx(k)];
+      for(let k=0;k<L;k++){const a=k+r;if(a<L)c+=src[idx(a)];const d=k-r-1;if(d>=0)c-=src[idx(d)];
+        out[idx(k)]=dil?(c>0?1:0):(c===win?1:0);}}
+    return out;};
+  const erode=(m,r)=>pass(pass(m,r,false,true),r,false,false);
+  const dilate=(m,r)=>pass(pass(m,r,true,true),r,true,false);
+
+  /* مكوّنات متصلة (٨ جيران) */
+  const comps=m=>{const lab=new Int32Array(N),out=[],Q=new Int32Array(N);let id=0;
+    for(let i=0;i<N;i++){if(!m[i]||lab[i])continue;id++;let h=0,t=0;Q[t++]=i;lab[i]=id;
+      let n=0,x0=W,y0=H,x1=0,y1=0;
+      while(h<t){const p=Q[h++],x=p%W,y=(p-x)/W;n++;
+        if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+        for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;
+          const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;
+          const k=ny*W+nx;if(m[k]&&!lab[k]){lab[k]=id;Q[t++]=k;}}}
+      out.push({id,n,x0,y0,x1,y1});}
+    return{lab,list:out};};
+
+  let raw=tryBand(60,205),th=thickOf(raw);
+  if(th.n<40){raw=tryBand(0,205);th=thickOf(raw);}
+  if(th.t<3||th.n<40)return null;
+  const T=th.t,r=Math.max(1,Math.round(T*.3));
+  const op=dilate(erode(raw,r),r);                       /* بيشيل الخطوط الأرفع من الحيطة */
+
+  /* ٢ — نسيب المكوّنات اللي شكلها حيطان: طويلة، ورفيعة لو مستقيمة، وقليلة الملء لو متفرعة */
+  const C=comps(op),maxD=Math.max(W,H);
+  const keep=new Uint8Array(C.list.length+1);
+  C.list.forEach(c=>{const bw=c.x1-c.x0+1,bh=c.y1-c.y0+1,lg=Math.max(bw,bh),sh=Math.min(bw,bh),fill=c.n/(bw*bh);
+    const straight=lg/sh>=3&&sh<=T*2.6,network=fill<.5&&lg>=maxD*.06;
+    if(lg>=Math.max(T*5,maxD*.03)&&(straight||network))keep[c.id]=1;});
+  const wall=new Uint8Array(N);for(let i=0;i<N;i++)if(keep[C.lab[i]])wall[i]=1;
+
+  /* حدود المبنى: أكبر مكوّن + اللي لازقين فيه */
+  const kept=C.list.filter(c=>keep[c.id]).sort((a,b)=>b.n-a.n);
+  if(!kept.length)return null;
+  const pad=maxD*.04;let B={x0:kept[0].x0,y0:kept[0].y0,x1:kept[0].x1,y1:kept[0].y1};
+  for(let pass2=0;pass2<3;pass2++)kept.forEach(c=>{
+    if(c.x1>=B.x0-pad&&c.x0<=B.x1+pad&&c.y1>=B.y0-pad&&c.y0<=B.y1+pad){
+      B.x0=Math.min(B.x0,c.x0);B.y0=Math.min(B.y0,c.y0);B.x1=Math.max(B.x1,c.x1);B.y1=Math.max(B.y1,c.y1);}});
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(x<B.x0||x>B.x1||y<B.y0||y>B.y1)wall[y*W+x]=0;
+  const BW=B.x1-B.x0+1,BH=B.y1-B.y0+1;
+  if(BW<maxD*.08||BH<maxD*.08)return null;
+
+  /* ٣ — مقاطع الحيطان: مستطيلات أفقية ورأسية بسمك الحيطة */
+  const segs=[];
+  const scan=horiz=>{const L=horiz?W:H,S=horiz?H:W,open=new Map(),minLen=T*2.5;
+    const at=(s,k)=>horiz?wall[s*W+k]:wall[k*W+s];
+    const close=(key,o)=>{const thk=o.e-o.s+1;if(thk>=T*.5&&thk<=T*2.6)segs.push(horiz?
+      {x0:o.a,x1:o.b,y0:o.s,y1:o.e,h:true}:{x0:o.s,x1:o.e,y0:o.a,y1:o.b,h:false});open.delete(key);};
+    for(let s=0;s<S;s++){const seen=new Set();let k=0;
+      while(k<L){if(!at(s,k)){k++;continue;}let e=k;while(e+1<L&&at(s,e+1))e++;
+        if(e-k+1>=minLen){let hit=null;
+          for(const [key,o] of open)if(Math.abs(o.a-k)<=2&&Math.abs(o.b-e)<=2&&o.e===s-1){hit=key;break;}
+          if(hit!==null){const o=open.get(hit);o.e=s;o.a=Math.min(o.a,k);o.b=Math.max(o.b,e);seen.add(hit);}
+          else{const key=s+":"+k;open.set(key,{a:k,b:e,s,e:s});seen.add(key);}}
+        k=e+1;}
+      for(const [key,o] of [...open])if(!seen.has(key))close(key,o);}
+    for(const [key,o] of [...open])close(key,o);};
+  scan(true);scan(false);
+
+  /* ٤ — حاجز الغرف: الحيطان + إطار المبنى + قفل فتحات الأبواب (امتداد الحيطة لحد أقرب حيطة) */
+  const bar=dilate(wall,1);
+  const G=Math.max(T*3,Math.min(BW,BH)*.2);   /* أوسع باب بيتقفل: ٢٠٪ من أقصر بُعد للمبنى (≈١٫٨ م هنا) */
+  const put=(x,y)=>{if(x>=B.x0&&x<=B.x1&&y>=B.y0&&y<=B.y1)bar[y*W+x]=1;};
+  for(let x=B.x0;x<=B.x1;x++){put(x,B.y0);put(x,B.y1);}
+  for(let y=B.y0;y<=B.y1;y++){put(B.x0,y);put(B.x1,y);}
+  const ext=(sg)=>{const cy=Math.round((sg.y0+sg.y1)/2),cx=Math.round((sg.x0+sg.x1)/2),half=Math.max(1,Math.floor(T/2));
+    /* بيعدّي طرف الحيطة نفسها الأول، وبعدين يدوّر على أقرب حيطة في نفس الاتجاه في حدود G */
+    const ray=(sx,sy,dx,dy)=>{let x=sx,y=sy,free=-1;
+      for(let s=1;s<=G+T*2;s++){x+=dx;y+=dy;if(x<B.x0||x>B.x1||y<B.y0||y>B.y1)return;
+        const b2=bar[y*W+x];
+        if(free<0){if(!b2)free=s;continue;}
+        if(s-free>G)return;
+        if(b2){for(let u=free;u<s;u++){const xx=sx+dx*u,yy=sy+dy*u;
+            for(let w=-half;w<=half;w++)sg.h?put(xx,yy+w):put(xx+w,yy);}return;}}};
+    if(sg.h){ray(sg.x1,cy,1,0);ray(sg.x0,cy,-1,0);}else{ray(cx,sg.y1,0,1);ray(cx,sg.y0,0,-1);}};
+  /* قفل الأبواب من الحيطان الحقيقية بس: مقطع قصير (طرف كرسي أو عفش لازق في حيطة) ما يمدّش حاجز */
+  const minRay=Math.max(T*8,Math.min(BW,BH)*.06);
+  segs.forEach(sg=>{const len=sg.h?sg.x1-sg.x0+1:sg.y1-sg.y0+1;if(len>=minRay)ext(sg);});
+
+  /* ٥ — الغرف: الفراغات اللي جوه الحدود (٤ جيران) */
+  const lab=new Int32Array(N),Q=new Int32Array(N),rooms=[];let id=0;
+  const minA=BW*BH*.008;
+  for(let y=B.y0+1;y<B.y1;y++)for(let x=B.x0+1;x<B.x1;x++){const i=y*W+x;
+    if(bar[i]||lab[i])continue;id++;let h=0,t=0;Q[t++]=i;lab[i]=id;let n=0,x0=W,y0=H,x1=0,y1=0;
+    while(h<t){const p=Q[h++],px2=p%W,py2=(p-px2)/W;n++;
+      if(px2<x0)x0=px2;if(px2>x1)x1=px2;if(py2<y0)y0=py2;if(py2>y1)y1=py2;
+      const nb=[p-1,p+1,p-W,p+W];
+      for(const k of nb){if(k<0||k>=N)continue;const kx=k%W,ky=(k-kx)/W;
+        if(kx<=B.x0||kx>=B.x1||ky<=B.y0||ky>=B.y1)continue;
+        if(!bar[k]&&!lab[k]){lab[k]=id;Q[t++]=k;}}}
+    if(n>=minA&&x1-x0>T*2&&y1-y0>T*2)rooms.push({id,n,minX:x0,minY:y0,maxX:x1,maxY:y1});}
+  if(!rooms.length)return null;
+
+  /* حواف مستقيمة: مستطيل لو مليان، وإلا مضلع بزوايا قايمة */
+  const ortho=pts=>{const o=pts.map(p=>[p[0],p[1]]),n=o.length;
+    for(let i=0;i<n;i++){const a=o[i],b=o[(i+1)%n],dx=Math.abs(b[0]-a[0]),dy=Math.abs(b[1]-a[1]);
+      if(dx<dy*.35)b[0]=a[0];else if(dy<dx*.35)b[1]=a[1];}
+    return o.filter((p,i)=>{const pr=o[(i-1+n)%n];return Math.hypot(p[0]-pr[0],p[1]-pr[1])>1.5;});};
+  const vis=new Uint8Array(N),outRooms=[];
+  rooms.forEach(rm=>{vis.fill(0);for(let y=rm.minY;y<=rm.maxY;y++)for(let x=rm.minX;x<=rm.maxX;x++){const i=y*W+x;if(lab[i]===rm.id)vis[i]=1;}
+    const rg={minX:rm.minX,minY:rm.minY,maxX:rm.maxX,maxY:rm.maxY,n:rm.n,vis};
+    const fill=rm.n/((rm.maxX-rm.minX+1)*(rm.maxY-rm.minY+1));
+    let poly=fill>.8?[[rm.minX,rm.minY],[rm.maxX+1,rm.minY],[rm.maxX+1,rm.maxY+1],[rm.minX,rm.maxY+1]]
+      :regionPoly({W,H},rg);
+    if(!poly||poly.length<3)return;
+    if(poly.length>4)poly=ortho(poly);
+    outRooms.push({poly:poly.map(p=>({x:p[0]/f,y:p[1]/f})),n:rm.n,cx:(rm.minX+rm.maxX)/2/f,cy:(rm.minY+rm.maxY)/2/f});});
+
+  /* حيطان الـ 3D: من غير القطع القصيرة جدًا (أطراف عفش) */
+  const minWall=Math.max(T*6,Math.min(BW,BH)*.05);
+  const walls=segs.filter(s=>(s.h?s.x1-s.x0+1:s.y1-s.y0+1)>=minWall).map(s=>s.h?{x1:s.x0/f,y1:(s.y0+s.y1+1)/2/f,x2:(s.x1+1)/f,y2:(s.y0+s.y1+1)/2/f,th:(s.y1-s.y0+1)/f,auto:1}
+                             :{x1:(s.x0+s.x1+1)/2/f,y1:s.y0/f,x2:(s.x0+s.x1+1)/2/f,y2:(s.y1+1)/f,th:(s.x1-s.x0+1)/f,auto:1});
+  return{rooms:outRooms,walls,outline:{x0:B.x0/f,y0:B.y0/f,x1:(B.x1+1)/f,y1:(B.y1+1)/f},thick:T/f};}
+
+/* تشغيل الاكتشاف الذكي: الغرف + الحيطان + حدود المبنى، والمقياس من غرفة واحدة مقاسها مكتوب على الرسمة */
+function smartRun(after){
+  const q=pl();
+  if(!IMG[q.id]){alert(t("aImg"));return;}
+  if(q.zones.length&&!confirm(t("smReplace",ar(q.zones.length))))return;
+  wait.classList.add("on");
+  setTimeout(()=>{let r=null;try{r=smartDetect(q);}catch(e){r=null;}
+    wait.classList.remove("on");
+    if(!r||!r.rooms.length){toast(t("smFallback"));q.zones=[];autoRooms(after);return;}
+    snap();
+    /* ترتيب القراءة: من فوق لتحت، وفي نفس الصف من اليمين للشمال */
+    const tol=(r.outline.y1-r.outline.y0)*.08;
+    r.rooms.sort((a,b)=>Math.abs(a.cy-b.cy)>tol?a.cy-b.cy:(L==="ar"?b.cx-a.cx:a.cx-b.cx));
+    q.zones=r.rooms.map((o,i)=>({id:SEQ++,name:t("room")+" "+ar(i+1),pts:o.poly,kind:"room",color:ZC[i%ZC.length]}));
+    q.walls=(q.walls||[]).filter(w=>!w.auto).concat(r.walls);
+    q.outline=r.outline;
+    q.sensors.concat(q.gateways,devs(q)).forEach(o=>{const z=q.zones.find(z=>inPoly(o,z.pts));o.zoneId=z?z.id:null;});
+    gwPlan(q);refresh();
+    toast(t("smFound",ar(q.zones.length),ar(r.walls.length)));
+    const done=()=>{if(after)after();};
+    if(q.scale>0){done();return;}
+    /* المقياس: من أكبر غرفة، بعد ما تتعلّم بالأصفر */
+    const big=q.zones.slice().sort((a,b)=>polyArea(b.pts)-polyArea(a.pts))[0];
+    U.tool="edit";document.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",x.dataset.t==="edit"));
+    U.sel={kind:"zone",z:big};render();
+    setTimeout(()=>{const v=prompt(t("smScale"),"");
+      const m=+String(v||"").replace(",",".");
+      if(m>0){const bb=bbox(big.pts);q.scale=(bb.maxX-bb.minX)/m;refresh();toast(t("whCal"));}
+      else toast(t("smNoScale"));
+      done();},60);},40);}
 function autoRooms(cb){
   const q=pl();
   if(!IMG[q.id]){alert(t("aImg"));return;}
@@ -2891,7 +3100,7 @@ function autoAll(){
     if(runPlan(q,true)){refresh();openMap(true);
       toast(t("tDone",ar(q.sensors.length),ar(q.gateways.length)));}
     else{refresh();toast(t("tNeedZones"));}};
-  const go=()=>{if(!q.zones.length&&IMG[q.id])autoRooms(finish);else finish();};
+  const go=()=>{if(!q.zones.length&&IMG[q.id])smartRun(finish);else finish();};
   if(q.scale>0)go();else askScaleQuick(go);}
 
 /* ================= التفاعل ================= */
@@ -4470,7 +4679,13 @@ entry sets the scale from the room, so a drawing becomes measured in one step an
 name, size and area are printed large enough to read on big drawings.</p>
 <p><b>Stand size.</b> In Project details, <b>stand size in metres</b> (width × length) sets the total area by itself:
 type 12 and 10 once and the totals and every PDF show <b>Stand area (12 × 10 m) 120 m²</b>, with no rectangle and
-no calibration needed. It is saved in the project file. Leave it empty to total the drawn rooms instead. Devices move with their room, are
+no calibration needed. It is saved in the project file. Leave it empty to total the drawn rooms instead.</p>
+<p><b>2D to 3D in one press.</b> On an uploaded drawing with no rooms, pressing <b>3D</b> (or <b>Detect all rooms</b>)
+finds the real walls first — neutral grey lines of a consistent thickness — ignoring dimension lines, text, furniture
+and page frames. It closes door openings using real walls only, takes rooms only inside the building outline, and
+straightens them into clean rectangles. If the plan has no scale, it highlights the largest room and asks its width
+from the printed dimensions. The 3D is then built from the detected walls: solid, with their real thickness and the
+doorways left open, on a base plate. Set the wall height in the 3D bar (3 m suits an exhibition stand). Devices move with their room, are
 saved in the project file, undo like everything else, appear in 3D at a typical height and in the PDF/PNG,
 and the legend lists only the types on the plan.</p>
 <p><b>Right / Left</b> splits the plan with a dashed divider: devices on each side are numbered from 1 on their
@@ -4750,7 +4965,12 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 اللي جوه الغرفة الجديدة بتتبعها لوحدها، وفي الـ PDF اسم الغرفة ومقاسها ومساحتها بيتكتبوا بحجم مقروء على الرسومات الكبيرة.</p>
 <p><b>مقاس الجناح.</b> في «بيانات المشروع» خانتين <b>مقاس الجناح بالمتر</b> (عرض × طول) والمساحة الإجمالية بتطلع منهم
 لوحدها: تكتب ١٢ و١٠ مرة واحدة، والأرقام وكل ملف PDF بيطلع فيهم <b>مساحة الجناح (١٢ × ١٠ متر) ١٢٠ م٢</b> — من غير
-مستطيل ولا معايرة. والمقاس بيتحفظ في ملف المشروع. ولو سيبتهم فاضيين المساحة بتتحسب من الغرف المرسومة. الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
+مستطيل ولا معايرة. والمقاس بيتحفظ في ملف المشروع. ولو سيبتهم فاضيين المساحة بتتحسب من الغرف المرسومة.</p>
+<p><b>من 2D لـ 3D بدوسة.</b> على رسمة مرفوعة من غير غرف، دوسة على <b>3D</b> (أو <b>اكتشاف كل الغرف</b>) بتلاقي
+الحيطان الحقيقية الأول — خطوط رمادي بسمك ثابت — وبتتجاهل خطوط المقاسات والكلام والعفش وإطار الصفحة. وبتقفل فتحات
+الأبواب من الحيطان الحقيقية بس، وبتطلّع الغرف جوه حدود المبنى بس، وبتعدّلها مستطيلات نضيفة. ولو الرسمة من غير مقياس،
+بتعلّم أكبر غرفة بالأصفر وتسألك عن عرضها من المقاسات المكتوبة. والـ 3D بيتبني من الحيطان المكتشفة: صلبة بسمكها
+الحقيقي والأبواب مفتوحة، فوق قاعدة. ظبّط ارتفاع الحيطان من شريط الـ 3D (٣ متر مناسب لجناح معرض). الأجهزة بتتحرك مع غرفتها، وبتتحفظ في ملف المشروع، والتراجع شغال عليها، وبتظهر
 في الـ 3D على ارتفاع منطقي وفي الـ PDF والصورة، والشرح تحت الرسمة بيعرض الأنواع اللي موجودة بس.</p>
 <p>زرار <b>يمين / يسار</b> بيقسم الرسمة بخط متقطع: الأجهزة في كل ناحية بتتعد من ١ لوحدها، لكل نوع، بترتيب
 الإضافة — أول جهاز تحطه في الناحية رقمه ١، وأي جهاز جديد بياخد الرقم اللي بعده. عشان تحرك الخط، بأداة تعديل اسحبه من أي
@@ -4966,7 +5186,7 @@ document.getElementById("btnNew").onclick=()=>{
   txtPlan.value="";descSum.style.display="none";
   applyProject(newProject());};
 document.getElementById("btnAll").onclick=()=>{LOG("evRun",t("runAll"));autoAll();};
-document.getElementById("btnAuto").onclick=()=>autoRooms();
+document.getElementById("btnAuto").onclick=()=>smartRun();
 document.getElementById("btnTo2D").onclick=()=>{wait.classList.add("on");
   setTimeout(()=>{try{to2D(+rngStr.value||8);}catch(e){alert(t("aBig"));}
     wait.classList.remove("on");},30);};
@@ -5240,7 +5460,9 @@ btnHmDoc.onclick=hmDoc;
 /* تبديل العرض */
 document.querySelectorAll("#segView button").forEach(b=>b.onclick=()=>{
   const on=b.dataset.v==="3";
-  if(on&&!pl().zones.length){alert(t("v3Need"));return;}
+  if(on&&!pl().zones.length){
+    if(IMG[pl().id]){smartRun(()=>{if(pl().zones.length)b.click();});return;}
+    alert(t("v3Need"));return;}
   V3.on=on;
   document.querySelectorAll("#segView button").forEach(x=>x.classList.toggle("on",x===b));
   document.body.classList.toggle("view3",on);
