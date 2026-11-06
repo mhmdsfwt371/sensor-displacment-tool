@@ -346,6 +346,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 .glinks button{flex:1;background:transparent;border:none;color:var(--muted);font-size:12px;padding:6px}
 .glinks button:hover{color:var(--text)}
 #userChip{font-size:11px;color:var(--muted);max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#builtChip{font-size:10.5px;color:var(--muted);opacity:.85;white-space:nowrap}
 #verChip{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:20px;
   padding:1px 7px;letter-spacing:.3px}
 .item .go{flex:1;font-size:12.5px;line-height:1.6}
@@ -461,6 +462,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
       <div class="r1">
         <h1 data-i="appTitle">توزيع الحساسات</h1>
         <span id="verChip"></span>
+        <span id="builtChip"></span>
         <span id="userChip"></span>
         <button id="btnLogout" data-i="bLogout" style="display:none">خروج</button>
         <button id="btnInstall" data-i="bInstall" style="display:none">تثبيت</button>
@@ -848,7 +850,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="7.1";
+const VERSION="7.2";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -979,7 +981,7 @@ dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",d
 pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
 tSplit:"يمين / يسار",tSymM:"−",tSymP:"+",sideR:"يمين",sideL:"يسار",
 whLbl:"المقاس",whW:"العرض",whH:"الطول",whCal:"المقياس اتظبط من مقاس الغرفة دي",
-bWalk:"تجوّل جوه",bOrbit:"منظر عام",walkHint:"اسحب عشان تبص حواليك · W/S أو ↑/↓ قدام وورا · A/D أو ←/→ يمين وشمال · Q/E تحت وفوق · Shift أسرع · دبل كليك على الأرض تروح هناك",
+builtBy:"من بناء وتطوير",bWalk:"تجوّل جوه",bOrbit:"منظر عام",walkHint:"اسحب عشان تبص حواليك · W/S أو ↑/↓ قدام وورا · A/D أو ←/→ يمين وشمال · Q/E تحت وفوق · Shift أسرع · دبل كليك على الأرض تروح هناك",
 orbHint:"اسحب تلف ٣٦٠ · كليك يمين أو Shift+سحب تحرّك · العجلة تكبير · دبل كليك على الأرض تدخل تتمشى من هناك",
 smReplace:"عندك {0} غرفة مرسومة — أبدّلهم بالغرف اللي هتتكشف من الرسمة؟",smFound:"لقيت {0} غرفة و{1} حيطة",
 smFallback:"الرسمة مافيهاش حيطان واضحة — رجعت للطريقة القديمة",
@@ -1161,7 +1163,7 @@ dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
 pDevName:"Label for this device (leave empty to go back to automatic numbering):",
 tSplit:"Right / Left",tSymM:"−",tSymP:"+",sideR:"Right",sideL:"Left",
 whLbl:"Size",whW:"Width",whH:"Length",whCal:"Scale set from this room's size",
-bWalk:"Walk inside",bOrbit:"Overview",walkHint:"Drag to look around · W/S or ↑/↓ forward/back · A/D or ←/→ sideways · Q/E down/up · Shift faster · double-click the floor to go there",
+builtBy:"Built & developed by",bWalk:"Walk inside",bOrbit:"Overview",walkHint:"Drag to look around · W/S or ↑/↓ forward/back · A/D or ←/→ sideways · Q/E down/up · Shift faster · double-click the floor to go there",
 orbHint:"Drag to turn 360° · right-click or Shift+drag to move · wheel to zoom · double-click the floor to walk from there",
 smReplace:"You have {0} drawn rooms — replace them with the rooms detected on the drawing?",smFound:"Found {0} rooms and {1} walls",
 smFallback:"No clear walls on this drawing — used the previous method",
@@ -1256,6 +1258,7 @@ function applyLang(){
   fbUndo.title=t("tUndo");fbRedo.title=t("tRedo");
   verChip.textContent="v"+VERSION;
   verChip.title=t("verHint");
+  builtChip.textContent="· "+builtLine()+" · "+brandCo();
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
   txtPlan.placeholder=t("phDesc");
   loadBrand();relabel();
@@ -2545,7 +2548,7 @@ function exportSheet(q,W,clean){
       P.cfg.gw==="gsm"?t("optGsm"):t("optWifi"),
       ar(P.cfg.gwRange),
       gwModeLabel()),
-        mR=BRAND.mark+" · "+BRAND.site+" · v"+VERSION;
+        mR=builtLineEN()+" · "+BRAND.mark+" · "+BRAND.site+" · v"+VERSION;
   let mf=Math.round(W*.0145);
   g.font=mf+FT;
   while(g.measureText(mL).width+g.measureText(mR).width>(RX-LX)-fs*2&&mf>W*.009){
@@ -2734,7 +2737,7 @@ function regSheets(q){
       y+=RH;});
     g.strokeStyle="#14213d";g.lineWidth=2;g.strokeRect(M,TOP,TW,y-TOP);
     g.fillStyle="#8a98a8";g.font=font(400,22);g.textBaseline="alphabetic";g.direction="ltr";
-    g.textAlign="left";g.fillText(BRAND.mark+" · "+BRAND.site+" · v"+VERSION,M,H-M/2);
+    g.textAlign="left";g.fillText(builtLineEN()+" · "+BRAND.mark+" · "+BRAND.site+" · v"+VERSION,M,H-M/2);
     g.textAlign="right";g.direction=rtl?"rtl":"ltr";g.fillText(t("rgPage")+" "+ar(pg+1)+" / "+ar(pages),W-M,H-M/2);
     out.push(c);}
   return out;}
@@ -4431,6 +4434,9 @@ function readImage(f){
 const OFF_AR="https://cdn.prod.website-files.com/64934b1b5b168f3686f8521b/65c3a242df94bdf87b48865b_afaqy-logo-ar.svg",
       OFF_EN="https://afaqy.com/images/afaqy-logo.svg";
 const px=u=>"https://wsrv.nl/?url="+encodeURIComponent(u)+"&h=240&output=png";
+const BUILT_BY={ar:"محمد صفوت",en:"Mohamed Safwat"};
+function builtLine(){return t("builtBy")+" "+(BUILT_BY[L]||BUILT_BY.ar);}
+function builtLineEN(){return "Built & developed by "+BUILT_BY.en;}
 const BRAND={
   mark:"AFAQY",site:"www.afaqy.com",key:"afaqyBrandLogo_v2",
   co:{ar:"آفاقي لتقنية المعلومات",en:"AFAQY IT"},
