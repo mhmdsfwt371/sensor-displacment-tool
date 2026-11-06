@@ -40,8 +40,11 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .side{background:var(--panel);border-inline-start:1px solid var(--line);overflow-y:auto;padding:0 0 70px}
 .brand{padding:13px 15px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;
   background:var(--panel);z-index:5;display:flex;flex-direction:column;gap:9px}
-.brand .r1{display:flex;align-items:center;gap:7px;min-width:0}
+.brand .r1{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap}
 .brand .r1>*{flex:0 0 auto}
+#builtChip{flex:1 1 100%;order:9;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brand .r1 #btnLang,.brand .r1 #btnTheme,.brand .r1 #btnManual{margin-inline-start:auto}
+.brand .r1 #btnTheme,.brand .r1 #btnManual{margin-inline-start:0}
 .brand .r2{display:flex;gap:7px}
 .brand .r2>button,.brand .r2>.savewrap{flex:1 1 0;min-width:0}
 .brand .r2 button{flex:1 1 0;padding:8px 6px;font-size:12.5px}
@@ -853,7 +856,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="7.3";
+const VERSION="7.4";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -1265,7 +1268,7 @@ function applyLang(){
   fbUndo.title=t("tUndo");fbRedo.title=t("tRedo");
   verChip.textContent="v"+VERSION;
   verChip.title=t("verHint");
-  builtChip.textContent="· "+t("cpLine");
+  builtChip.textContent=t("cpLine");
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
   txtPlan.placeholder=t("phDesc");
   loadBrand();relabel();
