@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#0d141c" id="metaTheme">
+<meta name="author" content="Mohamed Safwat (AFAQY IT) — Western Technical Manager, Jeddah">
+<meta name="description" content="Sensor Displacement & SFDA deployment planning tool. Built & developed by Mohamed Safwat at AFAQY IT.">
+<!-- Built & developed by Mohamed Safwat · AFAQY IT · first release 2026. Authorship history: github.com/mhmdsfwt371/sensor-displacment-tool -->
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -850,7 +853,7 @@ html[data-theme="light"] .per input::-webkit-calendar-picker-indicator{filter:no
 
 <script>
 "use strict";
-const VERSION="7.2";
+const VERSION="7.3";
 const COARSE=!!(window.matchMedia&&window.matchMedia("(pointer:coarse)").matches);
 /* ================================================================
    إعدادات فايربيز | Firebase settings
@@ -981,7 +984,9 @@ dvCam:"كاميرا",dvRdr:"ريدر",dvAnt:"أنتنا",dvPc:"كمبيوتر",d
 pDevName:"اسم الجهاز ده (سيبه فاضي يرجع للترقيم الأوتوماتيكي):",
 tSplit:"يمين / يسار",tSymM:"−",tSymP:"+",sideR:"يمين",sideL:"يسار",
 whLbl:"المقاس",whW:"العرض",whH:"الطول",whCal:"المقياس اتظبط من مقاس الغرفة دي",
-builtBy:"من بناء وتطوير",bWalk:"تجوّل جوه",bOrbit:"منظر عام",walkHint:"اسحب عشان تبص حواليك · W/S أو ↑/↓ قدام وورا · A/D أو ←/→ يمين وشمال · Q/E تحت وفوق · Shift أسرع · دبل كليك على الأرض تروح هناك",
+builtBy:"من بناء وتطوير",cpLine:"© ٢٠٢٦ آفاقي · بناء وتطوير: محمد صفوت",aboutT:"عن الأداة",
+aboutDev:"الباني والمطوّر",aboutRole:"مدير فني — المنطقة الغربية، آفاقي",aboutRel:"أول إصدار",aboutVer:"الإصدار الحالي",
+aboutNote:"أداة داخلية من بناء محمد صفوت تحت مظلة آفاقي لتقنية المعلومات. سجل التأليف الكامل محفوظ ومؤرّخ على مستودع الكود.",bWalk:"تجوّل جوه",bOrbit:"منظر عام",walkHint:"اسحب عشان تبص حواليك · W/S أو ↑/↓ قدام وورا · A/D أو ←/→ يمين وشمال · Q/E تحت وفوق · Shift أسرع · دبل كليك على الأرض تروح هناك",
 orbHint:"اسحب تلف ٣٦٠ · كليك يمين أو Shift+سحب تحرّك · العجلة تكبير · دبل كليك على الأرض تدخل تتمشى من هناك",
 smReplace:"عندك {0} غرفة مرسومة — أبدّلهم بالغرف اللي هتتكشف من الرسمة؟",smFound:"لقيت {0} غرفة و{1} حيطة",
 smFallback:"الرسمة مافيهاش حيطان واضحة — رجعت للطريقة القديمة",
@@ -1163,7 +1168,9 @@ dvCam:"Camera",dvRdr:"Reader",dvAnt:"Antenna",dvPc:"PC",dvRtr:"Router",
 pDevName:"Label for this device (leave empty to go back to automatic numbering):",
 tSplit:"Right / Left",tSymM:"−",tSymP:"+",sideR:"Right",sideL:"Left",
 whLbl:"Size",whW:"Width",whH:"Length",whCal:"Scale set from this room's size",
-builtBy:"Built & developed by",bWalk:"Walk inside",bOrbit:"Overview",walkHint:"Drag to look around · W/S or ↑/↓ forward/back · A/D or ←/→ sideways · Q/E down/up · Shift faster · double-click the floor to go there",
+builtBy:"Built & developed by",cpLine:"© 2026 AFAQY · built & developed by Mohamed Safwat",aboutT:"About",
+aboutDev:"Builder & developer",aboutRole:"Western Technical Manager, AFAQY",aboutRel:"First release",aboutVer:"Current version",
+aboutNote:"An internal tool built by Mohamed Safwat under AFAQY IT. The full, dated authorship history is kept on the code repository.",bWalk:"Walk inside",bOrbit:"Overview",walkHint:"Drag to look around · W/S or ↑/↓ forward/back · A/D or ←/→ sideways · Q/E down/up · Shift faster · double-click the floor to go there",
 orbHint:"Drag to turn 360° · right-click or Shift+drag to move · wheel to zoom · double-click the floor to walk from there",
 smReplace:"You have {0} drawn rooms — replace them with the rooms detected on the drawing?",smFound:"Found {0} rooms and {1} walls",
 smFallback:"No clear walls on this drawing — used the previous method",
@@ -1258,7 +1265,7 @@ function applyLang(){
   fbUndo.title=t("tUndo");fbRedo.title=t("tRedo");
   verChip.textContent="v"+VERSION;
   verChip.title=t("verHint");
-  builtChip.textContent="· "+builtLine()+" · "+brandCo();
+  builtChip.textContent="· "+t("cpLine");
   document.querySelectorAll(".num").forEach((e,i)=>e.textContent=ar(i+1));
   txtPlan.placeholder=t("phDesc");
   loadBrand();relabel();
@@ -5104,7 +5111,14 @@ Certificate text is in English, like the manufacturers' certificates.</blockquot
 (مش ISO/IEC 17025). نص الشهادة بالإنجليزي زي شهادات المصانع.</blockquote>`;}
 function manualHead(){
   return '<p style="color:var(--muted);font-size:12.5px;margin:0 0 4px">'+
-    t("manVer",VERSION)+' · '+today()+'</p>';}
+    t("manVer",VERSION)+' · '+today()+'</p>'+
+    '<div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:6px 0 14px;background:var(--panel-2)">'+
+    '<div style="font-weight:700;margin-bottom:6px">'+t("aboutT")+'</div>'+
+    '<div style="font-size:13px;line-height:1.9">'+
+      '<div><b>'+t("aboutDev")+':</b> '+(BUILT_BY[L]||BUILT_BY.ar)+' — '+t("aboutRole")+'</div>'+
+      '<div><b>'+t("aboutRel")+':</b> '+ar(2026)+' · <b>'+t("aboutVer")+':</b> v'+VERSION+'</div>'+
+      '<div style="color:var(--muted);margin-top:4px">'+t("aboutNote")+'</div>'+
+    '</div></div>';}
 function openManual(){
   mnTitle.textContent=t("manTitle")+" — v"+VERSION;
   mnBody.innerHTML=manualHead()+manualHTML();
